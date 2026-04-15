@@ -1,6 +1,6 @@
-"""Strategy C: single-channel autoreject-backed blink detection."""
+"""Configuration helpers and defaults for pyblinker."""
 
-from pyblinker.config.strategy_c_defaults import (
+from .strategy_c_defaults import (
     AUTOREJECT_BAYESIAN_OPTIMIZATION,
     AUTOREJECT_METHOD_ALIASES,
     AUTOREJECT_RANDOM_SEARCH,
@@ -21,40 +21,12 @@ from pyblinker.config.strategy_c_defaults import (
     validate_strategy_c_options,
 )
 
-from .single_channel_autoreject import (
-    EpochDetectionStrategyCAutoreject,
-    Stage1CandidateDetection,
-    Stage1CandidateEvaluation,
-    Stage1CandidateLane,
-    Stage1ScanResult,
-    StrategyCAutorejectResult,
-    channel_results_strategy_c,
-    epoch_detection_strategy_c_autoreject,
-)
-
-DEFAULT_STRATEGY_C_CHANNELS = ("__NO_BACKBONE__",)
-
-
 __all__ = [
-    "EpochDetectionStrategyCAutoreject",
-    "Stage1CandidateDetection",
-    "Stage1CandidateEvaluation",
-    "Stage1CandidateLane",
-    "Stage1ScanResult",
-    "StrategyCAutorejectResult",
-    "channel_results_strategy_c",
-    "epoch_detection_strategy_c_autoreject",
-    "get_autoreject_method_aliases",
-    "get_stage1_threshold_scope_aliases",
-    "normalize_autoreject_method",
-    "normalize_stage1_threshold_scope",
-    "validate_strategy_c_options",
     "AUTOREJECT_BAYESIAN_OPTIMIZATION",
     "AUTOREJECT_METHOD_ALIASES",
     "AUTOREJECT_RANDOM_SEARCH",
     "DEFAULT_AUTOREJECT_METHOD",
     "DEFAULT_STAGE1_THRESHOLD_SCOPE",
-    "DEFAULT_STRATEGY_C_CHANNELS",
     "STAGE1_BAYESIAN_SCAN_THRESHOLD_SCALE",
     "STAGE1_GLOBAL_SCAN_THRESHOLD_SCALE",
     "STAGE1_RANDOM_SCAN_THRESHOLD_SCALE",
@@ -63,4 +35,9 @@ __all__ = [
     "SUPPORTED_STAGE1_THRESHOLD_SCOPES",
     "THRESHOLD_SCOPE_GLOBAL",
     "THRESHOLD_SCOPE_PER_CHANNEL",
+    "get_autoreject_method_aliases",
+    "get_stage1_threshold_scope_aliases",
+    "normalize_autoreject_method",
+    "normalize_stage1_threshold_scope",
+    "validate_strategy_c_options",
 ]

@@ -16,7 +16,6 @@ from pyblinker.common.bad_epochs import get_valid_epoch_indices
 from pyblinker.common.epoch_input import prepare_epoch_detection_input
 from pyblinker.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
 from pyblinker.matching.blink_matching import enrich_absolute_times, load_annotation_as_reference
-from pyblinker.strategy_c import AUTOREJECT_BAYESIAN_OPTIMIZATION
 from pyblinker.strategy_c.runner import blink_position_strategy_c
 
 FIF_PATH = Path(
@@ -32,9 +31,15 @@ FILTER_LOW = 1.0
 FILTER_HIGH = 20.0
 RESAMPLE_RATE = None
 STAGE1_CHANNELS = ("__NO_BACKBONE__",)
+NO_BACKBONE_SENTINEL = ("__NO_BACKBONE__",)
 STAGE1_THRESHOLD_SCOPE = "per_channel"
 STAGE1_RESCALE_THRESHOLD = True
-AUTOREJECT_METHOD = AUTOREJECT_BAYESIAN_OPTIMIZATION
+AUTOREJECT_METHOD = "bayesian_optimization"
+STAGE1_THRESHOLD_SCALES = {
+    "random_search": 0.08,
+    "bayesian_optimization": 0.12,
+    "global": 0.005,
+}
 AUTOREJECT_RANDOM_STATE = 42
 AUTOREJECT_AUGMENT = False
 
@@ -59,15 +64,20 @@ def main() -> None:
         resample_rate=RESAMPLE_RATE,
     )
     valid_epoch_indices = get_valid_epoch_indices(epochs)
+    setting = {
+        "stage1_channels": STAGE1_CHANNELS,
+        "stage1_threshold_scope": STAGE1_THRESHOLD_SCOPE,
+        "stage1_rescale_threshold": STAGE1_RESCALE_THRESHOLD,
+        "no_backbone_sentinel": NO_BACKBONE_SENTINEL,
+        "stage1_threshold_scales": STAGE1_THRESHOLD_SCALES,
+        "autoreject_random_state": AUTOREJECT_RANDOM_STATE,
+        "autoreject_method": AUTOREJECT_METHOD,
+        "autoreject_augment": AUTOREJECT_AUGMENT,
+    }
     channel_results = blink_position_strategy_c(
         prepared,
         valid_epoch_indices,
-        stage1_channels=STAGE1_CHANNELS,
-        stage1_threshold_scope=STAGE1_THRESHOLD_SCOPE,
-        stage1_rescale_threshold=STAGE1_RESCALE_THRESHOLD,
-        autoreject_random_state=AUTOREJECT_RANDOM_STATE,
-        autoreject_method=AUTOREJECT_METHOD,
-        autoreject_augment=AUTOREJECT_AUGMENT,
+        setting,
     )
     ground_truth = enrich_absolute_times(
         load_annotation_as_reference(CSV_PATH, EPOCH_DURATION_S),
