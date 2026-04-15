@@ -77,7 +77,7 @@ def main() -> None:
     channel_results = blink_position_strategy_c(
         prepared,
         valid_epoch_indices,
-        setting,
+        setting=setting,
     )
     ground_truth = enrich_absolute_times(
         load_annotation_as_reference(CSV_PATH, EPOCH_DURATION_S),
