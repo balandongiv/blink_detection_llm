@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from pyblinker.epoch_detection_strategy_a.epoch_validation import (
+from pyblinker.common.validation import (
     BlinkValidationMetrics,
     match_blink_tables,
 )
@@ -46,7 +46,7 @@ def evaluate_channel_lanes(
     ----------
     channel_results:
         List of per-channel dicts as returned by
-        :func:`~pyblinker.epoch_detection_strategy_a.channel_blink_benchmark.blink_position_strategy_a`.
+        :func:`~pyblinker.epoch_detection_strategy_a.kleifges_blinker_2017.blink_position_strategy_a`.
         Each dict must have keys: ``channel``, ``df_positions``, ``mapped_candidates``,
         ``signal_by_epoch``.
     ground_truth:

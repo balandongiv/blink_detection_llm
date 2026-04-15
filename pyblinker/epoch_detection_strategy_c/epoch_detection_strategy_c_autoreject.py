@@ -24,17 +24,13 @@ from pyblinker.blinker.get_representative_channel import (
     filter_good_ratio,
 )
 from pyblinker.blinker.pyblinker import BlinkDetector
-from pyblinker.epoch_detection_strategy_a.bad_epoch_utils import get_valid_epoch_indices
-from pyblinker.epoch_detection_strategy_a.epoch_blink_pipeline import (
+from pyblinker.common.bad_epochs import get_valid_epoch_indices
+from pyblinker.common.epoch_input import (
     PreparedEpochDetectionInput,
     prepare_epoch_detection_input,
 )
-from pyblinker.epoch_detection_strategy_a.epoch_channel_processor import (
-    map_concatenated_blinks_to_epochs,
-)
-from pyblinker.epoch_detection_strategy_a.epoch_metadata_export import (
-    attach_epoch_blink_metadata,
-)
+from pyblinker.common.epoch_channel import map_concatenated_blinks_to_epochs
+from pyblinker.common.epoch_io import attach_epoch_blink_metadata
 from pyblinker.logging import get_logger
 from pyblinker.utils.annotation_utils import create_annotation
 from pyblinker.utils.statistics_utils import get_blink_statistic, get_good_blink_mask
@@ -62,13 +58,15 @@ from .autoreject_types import (
     Stage1ScanResult,
     StrategyCAutorejectResult,
 )
+from pyblinker.common.pipeline_utils import (
+    build_epoch_boundaries,
+    empty_annotations,
+    finalize_blink_table,
+)
 from .autoreject_utils import (
-    _build_epoch_boundaries,
     _cluster_seed_events,
     _dedup_union,
-    _empty_annotations,
     _empty_candidate_table,
-    _finalize_blink_table,
     _is_cluster_already_covered,
     normalize_autoreject_method,
     normalize_stage1_threshold_scope,
@@ -396,9 +394,9 @@ class EpochDetectionStrategyCAutoreject:
     ) -> Stage1ScanResult:
         """Run the shared Stage 1 scan before any FitBlinks refinement."""
 
-        epoch_boundaries = _build_epoch_boundaries(
-            valid_epoch_count=len(valid_epoch_indices),
-            epoch_length_samples=prepared.epoch_length_samples,
+        epoch_boundaries = build_epoch_boundaries(
+            len(valid_epoch_indices),
+            prepared.epoch_length_samples,
         )
 
         (
@@ -877,7 +875,7 @@ class EpochDetectionStrategyCAutoreject:
             epoch_boundaries=epoch_boundaries,
             sfreq=prepared.sfreq,
         )
-        blink_table = _finalize_blink_table(
+        blink_table = finalize_blink_table(
             mapped_blinks,
             epochs=epochs_out,
             prepared=prepared,
@@ -896,7 +894,7 @@ class EpochDetectionStrategyCAutoreject:
                 self.annot_label if self.annot_label else "eye_blink",
             )
             if not annotated_df.empty
-            else _empty_annotations()
+            else empty_annotations()
         )
 
         if selected_channel.empty:

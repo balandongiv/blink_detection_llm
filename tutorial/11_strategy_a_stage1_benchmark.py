@@ -5,14 +5,12 @@ from pathlib import Path
 import mne
 import pandas as pd
 
-from pyblinker.epoch_detection_strategy_a.bad_epoch_utils import get_valid_epoch_indices
-from pyblinker.epoch_detection_strategy_a.channel_blink_benchmark import (
+from pyblinker.common.bad_epochs import get_valid_epoch_indices
+from pyblinker.epoch_detection_strategy_a.kleifges_blinker_2017 import (
     blink_position_strategy_a,
 )
-from pyblinker.epoch_detection_strategy_a.epoch_blink_pipeline import (
-    prepare_epoch_detection_input,
-)
-from pyblinker.epoch_detection_strategy_a.epoch_validation import (
+from pyblinker.common.epoch_input import prepare_epoch_detection_input
+from pyblinker.common.validation import (
     filter_reference_to_valid_epochs,
     load_reference_blink_table,
     match_blink_tables,
@@ -47,13 +45,6 @@ def print_frame(title: str, frame: pd.DataFrame, columns: list[str] | None = Non
 
 
 def main() -> None:
-    print(f"data_path={DATA_PATH}")
-    print(f"reference_path={REFERENCE_PATH}")
-    print(f"target_channel={TARGET_CHANNEL}")
-    print(f"n_epochs={N_EPOCHS}")
-    print(f"filter_low={FILTER_LOW}")
-    print(f"filter_high={FILTER_HIGH}")
-    print(f"resample_rate={RESAMPLE_RATE}")
 
     epochs = load_epochs()
     prepared = prepare_epoch_detection_input(

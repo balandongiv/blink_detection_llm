@@ -15,20 +15,16 @@ if str(REPO_ROOT) not in sys.path:
 
 from pyblinker.blinker.get_blink_positions import get_blink_position
 from pyblinker.blinker.pyblinker import BlinkDetector
-from pyblinker.epoch_detection_strategy_a.bad_epoch_utils import get_valid_epoch_indices
-from pyblinker.epoch_detection_strategy_a.epoch_blink_pipeline import (
-    prepare_epoch_detection_input,
-)
-from pyblinker.epoch_detection_strategy_a.epoch_channel_processor import (
-    map_concatenated_blinks_to_epochs,
-)
-from pyblinker.epoch_detection_strategy_a.epoch_validation import (
+from pyblinker.common.bad_epochs import get_valid_epoch_indices
+from pyblinker.common.epoch_channel import map_concatenated_blinks_to_epochs
+from pyblinker.common.epoch_input import prepare_epoch_detection_input
+from pyblinker.common.validation import (
     BlinkValidationMetrics,
     filter_reference_to_valid_epochs,
     load_reference_blink_table,
     match_blink_tables,
 )
-from pyblinker.epoch_detection_strategy_b.mne_step1 import find_eog_candidate_regions
+from pyblinker.epoch_detection_strategy_b.nathanael_mne import find_eog_candidate_regions
 
 DATA_PATH = REPO_ROOT / "sample_data" / "dev_epo.fif"
 REFERENCE_PATH = REPO_ROOT / "sample_data" / "dev_epo_annotations_5_epochs.csv"

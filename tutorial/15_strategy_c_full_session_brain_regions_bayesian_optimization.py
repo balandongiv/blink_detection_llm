@@ -33,7 +33,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from pyblinker.epoch_detection_strategy_a.epoch_validation import match_blink_tables
+from pyblinker.common.validation import match_blink_tables
 from pyblinker.epoch_detection_strategy_c import (
     AUTOREJECT_BAYESIAN_OPTIMIZATION,
     epoch_detection_strategy_c_autoreject,

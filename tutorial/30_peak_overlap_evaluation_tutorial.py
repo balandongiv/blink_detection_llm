@@ -22,7 +22,7 @@ _RUNNER_MOD = importlib.util.module_from_spec(_RUNNER_SPEC)  # type: ignore[arg-
 sys.modules[_RUNNER_SPEC.name] = _RUNNER_MOD
 _RUNNER_SPEC.loader.exec_module(_RUNNER_MOD)  # type: ignore[union-attr]
 
-from pyblinker.epoch_detection_strategy_a.epoch_validation import (
+from pyblinker.common.validation import (
     match_blink_tables,
 )
 from pyblinker.utils.peak_overlap_metric import (

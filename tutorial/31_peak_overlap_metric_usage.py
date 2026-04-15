@@ -13,14 +13,10 @@ if str(REPO_ROOT) not in sys.path:
 
 from pyblinker.blinker.pyblinker import BlinkDetector
 from pyblinker.blinker.get_blink_positions import get_blink_position
-from pyblinker.epoch_detection_strategy_a.bad_epoch_utils import get_valid_epoch_indices
-from pyblinker.epoch_detection_strategy_a.epoch_blink_pipeline import (
-    prepare_epoch_detection_input,
-)
-from pyblinker.epoch_detection_strategy_a.epoch_channel_processor import (
-    map_concatenated_blinks_to_epochs,
-)
-from pyblinker.epoch_detection_strategy_a.epoch_validation import match_blink_tables
+from pyblinker.common.bad_epochs import get_valid_epoch_indices
+from pyblinker.common.epoch_channel import map_concatenated_blinks_to_epochs
+from pyblinker.common.epoch_input import prepare_epoch_detection_input
+from pyblinker.common.validation import match_blink_tables
 from pyblinker.utils.peak_overlap_metric import (
     calculate_interval_overlap_ratio,
     is_peak_overlap_match,

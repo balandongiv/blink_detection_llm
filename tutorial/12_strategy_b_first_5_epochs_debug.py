@@ -1,3 +1,5 @@
+"""Debug tutorial: Strategy B (Nathanael MNE) on the first 5 epochs."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -10,13 +12,16 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from pyblinker.epoch_detection_strategy_a.epoch_validation import (
+from pyblinker.common.bad_epochs import get_valid_epoch_indices
+from pyblinker.common.epoch_input import prepare_epoch_detection_input
+from pyblinker.common.validation import (
     load_reference_blink_table,
     match_blink_tables,
 )
-from pyblinker.epoch_detection_strategy_b import (
-    BlinkDetectorEpochStrategyB,
+from pyblinker.epoch_detection_strategy_b.nathanael_mne import (
     DEFAULT_STRATEGY_B_CHANNELS,
+    find_eog_candidate_regions,
+    summarize_candidate_regions,
 )
 
 DATA_PATH = REPO_ROOT / "sample_data" / "dev_epo.fif"
@@ -24,10 +29,8 @@ REFERENCE_PATH = REPO_ROOT / "sample_data" / "dev_epo_annotations_5_epochs.csv"
 CHANNELS = list(DEFAULT_STRATEGY_B_CHANNELS)
 
 TARGET_EPOCH_INDEX = 0
-VISUALIZE = False
 FILTER_LOW = 1.0
 FILTER_HIGH = 20.0
-RESAMPLE_RATE = None
 MNE_LOW_FREQ = 1.0
 MNE_HIGH_FREQ = 20.0
 MNE_THRESH = None
@@ -46,7 +49,7 @@ def print_frame(title: str, frame: pd.DataFrame, columns: list[str] | None = Non
         print("<empty>")
         return
     if columns is not None:
-        existing = [column for column in columns if column in frame.columns]
+        existing = [c for c in columns if c in frame.columns]
         frame = frame.loc[:, existing]
     print(frame.to_string(index=False))
 
@@ -56,53 +59,70 @@ def main() -> None:
     print(f"reference_path={REFERENCE_PATH}")
     print(f"channels={CHANNELS}")
     print(f"target_epoch_index={TARGET_EPOCH_INDEX}")
-    print(f"filter_low={FILTER_LOW}")
-    print(f"filter_high={FILTER_HIGH}")
-    print(f"resample_rate={RESAMPLE_RATE}")
-    print(f"mne_low_freq={MNE_LOW_FREQ}")
-    print(f"mne_high_freq={MNE_HIGH_FREQ}")
-    print(f"mne_thresh={MNE_THRESH}")
-    print(f"mne_half_window_s={MNE_HALF_WINDOW_S}")
 
     epochs = load_first_5_epochs()
     reference = load_reference_blink_table(REFERENCE_PATH)
 
-    detector = BlinkDetectorEpochStrategyB(
+    prepared = prepare_epoch_detection_input(
         epochs,
-        visualize=VISUALIZE,
+        pick_types_options={"eeg": True},
         filter_low=FILTER_LOW,
         filter_high=FILTER_HIGH,
-        resample_rate=RESAMPLE_RATE,
-        n_jobs=1,
-        use_multiprocessing=False,
-        mne_half_window_s=MNE_HALF_WINDOW_S,
-        mne_l_freq=MNE_LOW_FREQ,
-        mne_h_freq=MNE_HIGH_FREQ,
-        mne_thresh=MNE_THRESH,
     )
-    prepared = detector.prepare_epoch_data()
+    valid_epoch_indices = get_valid_epoch_indices(epochs)
+
     print(f"prepared_shape={prepared.data.shape}")
     print(f"prepared_channel_names={prepared.channel_names}")
     print(f"prepared_sfreq={prepared.sfreq}")
     print(f"epoch_length_samples={prepared.epoch_length_samples}")
+    print(f"valid_epoch_indices={valid_epoch_indices}")
 
-    annotations, channel, n_good_blinks, blink_table, _fig_data, selected_channel, _epochs = (
-        detector.get_blink()
+    # Run find_eog_candidate_regions on each channel and collect all candidates
+    all_candidates: list[pd.DataFrame] = []
+    for ch_idx, channel_name in enumerate(prepared.channel_names):
+        signal = prepared.data[valid_epoch_indices, ch_idx, :].reshape(-1)
+        df_positions = find_eog_candidate_regions(
+            signal,
+            channel=channel_name,
+            sfreq=prepared.sfreq,
+            half_window_s=MNE_HALF_WINDOW_S,
+            l_freq=MNE_LOW_FREQ,
+            h_freq=MNE_HIGH_FREQ,
+            thresh=MNE_THRESH,
+        )
+        mapped = summarize_candidate_regions(
+            df_positions,
+            epoch_length_samples=prepared.epoch_length_samples,
+            sfreq=prepared.sfreq,
+            epoch_indices=valid_epoch_indices,
+        )
+        print(f"  channel={channel_name}  raw_candidates={len(df_positions)}  mapped={len(mapped)}")
+        if not mapped.empty:
+            all_candidates.append(mapped)
+
+    blink_table = (
+        pd.concat(all_candidates, ignore_index=True)
+        .sort_values(["epoch_index", "blink_onset"])
+        .reset_index(drop=True)
+        if all_candidates else pd.DataFrame()
     )
+
+    signal_by_epoch = {
+        ep: prepared.data[ep, 0, :].astype(float)
+        for ep in range(prepared.data.shape[0])
+    }
     metrics = match_blink_tables(
         blink_table,
         reference,
         n_epochs=len(epochs),
+        signal_by_epoch=signal_by_epoch,
+        sfreq=prepared.sfreq,
     )
 
-    print(f"selected_channel={channel}")
-    print(f"n_good_blinks={n_good_blinks}")
-    print(f"annotation_count={len(annotations)}")
-    print_frame("Selected Channel Summary", selected_channel)
     print_frame(
         f"Predicted Blinks For Epoch {TARGET_EPOCH_INDEX}",
         blink_table[blink_table["epoch_index"] == TARGET_EPOCH_INDEX].copy(),
-        ["epoch_index", "channel", "blink_onset", "blink_duration", "epoch_selection"],
+        ["epoch_index", "channel", "blink_onset", "blink_duration"],
     )
     print_frame(
         f"Reference Blinks For Epoch {TARGET_EPOCH_INDEX}",

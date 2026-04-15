@@ -50,7 +50,7 @@ def collect_false_negatives(
     DataFrame before passing it here.
 
     Uses the same greedy peak-overlap matching algorithm as
-    :func:`~pyblinker.epoch_detection_strategy_a.epoch_validation.match_blink_tables`.
+    :func:`~pyblinker.common.validation.match_blink_tables`.
 
     Returns a DataFrame with one row per false negative containing:
     epoch_index, blink_onset, blink_duration, absolute_onset_s,

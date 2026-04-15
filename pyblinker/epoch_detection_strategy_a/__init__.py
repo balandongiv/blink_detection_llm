@@ -1,18 +1,17 @@
-"""Epoch-aware blink detection built on the legacy six-step pipeline."""
+"""Strategy A: Kleifges/BLINKER-based blink position detection."""
 
-from .bad_epoch_utils import get_valid_epoch_indices, simulate_bad_epochs
-from .epoch_blink_pipeline import (
-    BlinkDetectorEpoch,
-    PreparedEpochDetectionInput,
-    prepare_epoch_detection_input,
-    run_epoch_blink_pipeline,
-)
+from pyblinker.common.bad_epochs import get_valid_epoch_indices, simulate_bad_epochs
+from pyblinker.common.epoch_input import PreparedEpochDetectionInput, prepare_epoch_detection_input
+
+from .kleifges_blinker_2017 import blink_position_strategy_a
+from .runner import channel_results_strategy_a, run_strategy_a
 
 __all__ = [
-    "BlinkDetectorEpoch",
     "PreparedEpochDetectionInput",
+    "blink_position_strategy_a",
+    "channel_results_strategy_a",
     "get_valid_epoch_indices",
     "prepare_epoch_detection_input",
-    "run_epoch_blink_pipeline",
+    "run_strategy_a",
     "simulate_bad_epochs",
 ]

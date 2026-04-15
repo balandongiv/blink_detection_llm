@@ -2,6 +2,9 @@
 
 All functions here are side-effect-free and can be imported and tested
 independently of the main EpochDetectionStrategyCAutoreject class.
+
+Cross-strategy utilities (_empty_annotations, finalize_blink_table,
+build_epoch_boundaries) live in pyblinker.common.pipeline_utils.
 """
 
 from __future__ import annotations
@@ -10,10 +13,13 @@ import mne
 import numpy as np
 import pandas as pd
 
-from pyblinker.epoch_detection_strategy_a.epoch_blink_pipeline import (
-    PreparedEpochDetectionInput,
+from pyblinker.common.epoch_input import PreparedEpochDetectionInput
+from pyblinker.common.epoch_io import normalize_blink_table
+from pyblinker.common.pipeline_utils import (
+    build_epoch_boundaries,
+    empty_annotations,
+    finalize_blink_table,
 )
-from pyblinker.epoch_detection_strategy_a.epoch_metadata_export import normalize_blink_table
 
 from .autoreject_constants import (
     AUTOREJECT_METHOD_ALIASES,
@@ -81,10 +87,6 @@ def compare_with_reference_benchmark(metrics) -> dict[str, dict[str, float | int
 # Empty-frame factories
 # ---------------------------------------------------------------------------
 
-def _empty_annotations() -> mne.Annotations:
-    return mne.Annotations(onset=[], duration=[], description=[])
-
-
 def _empty_candidate_table() -> pd.DataFrame:
     return pd.DataFrame(
         columns=[
@@ -97,50 +99,6 @@ def _empty_candidate_table() -> pd.DataFrame:
             "candidate_source",
         ]
     )
-
-
-# ---------------------------------------------------------------------------
-# Epoch boundary helpers
-# ---------------------------------------------------------------------------
-
-def _build_epoch_boundaries(
-    *,
-    valid_epoch_count: int,
-    epoch_length_samples: int,
-) -> list[tuple[int, int]]:
-    """Return concatenated-signal boundaries for each valid epoch."""
-
-    return [
-        (
-            idx * epoch_length_samples,
-            (idx + 1) * epoch_length_samples,
-        )
-        for idx in range(valid_epoch_count)
-    ]
-
-
-def _finalize_blink_table(
-    blink_table: pd.DataFrame,
-    *,
-    epochs: mne.Epochs,
-    prepared: PreparedEpochDetectionInput,
-) -> pd.DataFrame:
-    normalized = normalize_blink_table(blink_table)
-    if normalized.empty:
-        return normalized
-
-    normalized = normalized.copy()
-    normalized["epoch_selection"] = normalized["epoch_index"].map(
-        {idx: int(selection) for idx, selection in enumerate(prepared.selection)}
-    )
-
-    if isinstance(epochs.metadata, pd.DataFrame):
-        metadata = epochs.metadata.reset_index(drop=True)
-        if "epoch_id" in metadata.columns:
-            normalized["epoch_id"] = normalized["epoch_index"].map(
-                {idx: metadata.loc[idx, "epoch_id"] for idx in range(len(metadata))}
-            )
-    return normalized
 
 
 # ---------------------------------------------------------------------------
@@ -256,16 +214,16 @@ def _is_cluster_already_covered(
 
 
 __all__ = [
+    "build_epoch_boundaries",
     "compare_with_reference_benchmark",
+    "empty_annotations",
+    "finalize_blink_table",
     "normalize_autoreject_method",
     "normalize_stage1_threshold_scope",
-    "_build_epoch_boundaries",
     "_cluster_seed_events",
     "_dedup_union",
-    "_empty_annotations",
     "_empty_candidate_table",
     "_events_match",
-    "_finalize_blink_table",
     "_interval_overlap_ratio",
     "_is_cluster_already_covered",
 ]
