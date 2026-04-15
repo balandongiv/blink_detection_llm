@@ -29,23 +29,12 @@ from .utils.metadata_utils import (
 )
 
 from .blinker.fit_blink import FitBlinks
-from .blink_features._core_blink import (
-    ALL_METHODS,
-    CANONICAL_METRIC_STEMS,
-    METHODS_BY_MODALITY,
-    core_nan_dict,
-)
-from .blink_features.kinematics.per_blink import compute_segment_kinematics
-from .blink_features.morphology.per_blink import compute_blink_waveform_metrics
-from .blink_features.waveform_features.extract_blink_properties import BlinkProperties
+
 from .utils import normalize_picks, require_channels
 from .utils.modality import infer_modality
 from .blinker.zero_crossing import left_right_zero_crossing
 
-_METHOD_METRIC_KEYS = {
-    method: [f"{stem}_{method}" for stem in CANONICAL_METRIC_STEMS]
-    for method in ALL_METHODS
-}
+
 
 logger = get_logger(__name__)
 

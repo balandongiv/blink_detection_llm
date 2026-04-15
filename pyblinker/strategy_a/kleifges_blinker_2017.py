@@ -7,7 +7,7 @@ from pyblinker.common.pipeline_utils import build_epoch_boundaries, build_signal
 from .thresholding import compute_basic_statistics, scan_threshold_crossings
 import pandas as pd
 
-def blink_position_strategy_a(
+def kleifges_strategy_a(
     prepared: PreparedEpochDetectionInput,
     valid_epoch_indices: list[int],
 ) -> list[dict]:
@@ -67,4 +67,4 @@ def blink_position_strategy_a(
     return results
 
 
-__all__ = ["blink_position_strategy_a"]
+__all__ = ["kleifges_strategy_a"]

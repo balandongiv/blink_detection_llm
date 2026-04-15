@@ -18,7 +18,7 @@ from pyblinker.common.epoch_input import PreparedEpochDetectionInput, prepare_ep
 from pyblinker.evaluation_runner import score_channel_results
 from pyblinker.matching.blink_matching import enrich_absolute_times
 
-from .kleifges_blinker_2017 import blink_position_strategy_a
+from .kleifges_blinker_2017 import kleifges_strategy_a
 
 
 def channel_results_strategy_a(
@@ -30,7 +30,7 @@ def channel_results_strategy_a(
     Each dict has keys: ``channel``, ``df_positions``,
     ``mapped_candidates``, ``signal_by_epoch``.
     """
-    return blink_position_strategy_a(prepared, valid_epoch_indices)
+    return kleifges_strategy_a(prepared, valid_epoch_indices)
 
 
 def run_strategy_a(

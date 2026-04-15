@@ -12,9 +12,7 @@ from tqdm import tqdm
 from pyblinker.logging import get_logger
 from pyblinker.utils.statistics_utils import get_good_blink_mask, get_blink_statistic
 from pyblinker.blinker.fit_blink import FitBlinks
-from pyblinker.blink_features.waveform_features.extract_blink_properties import (
-    BlinkProperties,
-)
+
 from pyblinker.blinker.get_blink_positions import get_blink_position
 from pyblinker.blinker.get_representative_channel import channel_selection
 

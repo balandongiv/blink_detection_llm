@@ -14,7 +14,7 @@ from pyblinker.analysis.fn_report_builder import build_false_negative_report
 from pyblinker.analysis.lane_evaluation import evaluate_channel_lanes
 from pyblinker.common.bad_epochs import get_valid_epoch_indices
 from pyblinker.strategy_a.kleifges_blinker_2017 import (
-    blink_position_strategy_a,
+    kleifges_strategy_a,
 )
 from pyblinker.common.epoch_input import prepare_epoch_detection_input
 from pyblinker.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
@@ -55,7 +55,7 @@ def main() -> None:
         resample_rate=RESAMPLE_RATE,
     )
     valid_epoch_indices = get_valid_epoch_indices(epochs)
-    channel_results = blink_position_strategy_a(prepared, valid_epoch_indices)
+    channel_results = kleifges_strategy_a(prepared, valid_epoch_indices)
     ground_truth = enrich_absolute_times(
         load_annotation_as_reference(CSV_PATH, EPOCH_DURATION_S),
         EPOCH_DURATION_S,

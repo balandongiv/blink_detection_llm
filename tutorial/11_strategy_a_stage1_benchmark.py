@@ -7,7 +7,7 @@ import pandas as pd
 
 from pyblinker.common.bad_epochs import get_valid_epoch_indices
 from pyblinker.strategy_a.kleifges_blinker_2017 import (
-    blink_position_strategy_a,
+    kleifges_strategy_a,
 )
 from pyblinker.common.epoch_input import prepare_epoch_detection_input
 from pyblinker.common.validation import (
@@ -56,7 +56,7 @@ def main() -> None:
     )
 
     valid_epoch_indices = get_valid_epoch_indices(epochs)
-    channel_results = blink_position_strategy_a(prepared, valid_epoch_indices)
+    channel_results = kleifges_strategy_a(prepared, valid_epoch_indices)
     result = channel_results[0]  # Single channel: TARGET_CHANNEL
     df_positions = result["df_positions"]
     mapped_positions = result["mapped_candidates"]
