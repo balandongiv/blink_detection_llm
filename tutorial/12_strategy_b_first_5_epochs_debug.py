@@ -18,7 +18,7 @@ from pyblinker.common.validation import (
     load_reference_blink_table,
     match_blink_tables,
 )
-from pyblinker.epoch_detection_strategy_b.nathanael_mne import (
+from pyblinker.strategy_b.nathanael_mne import (
     DEFAULT_STRATEGY_B_CHANNELS,
     find_eog_candidate_regions,
     summarize_candidate_regions,

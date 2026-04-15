@@ -24,7 +24,7 @@ from pyblinker.common.validation import (
     load_reference_blink_table,
     match_blink_tables,
 )
-from pyblinker.epoch_detection_strategy_b.nathanael_mne import find_eog_candidate_regions
+from pyblinker.strategy_b.nathanael_mne import find_eog_candidate_regions
 
 DATA_PATH = REPO_ROOT / "sample_data" / "dev_epo.fif"
 REFERENCE_PATH = REPO_ROOT / "sample_data" / "dev_epo_annotations_5_epochs.csv"

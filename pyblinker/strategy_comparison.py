@@ -43,14 +43,14 @@ from pyblinker.analysis.lane_evaluation import LaneScoringResult
 from pyblinker.dataset_config import EPOCH_DURATION_S, FILTER_HIGH, FILTER_LOW, PEAK_SIDE_TOLERANCE_S
 from pyblinker.common.bad_epochs import get_valid_epoch_indices
 from pyblinker.common.epoch_input import prepare_epoch_detection_input
-from pyblinker.epoch_detection_strategy_a.runner import channel_results_strategy_a
-from pyblinker.epoch_detection_strategy_b.runner import blink_position_strategy_b
-from pyblinker.epoch_detection_strategy_c.runner import blink_position_strategy_c
-from pyblinker.epoch_detection_strategy_d.runner import blink_position_strategy_d
-from pyblinker.epoch_detection_strategy_e.runner import channel_results_strategy_e
+from pyblinker.strategy_a.runner import channel_results_strategy_a
+from pyblinker.strategy_b.runner import blink_position_strategy_b
+from pyblinker.strategy_c.runner import blink_position_strategy_c
+from pyblinker.strategy_d.runner import blink_position_strategy_d
+from pyblinker.strategy_e.runner import channel_results_strategy_e
 from pyblinker.evaluation_runner import score_channel_results
 
-from pyblinker.epoch_detection_strategy_c import (
+from pyblinker.strategy_c import (
     AUTOREJECT_BAYESIAN_OPTIMIZATION,
     epoch_detection_strategy_c_autoreject,
 )

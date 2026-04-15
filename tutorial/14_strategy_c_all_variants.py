@@ -60,8 +60,8 @@ from pyblinker.common.validation import (
     match_blink_tables,
 )
 from pyblinker.common.epoch_input import prepare_epoch_detection_input as prepare_b_detection_input
-from pyblinker.epoch_detection_strategy_b.nathanael_mne import find_eog_candidate_regions
-from pyblinker.epoch_detection_strategy_c import (
+from pyblinker.strategy_b.nathanael_mne import find_eog_candidate_regions
+from pyblinker.strategy_c import (
     AUTOREJECT_BAYESIAN_OPTIMIZATION,
     AUTOREJECT_RANDOM_SEARCH,
     DEFAULT_STAGE1_THRESHOLD_SCOPE,

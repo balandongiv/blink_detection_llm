@@ -23,7 +23,7 @@ from pyblinker.common.validation import (
     match_blink_tables,
 )
 from pyblinker.common.epoch_input import prepare_epoch_detection_input
-from pyblinker.epoch_detection_strategy_b.nathanael_mne import find_eog_candidate_regions
+from pyblinker.strategy_b.nathanael_mne import find_eog_candidate_regions
 from pyblinker.utils.statistics_utils import get_blink_statistic, get_good_blink_mask
 
 DATA_PATH = REPO_ROOT / "sample_data" / "dev_epo.fif"

@@ -34,7 +34,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from pyblinker.common.validation import match_blink_tables
-from pyblinker.epoch_detection_strategy_c import (
+from pyblinker.strategy_c import (
     AUTOREJECT_BAYESIAN_OPTIMIZATION,
     epoch_detection_strategy_c_autoreject,
 )

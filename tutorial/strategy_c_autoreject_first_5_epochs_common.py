@@ -16,7 +16,7 @@ from pyblinker.common.validation import (
     load_reference_blink_table,
     match_blink_tables,
 )
-from pyblinker.epoch_detection_strategy_c import (
+from pyblinker.strategy_c import (
     AUTOREJECT_BAYESIAN_OPTIMIZATION,
     AUTOREJECT_RANDOM_SEARCH,
     DEFAULT_STAGE1_THRESHOLD_SCOPE,

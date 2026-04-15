@@ -13,7 +13,7 @@ from pyblinker.analysis.false_negative_analysis import collect_false_negatives
 from pyblinker.analysis.fn_report_builder import build_false_negative_report
 from pyblinker.analysis.lane_evaluation import evaluate_channel_lanes
 from pyblinker.common.bad_epochs import get_valid_epoch_indices
-from pyblinker.epoch_detection_strategy_a.kleifges_blinker_2017 import (
+from pyblinker.strategy_a.kleifges_blinker_2017 import (
     blink_position_strategy_a,
 )
 from pyblinker.common.epoch_input import prepare_epoch_detection_input
