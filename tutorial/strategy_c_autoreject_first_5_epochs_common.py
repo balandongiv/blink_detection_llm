@@ -12,6 +12,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from pyblinker.common.epoch_input import prepare_epoch_detection_input
 from pyblinker.common.validation import (
     load_reference_blink_table,
     match_blink_tables,
@@ -21,9 +22,7 @@ from pyblinker.strategy_c import (
     AUTOREJECT_RANDOM_SEARCH,
     DEFAULT_STAGE1_THRESHOLD_SCOPE,
     DEFAULT_STRATEGY_C_CHANNELS,
-    REFERENCE_BENCHMARK,
     THRESHOLD_SCOPE_GLOBAL,
-    compare_with_reference_benchmark,
     epoch_detection_strategy_c_autoreject,
 )
 
@@ -111,7 +110,13 @@ def run_debug_benchmark(
         stage1_threshold_scope=stage1_threshold_scope,
         stage1_rescale_threshold=stage1_rescale_threshold,
     )
-    prepared = detector.prepare_epoch_data()
+    prepared = prepare_epoch_detection_input(
+        epochs,
+        pick_types_options={"eeg": True},
+        filter_low=FILTER_LOW,
+        filter_high=FILTER_HIGH,
+        resample_rate=RESAMPLE_RATE,
+    )
     annotations, channel, n_good_blinks, blink_table, _fig_data, selected_channel, _epochs = (
         detector.get_blink()
     )
@@ -248,7 +253,7 @@ def print_execution_flow_chart(result: DebugRunResult) -> None:
                 "load dev_epo.fif",
                 "  -> keep first 5 epochs",
                 "  -> instantiate EpochDetectionStrategyCAutoreject",
-                "  -> prepare_epoch_data()",
+                "  -> prepare_epoch_detection_input(...)",
                 "     -> pick EEG channels",
                 "     -> band-pass filter data",
                 "     -> optionally resample",
@@ -370,11 +375,6 @@ def print_debug_run(
             "blink_count_agreement": metrics.blink_count_agreement,
         }
     )
-
-    print("\n=== Reference Benchmark ===")
-    print(REFERENCE_BENCHMARK)
-    print("\n=== Comparison To Reference Benchmark ===")
-    print(compare_with_reference_benchmark(metrics))
 
 
 def run_single_method_debug(

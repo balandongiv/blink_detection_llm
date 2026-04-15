@@ -9,7 +9,6 @@ from types import SimpleNamespace
 import mne
 import numpy as np
 import pandas as pd
-import yaml
 
 from pyblinker.blinker.get_blink_positions import get_blink_position_with_threshold
 from pyblinker.blinker.pyblinker import BlinkDetector
@@ -45,83 +44,56 @@ _ensure_autoreject_path()
 from autoreject import compute_thresholds, get_rejection_threshold  # noqa: E402
 
 
-_CONFIG_PATH = Path(__file__).with_name("autoreject_config.yaml")
-_NO_BACKBONE = ("__NO_BACKBONE__",)
-_EMPTY_MAPPED_COLUMNS = [
-    "epoch_index",
-    "channel",
-    "blink_onset",
-    "blink_duration",
-    "start_blink",
-    "end_blink",
-    "candidate_source",
-    "raw_threshold",
-    "scan_threshold",
-]
-
-
-def load_strategy_c_config() -> dict:
-    with _CONFIG_PATH.open("r", encoding="utf-8") as handle:
-        config = yaml.safe_load(handle)
-    if not isinstance(config, dict):
-        raise ValueError(f"Invalid Strategy C config file: {_CONFIG_PATH}")
-    return config
-
-
-def _config_value(*keys: str):
-    value = load_strategy_c_config()
-    for key in keys:
-        value = value[key]
-    return value
-
-
-def get_default_strategy_c_channels() -> tuple[str, ...]:
-    return tuple(_config_value("channels", "default_strategy_c"))
-
-
-def get_default_autoreject_method() -> str:
-    return str(_config_value("autoreject_methods", "default"))
-
-
-def get_default_stage1_threshold_scope() -> str:
-    return str(_config_value("threshold_scopes", "default"))
-
-
-def get_reference_benchmark() -> dict:
-    return dict(_config_value("reference_benchmark"))
-
-
-def get_ignored_template_args() -> tuple[str, ...]:
-    return tuple(_config_value("ignored_template_args"))
+_AUTOREJECT_RANDOM_SEARCH = "random_search"
+_AUTOREJECT_BAYESIAN_OPTIMIZATION = "bayesian_optimization"
+_DEFAULT_AUTOREJECT_METHOD = _AUTOREJECT_RANDOM_SEARCH
+_THRESHOLD_SCOPE_PER_CHANNEL = "per_channel"
+_THRESHOLD_SCOPE_GLOBAL = "global"
+_DEFAULT_STAGE1_THRESHOLD_SCOPE = _THRESHOLD_SCOPE_PER_CHANNEL
+_NO_BACKBONE_SENTINEL = ("__NO_BACKBONE__",)
+_AUTOREJECT_METHOD_ALIASES = {
+    "random": _AUTOREJECT_RANDOM_SEARCH,
+    "bayesian": _AUTOREJECT_BAYESIAN_OPTIMIZATION,
+    "bayes": _AUTOREJECT_BAYESIAN_OPTIMIZATION,
+    "bo": _AUTOREJECT_BAYESIAN_OPTIMIZATION,
+}
+_THRESHOLD_SCOPE_ALIASES = {
+    "per-channel": _THRESHOLD_SCOPE_PER_CHANNEL,
+    "channel": _THRESHOLD_SCOPE_PER_CHANNEL,
+    "shared": _THRESHOLD_SCOPE_GLOBAL,
+}
+_STAGE1_THRESHOLD_SCALES = {
+    _AUTOREJECT_RANDOM_SEARCH: 0.08,
+    _AUTOREJECT_BAYESIAN_OPTIMIZATION: 0.12,
+    _THRESHOLD_SCOPE_GLOBAL: 0.005,
+}
+_IGNORED_TEMPLATE_ARGS = (
+    "mne_half_window_s",
+    "mne_l_freq",
+    "mne_h_freq",
+    "mne_thresh",
+)
 
 
 def get_autoreject_method_aliases() -> dict[str, str]:
-    methods = load_strategy_c_config()["autoreject_methods"]
-    random_search = str(methods["random_search"])
-    bayesian_optimization = str(methods["bayesian_optimization"])
-    aliases = {str(key): str(value) for key, value in methods.get("aliases", {}).items()}
     return {
-        random_search: random_search,
-        bayesian_optimization: bayesian_optimization,
-        **aliases,
+        _AUTOREJECT_RANDOM_SEARCH: _AUTOREJECT_RANDOM_SEARCH,
+        _AUTOREJECT_BAYESIAN_OPTIMIZATION: _AUTOREJECT_BAYESIAN_OPTIMIZATION,
+        **_AUTOREJECT_METHOD_ALIASES,
     }
 
 
 def get_stage1_threshold_scope_aliases() -> dict[str, str]:
-    scopes = load_strategy_c_config()["threshold_scopes"]
-    per_channel = str(scopes["per_channel"])
-    global_scope = str(scopes["global"])
-    aliases = {str(key): str(value) for key, value in scopes.get("aliases", {}).items()}
     return {
-        per_channel: per_channel,
-        global_scope: global_scope,
-        **aliases,
+        _THRESHOLD_SCOPE_PER_CHANNEL: _THRESHOLD_SCOPE_PER_CHANNEL,
+        _THRESHOLD_SCOPE_GLOBAL: _THRESHOLD_SCOPE_GLOBAL,
+        **_THRESHOLD_SCOPE_ALIASES,
     }
 
 
 def normalize_autoreject_method(autoreject_method: str | None) -> str:
     if autoreject_method is None:
-        return get_default_autoreject_method()
+        return _DEFAULT_AUTOREJECT_METHOD
 
     key = str(autoreject_method).strip().lower()
     aliases = get_autoreject_method_aliases()
@@ -135,7 +107,7 @@ def normalize_autoreject_method(autoreject_method: str | None) -> str:
 
 def normalize_stage1_threshold_scope(stage1_threshold_scope: str | None) -> str:
     if stage1_threshold_scope is None:
-        return get_default_stage1_threshold_scope()
+        return _DEFAULT_STAGE1_THRESHOLD_SCOPE
 
     key = str(stage1_threshold_scope).strip().lower()
     aliases = get_stage1_threshold_scope_aliases()
@@ -146,22 +118,6 @@ def normalize_stage1_threshold_scope(stage1_threshold_scope: str | None) -> str:
             f"{stage1_threshold_scope!r}. Use one of: {supported}."
         )
     return aliases[key]
-
-
-def compare_with_reference_benchmark(metrics) -> dict[str, dict[str, float | int]]:
-    benchmark = get_reference_benchmark()
-    return {
-        "vs_strategy_a_step1": {
-            "delta_tp": int(metrics.true_positives - benchmark["strategy_a_step1"]["TP"]),
-            "delta_fp": int(metrics.false_positives - benchmark["strategy_a_step1"]["FP"]),
-            "delta_fn": int(metrics.false_negatives - benchmark["strategy_a_step1"]["FN"]),
-        },
-        "vs_strategy_b_step1": {
-            "delta_tp": int(metrics.true_positives - benchmark["strategy_b_step1"]["TP"]),
-            "delta_fp": int(metrics.false_positives - benchmark["strategy_b_step1"]["FP"]),
-            "delta_fn": int(metrics.false_negatives - benchmark["strategy_b_step1"]["FN"]),
-        },
-    }
 
 
 def get_stage1_scan_threshold_scale(
@@ -175,12 +131,11 @@ def get_stage1_scan_threshold_scale(
 
     method = normalize_autoreject_method(autoreject_method)
     scope = normalize_stage1_threshold_scope(stage1_threshold_scope)
-    scales = _config_value("stage1_threshold_scales")
-    if scope == str(_config_value("threshold_scopes", "global")):
-        return float(scales["global"])
-    if method == str(_config_value("autoreject_methods", "bayesian_optimization")):
-        return float(scales["bayesian"])
-    return float(scales["random"])
+    if scope == _THRESHOLD_SCOPE_GLOBAL:
+        return float(_STAGE1_THRESHOLD_SCALES[_THRESHOLD_SCOPE_GLOBAL])
+    if method == _AUTOREJECT_BAYESIAN_OPTIMIZATION:
+        return float(_STAGE1_THRESHOLD_SCALES[_AUTOREJECT_BAYESIAN_OPTIMIZATION])
+    return float(_STAGE1_THRESHOLD_SCALES[_AUTOREJECT_RANDOM_SEARCH])
 
 
 def _build_stage1_epochs(
@@ -201,7 +156,7 @@ def _resolve_stage1_channel_names(
     prepared: PreparedEpochDetectionInput,
     stage1_channels: tuple[str, ...],
 ) -> tuple[str, ...]:
-    if stage1_channels == _NO_BACKBONE:
+    if stage1_channels == _NO_BACKBONE_SENTINEL:
         return tuple(prepared.channel_names)
 
     resolved = tuple(channel for channel in stage1_channels if channel in prepared.channel_names)
@@ -212,19 +167,6 @@ def _resolve_stage1_channel_names(
     raise ValueError("Strategy C needs at least one EEG channel after preprocessing.")
 
 
-def _fallback_thresholds(
-    stage1_data: np.ndarray,
-    channel_names: tuple[str, ...],
-) -> dict[str, float]:
-    if stage1_data.size == 0:
-        return {channel: 0.0 for channel in channel_names}
-    ptp = np.ptp(stage1_data, axis=2)
-    return {
-        channel: float(np.max(ptp[:, idx])) if ptp.size else 0.0
-        for idx, channel in enumerate(channel_names)
-    }
-
-
 def _learn_global_threshold(
     stage1_data: np.ndarray,
     *,
@@ -232,18 +174,13 @@ def _learn_global_threshold(
     sfreq: float,
     random_state: int,
 ) -> float:
-    if stage1_data.size == 0:
-        return 0.0
-    if stage1_data.shape[0] < 2:
-        return float(np.max(np.ptp(stage1_data, axis=2)))
-
-    stage1_epochs = _build_stage1_epochs(
+    epochs = _build_stage1_epochs(
         stage1_data,
         channel_names=channel_names,
         sfreq=sfreq,
     )
     reject = get_rejection_threshold(
-        stage1_epochs,
+        epochs,
         random_state=int(random_state),
         ch_types="eeg",
         cv=min(5, int(stage1_data.shape[0])),
@@ -269,7 +206,7 @@ def _learn_thresholds(
     channel_indices = [prepared.channel_names.index(channel) for channel in channel_names]
     stage1_data = prepared.data[valid_indices][:, channel_indices, :]
 
-    if stage1_threshold_scope == str(_config_value("threshold_scopes", "global")):
+    if stage1_threshold_scope == _THRESHOLD_SCOPE_GLOBAL:
         global_threshold = _learn_global_threshold(
             stage1_data,
             channel_names=channel_names,
@@ -279,26 +216,19 @@ def _learn_thresholds(
         thresholds = {channel: global_threshold for channel in channel_names}
         return thresholds, global_threshold, "get_rejection_threshold"
 
-    if stage1_data.shape[0] < 2:
-        return _fallback_thresholds(stage1_data, channel_names), None, "peak_to_peak_fallback"
-
     stage1_epochs = _build_stage1_epochs(
         stage1_data,
         channel_names=channel_names,
         sfreq=prepared.sfreq,
     )
-    try:
-        thresholds = compute_thresholds(
-            stage1_epochs,
-            method=autoreject_method,
-            random_state=int(autoreject_random_state),
-            augment=bool(autoreject_augment),
-            verbose=False,
-            n_jobs=1,
-        )
-    except Exception:
-        return _fallback_thresholds(stage1_data, channel_names), None, "peak_to_peak_fallback"
-
+    thresholds = compute_thresholds(
+        stage1_epochs,
+        method=autoreject_method,
+        random_state=int(autoreject_random_state),
+        augment=bool(autoreject_augment),
+        verbose=False,
+        n_jobs=1,
+    )
     return (
         {channel: float(thresholds[channel]) for channel in channel_names},
         None,
@@ -306,7 +236,7 @@ def _learn_thresholds(
     )
 
 
-def summarize_stage1_detections(detections: list[SimpleNamespace]) -> pd.DataFrame:
+def _build_stage1_summary(detections: list[SimpleNamespace]) -> pd.DataFrame:
     rows: list[dict[str, object]] = []
     for detection in detections:
         rows.append(
@@ -351,9 +281,7 @@ def channel_results_strategy_c(
 
     method = normalize_autoreject_method(autoreject_method)
     scope = normalize_stage1_threshold_scope(stage1_threshold_scope)
-    selected_channels = (
-        tuple(stage1_channels) if stage1_channels is not None else _NO_BACKBONE
-    )
+    selected_channels = tuple(stage1_channels) if stage1_channels is not None else _NO_BACKBONE_SENTINEL
     channel_names = _resolve_stage1_channel_names(prepared, selected_channels)
     thresholds, _global_threshold, _api = _learn_thresholds(
         prepared,
@@ -412,19 +340,6 @@ def channel_results_strategy_c(
             }
         )
     return results
-
-
-def prepare_epoch_data(detector) -> PreparedEpochDetectionInput:
-    if detector._prepared is None:
-        detector._prepared = prepare_epoch_detection_input(
-            detector.epoch,
-            pick_types_options=detector.pick_types_options,
-            filter_low=detector.filter_low,
-            filter_high=detector.filter_high,
-            resample_rate=detector.resample_rate,
-        )
-    detector.params["sfreq"] = float(detector._prepared.sfreq)
-    return detector._prepared
 
 
 def run_stage1_candidate_scan(
@@ -493,7 +408,7 @@ def run_stage1_candidate_scan(
             )
         )
 
-    summary = summarize_stage1_detections(detections)
+    summary = _build_stage1_summary(detections)
     candidate_frames = [
         detection.mapped_candidates
         for detection in detections
@@ -511,7 +426,19 @@ def run_stage1_candidate_scan(
     detector.stage1_candidates_ = (
         pd.concat(candidate_frames, ignore_index=True, sort=False)
         if candidate_frames
-        else pd.DataFrame(columns=_EMPTY_MAPPED_COLUMNS)
+        else pd.DataFrame(
+            columns=[
+                "epoch_index",
+                "channel",
+                "blink_onset",
+                "blink_duration",
+                "start_blink",
+                "end_blink",
+                "candidate_source",
+                "raw_threshold",
+                "scan_threshold",
+            ]
+        )
     )
     detector.stage1_rescue_candidates_ = pd.DataFrame()
     detector.stage1_channel_summary_ = summary
@@ -529,30 +456,25 @@ def run_stage1_candidate_scan(
     )
 
 
-def _empty_selected_channel() -> pd.DataFrame:
-    return pd.DataFrame(
-        columns=[
-            "ch",
-            "channel",
-            "candidate_source",
-            "raw_threshold",
-            "scan_threshold",
-            "raw_candidate_count",
-            "mapped_candidate_count",
-            "number_good_blinks",
-        ]
-    )
-
-
 def get_blink(detector):
-    prepared = prepare_epoch_data(detector)
+    if detector._prepared is None:
+        detector._prepared = prepare_epoch_detection_input(
+            detector.epoch,
+            pick_types_options=detector.pick_types_options,
+            filter_low=detector.filter_low,
+            filter_high=detector.filter_high,
+            resample_rate=detector.resample_rate,
+        )
+    prepared = detector._prepared
+    detector.params["sfreq"] = float(prepared.sfreq)
+
     valid_epoch_indices = get_valid_epoch_indices(detector.epoch)
     stage1 = run_stage1_candidate_scan(
         detector,
         prepared=prepared,
         valid_epoch_indices=valid_epoch_indices,
     )
-    summary = summarize_stage1_detections(stage1.detections)
+    summary = detector.stage1_channel_summary_.copy()
 
     if summary.empty:
         annotations = empty_annotations()
@@ -561,7 +483,18 @@ def get_blink(detector):
             epochs=detector.epoch,
             prepared=prepared,
         )
-        selected_channel = _empty_selected_channel()
+        selected_channel = pd.DataFrame(
+            columns=[
+                "ch",
+                "channel",
+                "candidate_source",
+                "raw_threshold",
+                "scan_threshold",
+                "raw_candidate_count",
+                "mapped_candidate_count",
+                "number_good_blinks",
+            ]
+        )
         result = SimpleNamespace(
             annotations=annotations,
             channel="",
@@ -657,7 +590,7 @@ def epoch_detection_strategy_c_autoreject(
     **blink_param_overrides,
 ):
     clean_overrides = dict(blink_param_overrides)
-    for ignored_key in get_ignored_template_args():
+    for ignored_key in _IGNORED_TEMPLATE_ARGS:
         clean_overrides.pop(ignored_key, None)
 
     detector = SimpleNamespace(
@@ -670,7 +603,7 @@ def epoch_detection_strategy_c_autoreject(
         n_jobs=int(n_jobs),
         use_multiprocessing=bool(use_multiprocessing),
         pick_types_options=pick_types_options or {"eeg": True},
-        stage1_channels=tuple(stage1_channels) if stage1_channels is not None else _NO_BACKBONE,
+        stage1_channels=tuple(stage1_channels) if stage1_channels is not None else _NO_BACKBONE_SENTINEL,
         stage1_threshold_scope=normalize_stage1_threshold_scope(stage1_threshold_scope),
         stage1_rescale_threshold=bool(stage1_rescale_threshold),
         autoreject_random_state=int(autoreject_random_state),
@@ -687,12 +620,23 @@ def epoch_detection_strategy_c_autoreject(
         stage1_global_threshold_=None,
         stage1_thresholds_={},
         stage1_backbone_signal_=None,
-        stage1_candidates_=pd.DataFrame(columns=_EMPTY_MAPPED_COLUMNS),
+        stage1_candidates_=pd.DataFrame(
+            columns=[
+                "epoch_index",
+                "channel",
+                "blink_onset",
+                "blink_duration",
+                "start_blink",
+                "end_blink",
+                "candidate_source",
+                "raw_threshold",
+                "scan_threshold",
+            ]
+        ),
         stage1_rescue_candidates_=pd.DataFrame(),
         stage1_channel_summary_=pd.DataFrame(),
         stage1_representative_channels_=pd.DataFrame(),
     )
-    detector.prepare_epoch_data = lambda: prepare_epoch_data(detector)
     detector.run_stage1_candidate_scan = (
         lambda *, prepared, valid_epoch_indices: run_stage1_candidate_scan(
             detector,
@@ -725,20 +669,11 @@ __all__ = [
     "Stage1ScanResult",
     "StrategyCAutorejectResult",
     "channel_results_strategy_c",
-    "compare_with_reference_benchmark",
     "epoch_detection_strategy_c_autoreject",
     "get_autoreject_method_aliases",
-    "get_default_autoreject_method",
-    "get_default_stage1_threshold_scope",
-    "get_default_strategy_c_channels",
-    "get_ignored_template_args",
-    "get_reference_benchmark",
     "get_stage1_scan_threshold_scale",
     "get_stage1_threshold_scope_aliases",
-    "load_strategy_c_config",
     "normalize_autoreject_method",
     "normalize_stage1_threshold_scope",
-    "prepare_epoch_data",
     "run_stage1_candidate_scan",
-    "summarize_stage1_detections",
 ]

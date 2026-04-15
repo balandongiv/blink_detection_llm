@@ -7,7 +7,10 @@ import pandas as pd
 
 from pyblinker.analysis.lane_evaluation import LaneScoringResult
 from pyblinker.common.bad_epochs import get_valid_epoch_indices
-from pyblinker.common.epoch_input import PreparedEpochDetectionInput
+from pyblinker.common.epoch_input import (
+    PreparedEpochDetectionInput,
+    prepare_epoch_detection_input,
+)
 from pyblinker.evaluation_runner import score_channel_results
 from pyblinker.matching.blink_matching import enrich_absolute_times
 
@@ -30,9 +33,7 @@ def blink_position_strategy_c(
     - ``blink_position_strategy_c(detector, prepared, valid_epoch_indices)``
     """
 
-    if hasattr(detector_or_prepared, "run_stage1_candidate_scan") and hasattr(
-        detector_or_prepared, "prepare_epoch_data"
-    ):
+    if hasattr(detector_or_prepared, "run_stage1_candidate_scan"):
         detector = detector_or_prepared
         prepared = prepared_or_valid_epoch_indices
         if valid_epoch_indices is None:
@@ -95,7 +96,13 @@ def run_strategy_c(
         autoreject_random_state=autoreject_random_state,
         autoreject_method=autoreject_method,
     )
-    prepared = detector.prepare_epoch_data()
+    prepared = prepare_epoch_detection_input(
+        epochs,
+        pick_types_options={"eeg": True},
+        filter_low=filter_low,
+        filter_high=filter_high,
+        resample_rate=None,
+    )
     valid_epoch_indices = get_valid_epoch_indices(epochs)
     channel_results = blink_position_strategy_c(detector, prepared, valid_epoch_indices)
     ground_truth = enrich_absolute_times(ground_truth_raw, epoch_duration)

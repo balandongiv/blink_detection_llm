@@ -1,15 +1,3 @@
-channels:
-  default_strategy_c:
-    - "EEG Fp1 - Pz"
-    - "EEG Fp2 - Pz"
-    - "EEG F7 - Pz"
-    - "EEG F8 - Pz"
-    - "EEG F3 - Pz"
-    - "EEG Fz - Pz"
-    - "EEG F4 - Pz"
-  seed_rescue: "EEG F7 - Pz"
-  consensus_name: "front7_autoreject_weighted_median"
-
 autoreject_methods:
   random_search: "random_search"
   bayesian_optimization: "bayesian_optimization"
@@ -34,24 +22,4 @@ stage1_threshold_scales:
   bayesian: 0.12
   global: 0.005
 
-reference_benchmark:
-  strategy_a_step1:
-    TP: 133
-    FP: 32
-    FN: 0
-    precision: 0.80
-    recall: 1.0
-    f1: 0.89
-  strategy_b_step1:
-    TP: 131
-    FP: 14
-    FN: 2
-    precision: 0.903
-    recall: 0.98
-    f1: 0.94
 
-ignored_template_args:
-  - "mne_half_window_s"
-  - "mne_l_freq"
-  - "mne_h_freq"
-  - "mne_thresh"

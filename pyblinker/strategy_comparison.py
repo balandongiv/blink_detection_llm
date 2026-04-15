@@ -111,7 +111,13 @@ def _run_one_strategy(
             autoreject_method=AUTOREJECT_BAYESIAN_OPTIMIZATION,
             autoreject_augment=False,
         )
-        prepared_c = detector.prepare_epoch_data()
+        prepared_c = prepare_epoch_detection_input(
+            epochs,
+            pick_types_options={"eeg": True},
+            filter_low=filter_low,
+            filter_high=filter_high,
+            resample_rate=None,
+        )
         channel_results = blink_position_strategy_c(detector, prepared_c, valid_epoch_indices)
         # Use strategy C's own prepared for sfreq
         sfreq = float(prepared_c.sfreq)
