@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.\\(fif|csv|edf|pkl\\)$\")",
+      "Bash(find /c/Users/balan/IdeaProjects/find_blink_epoch_worktree/sample_data -type f -name *.fif -o -name *.csv -o -name *.edf -o -name *.pkl)",
+      "Bash(python -m unittest discover -s test/epoch_detection_strategy_a -v)",
+      "Bash(ls:*)",
+      "Bash(git lfs:*)",
+      "Bash(mkdir -p /c/Users/balan/IdeaProjects/find_blink_epoch_worktree/pyblinker/epoch_detection_strategy_c)",
+      "Bash(mkdir -p /c/Users/balan/IdeaProjects/find_blink_epoch_worktree/test/epoch_detection_strategy_c)",
+      "Bash(mkdir -p /c/Users/balan/IdeaProjects/find_blink_epoch_worktree/experiment_notebooks)",
+      "Bash(python:*)",
+      "Bash(tasklist)",
+      "Bash(conda env:*)",
+      "Read(//c/Users/balan/miniconda3/**)",
+      "Read(//c/Users/balan/anaconda3/envs//**)",
+      "Read(//c/ProgramData/miniconda3/**)",
+      "Bash(/c/Users/balan/miniconda3/envs/pyblinker/python.exe --version)",
+      "Bash(/c/Users/balan/miniconda3/envs/pyblinker/python.exe -c \"import pandas; print\\('pandas', pandas.__version__\\)\")",
+      "Bash(\"/c/ProgramData/miniconda3/envs/pyblinker/python.exe\" --version)",
+      "Bash(\"/c/ProgramData/miniconda3/envs/pyblinker/python.exe\" -c \"import pandas; print\\('pandas', pandas.__version__\\)\")",
+      "Bash(cmd.exe:*)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(echo \"bash_exit=$?\")"
+    ]
+  }
+}
