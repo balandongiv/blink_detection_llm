@@ -3,14 +3,7 @@
 Named after Nathanael's MNE-based approach.  The single important function is
 :func:`find_eog_candidate_regions`, which wraps MNE's ``find_eog_events`` to
 produce a DataFrame of blink-window candidates in concatenated-signal space.
-
-:func:`summarize_candidate_regions` maps those candidates back to epoch-local
-timing for inspection and downstream evaluation.
 """
-
-from __future__ import annotations
-
-from typing import Sequence
 
 import mne
 import numpy as np
@@ -104,69 +97,7 @@ def find_eog_candidate_regions(
     return blink_df.sort_values(["start_blink", "end_blink"]).reset_index(drop=True)
 
 
-def summarize_candidate_regions(
-    blink_df: pd.DataFrame,
-    *,
-    epoch_length_samples: int,
-    sfreq: float,
-    epoch_indices: Sequence[int],
-) -> pd.DataFrame:
-    """Map Strategy B candidate regions to epoch-local timing.
-
-    Parameters
-    ----------
-    blink_df:
-        Output of :func:`find_eog_candidate_regions` (concatenated-signal space).
-    epoch_length_samples:
-        Number of samples per epoch.
-    sfreq:
-        Sampling frequency in Hz.
-    epoch_indices:
-        Ordered list of valid epoch indices (maps offsets back to original IDs).
-
-    Returns
-    -------
-    pd.DataFrame
-        Columns: ``epoch_index``, ``channel``, ``peak_sample``, ``blink_onset``,
-        ``blink_duration``, ``start_blink``, ``end_blink``.
-    """
-    columns = [
-        "epoch_index",
-        "channel",
-        "peak_sample",
-        "blink_onset",
-        "blink_duration",
-        "start_blink",
-        "end_blink",
-    ]
-    if blink_df.empty:
-        return pd.DataFrame(columns=columns)
-
-    mapped = blink_df.copy()
-    epoch_offsets = mapped["start_blink"].to_numpy(dtype=int) // int(epoch_length_samples)
-    valid_mask = (epoch_offsets >= 0) & (epoch_offsets < len(epoch_indices))
-    mapped = mapped.loc[valid_mask].copy().reset_index(drop=True)
-    epoch_offsets = epoch_offsets[valid_mask]
-    mapped["epoch_index"] = [int(epoch_indices[offset]) for offset in epoch_offsets]
-    mapped["blink_onset"] = (
-        mapped["start_blink"].to_numpy(dtype=float) % float(epoch_length_samples)
-    ) / float(sfreq)
-    mapped["blink_duration"] = (
-        mapped["end_blink"].to_numpy(dtype=float)
-        - mapped["start_blink"].to_numpy(dtype=float)
-    ) / float(sfreq)
-    mapped["peak_sample"] = (
-        mapped["peak_sample"].to_numpy(dtype=float) % float(epoch_length_samples)
-    ).astype(int)
-    return (
-        mapped.loc[:, columns]
-        .sort_values(["epoch_index", "blink_onset"])
-        .reset_index(drop=True)
-    )
-
-
 __all__ = [
     "DEFAULT_STRATEGY_B_CHANNELS",
     "find_eog_candidate_regions",
-    "summarize_candidate_regions",
 ]

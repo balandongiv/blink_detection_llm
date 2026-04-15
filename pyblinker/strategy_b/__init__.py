@@ -5,9 +5,8 @@ from pyblinker.common.epoch_input import PreparedEpochDetectionInput, prepare_ep
 from .nathanael_mne import (
     DEFAULT_STRATEGY_B_CHANNELS,
     find_eog_candidate_regions,
-    summarize_candidate_regions,
 )
-from .runner import blink_position_strategy_b, run_strategy_b
+from .runner import blink_position_strategy_b, run_strategy_b, summarize_candidate_regions
 
 __all__ = [
     "DEFAULT_STRATEGY_B_CHANNELS",
