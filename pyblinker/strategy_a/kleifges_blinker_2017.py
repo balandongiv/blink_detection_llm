@@ -40,13 +40,6 @@ def kleifges_strategy_a(
         concatenated_signal = prepared.data[valid_epoch_indices, channel_index, :].reshape(-1)
 
         min_blink_frames, threshold = compute_basic_statistics(params, concatenated_signal)
-        # start_blinks, end_blinks = scan_threshold_crossings(
-        #     concatenated_signal,
-        #     float(threshold),
-        #     min_blink_frames,
-        #     progress_bar=False,
-        #     channel_name=channel_name,
-        #     )
         start_blinks, end_blinks =scan_threshold_crossings_kleifges(
             concatenated_signal,
             float(threshold),
