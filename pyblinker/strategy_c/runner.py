@@ -137,14 +137,14 @@ def _scan_strategy_c_channels(
         concatenated_signal = prepared.data[valid_indices, channel_index, :].reshape(-1)
         raw_threshold = float(threshold_result.raw_thresholds[channel])
         scan_threshold = float(threshold_result.scan_thresholds[channel])
-        df_positions = scan_threshold_crossings_kleifges(
-            params,
-            blink_component=concatenated_signal,
-            threshold=scan_threshold,
-            ch=channel,
+        start_blinks, end_blinks = scan_threshold_crossings_kleifges(
+            concatenated_signal,
+            float(scan_threshold),
+            min_blink_frames,
             progress_bar=False,
-            min_blink_frames=min_blink_frames,
+            channel_name=channel,
         )
+        df_positions = pd.DataFrame({"start_blink": start_blinks, "end_blink": end_blinks})
         mapped_candidates = map_concatenated_blinks_to_epochs(
             df_positions,
             channel=channel,
