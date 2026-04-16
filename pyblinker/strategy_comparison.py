@@ -55,7 +55,6 @@ from pyblinker.strategy_c import (
     epoch_detection_strategy_c_autoreject,
 )
 
-_DISABLE_BACKBONE = ("__NO_BACKBONE__",)
 
 # ── Default strategy list ──────────────────────────────────────────────────────
 DEFAULT_STRATEGIES: list[str] = [
@@ -104,7 +103,7 @@ def _run_one_strategy(
             resample_rate=None,
             n_jobs=1,
             use_multiprocessing=False,
-            stage1_channels=_DISABLE_BACKBONE,
+            stage1_channels=None,
             stage1_threshold_scope="per_channel",
             stage1_rescale_threshold=True,
             autoreject_random_state=42,

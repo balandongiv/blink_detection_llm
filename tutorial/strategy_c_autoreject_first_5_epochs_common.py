@@ -21,7 +21,6 @@ from pyblinker.strategy_c import (
     AUTOREJECT_BAYESIAN_OPTIMIZATION,
     AUTOREJECT_RANDOM_SEARCH,
     DEFAULT_STAGE1_THRESHOLD_SCOPE,
-    DEFAULT_STRATEGY_C_CHANNELS,
     THRESHOLD_SCOPE_GLOBAL,
     epoch_detection_strategy_c_autoreject,
 )
@@ -29,7 +28,8 @@ from pyblinker.strategy_c import (
 
 DATA_PATH = REPO_ROOT / "sample_data" / "dev_epo.fif"
 REFERENCE_PATH = REPO_ROOT / "sample_data" / "dev_epo_annotations_5_epochs.csv"
-CHANNELS = list(DEFAULT_STRATEGY_C_CHANNELS)
+# stage1_channels=None means use all available EEG channels.
+CHANNELS = None
 
 TARGET_EPOCH_INDEX = 0
 VISUALIZE = False
