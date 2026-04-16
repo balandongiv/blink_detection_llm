@@ -67,7 +67,7 @@ def _scan_strategy_c_channels(
     )
     min_blink_frames = float(params["min_event_len"] * params["sfreq"])
     valid_indices = np.asarray(valid_epoch_indices, dtype=int)
-
+    # from pyblinker.blinker.get_blink_positions import apply_minimum_separation
     results: list[dict] = []
     for channel in threshold_result.channel_names:
         channel_index = prepared.channel_names.index(channel)
@@ -81,6 +81,14 @@ def _scan_strategy_c_channels(
             progress_bar=False,
             channel_name=channel,
         )
+
+        # start_blinks, end_blinks = apply_minimum_separation(
+        #     start_blinks,
+        #     end_blinks,
+        #     sfreq=params["sfreq"],
+        #     min_event_sep=min_blink_frames,
+        #     )
+
         df_positions = pd.DataFrame({"start_blink": start_blinks, "end_blink": end_blinks})
         mapped_candidates = map_concatenated_blinks_to_epochs(
             df_positions,

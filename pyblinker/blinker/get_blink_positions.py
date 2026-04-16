@@ -53,7 +53,7 @@ def _scan_threshold_crossings(
     return np.asarray(start_blinks, dtype=int), np.asarray(end_blinks, dtype=int)
 
 
-def _apply_minimum_separation(
+def apply_minimum_separation(
     start_blinks: np.ndarray,
     end_blinks: np.ndarray,
     *,
@@ -101,7 +101,7 @@ def get_blink_position_with_threshold(
         return pd.DataFrame({"start_blink": [], "end_blink": []})
 
     min_event_sep = float(params.get("min_event_sep", params["min_event_len"]))
-    start_blinks, end_blinks = _apply_minimum_separation(
+    start_blinks, end_blinks = apply_minimum_separation(
         start_blinks,
         end_blinks,
         sfreq=params["sfreq"],
