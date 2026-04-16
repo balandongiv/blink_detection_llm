@@ -34,15 +34,14 @@ from pyblinker.utils.annotation_utils import create_annotation
 from .single_channel_autoreject import learn_strategy_c_thresholds
 
 
-def _scan_strategy_c_channels(
+def scan_strategy_c_channels(
     prepared: PreparedEpochDetectionInput,
     valid_epoch_indices: list[int],
     *,
     blink_params: dict | None = None,
-    stage1_channels: tuple[str, ...] | list[str] | None = None,
-    stage1_threshold_scope: str,
+    threshold_scope: str,
     autoreject_method: str,
-    stage1_scan_scale: float = 1.0,
+    scan_scale: float = 1.0,
     autoreject_random_state: int = 42,
     autoreject_augment: bool = False,
     **blink_param_overrides,
@@ -53,10 +52,9 @@ def _scan_strategy_c_channels(
     threshold_result = learn_strategy_c_thresholds(
         prepared,
         valid_epoch_indices,
-        stage1_channels=stage1_channels,
-        stage1_threshold_scope=stage1_threshold_scope,
+        stage1_threshold_scope=threshold_scope,
         autoreject_method=autoreject_method,
-        stage1_scan_scale=stage1_scan_scale,
+        stage1_scan_scale=scan_scale,
         autoreject_random_state=autoreject_random_state,
         autoreject_augment=autoreject_augment,
     )
@@ -111,22 +109,20 @@ def channel_results_strategy_c(
     valid_epoch_indices: list[int],
     *,
     blink_params: dict | None = None,
-    stage1_channels: tuple[str, ...] | list[str] | None = None,
-    stage1_threshold_scope: str,
+    threshold_scope: str,
     autoreject_method: str,
-    stage1_scan_scale: float = 1.0,
+    scan_scale: float = 1.0,
     autoreject_random_state: int = 42,
     autoreject_augment: bool = False,
     **blink_param_overrides,
 ) -> list[dict]:
-    results, _threshold_result = _scan_strategy_c_channels(
+    results, _threshold_result = scan_strategy_c_channels(
         prepared,
         valid_epoch_indices,
         blink_params=blink_params,
-        stage1_channels=stage1_channels,
-        stage1_threshold_scope=stage1_threshold_scope,
+        threshold_scope=threshold_scope,
         autoreject_method=autoreject_method,
-        stage1_scan_scale=stage1_scan_scale,
+        scan_scale=scan_scale,
         autoreject_random_state=autoreject_random_state,
         autoreject_augment=autoreject_augment,
         **blink_param_overrides,
@@ -183,14 +179,13 @@ def run_stage1_candidate_scan(
     prepared: PreparedEpochDetectionInput,
     valid_epoch_indices: list[int],
 ):
-    channel_results, threshold_result = _scan_strategy_c_channels(
+    channel_results, threshold_result = scan_strategy_c_channels(
         prepared,
         valid_epoch_indices,
         blink_params=detector.params,
-        stage1_channels=detector.stage1_channels,
-        stage1_threshold_scope=detector.stage1_threshold_scope,
+        threshold_scope=detector.stage1_threshold_scope,
         autoreject_method=detector.autoreject_method,
-        stage1_scan_scale=detector.stage1_scan_scale,
+        scan_scale=detector.stage1_scan_scale,
         autoreject_random_state=detector.autoreject_random_state,
         autoreject_augment=detector.autoreject_augment,
     )
@@ -381,14 +376,13 @@ def epoch_detection_strategy_c_autoreject(
     *,
     stage1_threshold_scope: str,
     autoreject_method: str,
-    stage1_channels: tuple[str, ...] | list[str] | None = None,
     stage1_scan_scale: float = 1.0,
     autoreject_random_state: int = 42,
     autoreject_augment: bool = False,
     **blink_param_overrides,
 ):
     clean_overrides = dict(blink_param_overrides)
-    for ignored_key in {"stage1_threshold_scope", "autoreject_method"}:
+    for ignored_key in {"threshold_scope", "autoreject_method"}:
         clean_overrides.pop(ignored_key, None)
 
     method, scope = validate_strategy_c_options(
@@ -406,9 +400,6 @@ def epoch_detection_strategy_c_autoreject(
         n_jobs=int(n_jobs),
         use_multiprocessing=bool(use_multiprocessing),
         pick_types_options=pick_types_options or {"eeg": True},
-        stage1_channels=(
-            tuple(stage1_channels) if stage1_channels is not None else None
-        ),
         stage1_threshold_scope=scope,
         stage1_scan_scale=float(stage1_scan_scale),
         autoreject_random_state=int(autoreject_random_state),
@@ -477,9 +468,8 @@ def run_strategy_c(
         prepared,
         valid_epoch_indices,
         setting={
-            "stage1_channels": None,
-            "stage1_threshold_scope": scope,
-            "stage1_scan_scale": 1.0,
+            "threshold_scope": scope,
+            "scan_scale": 1.0,
             "autoreject_random_state": autoreject_random_state,
             "autoreject_method": method,
         },

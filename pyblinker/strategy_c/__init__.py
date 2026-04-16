@@ -29,7 +29,6 @@ from .runner import (
 )
 from .single_channel_autoreject import (
     learn_strategy_c_thresholds,
-    resolve_stage1_channels,
 )
 
 
@@ -42,7 +41,6 @@ __all__ = [
     "learn_strategy_c_thresholds",
     "normalize_autoreject_method",
     "normalize_stage1_threshold_scope",
-    "resolve_stage1_channels",
     "run_strategy_c",
     "validate_strategy_c_options",
     "AUTOREJECT_BAYESIAN_OPTIMIZATION",

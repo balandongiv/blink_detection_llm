@@ -31,8 +31,6 @@ FILTER_LOW = 1.0
 FILTER_HIGH = 20.0
 RESAMPLE_RATE = None
 
-# stage1_channels=None means use all available EEG channels (no backbone selection).
-STAGE1_CHANNELS = None
 STAGE1_THRESHOLD_SCOPE = "per_channel"
 AUTOREJECT_METHOD = "bayesian_optimization"
 # Scale factor applied to raw autoreject thresholds to obtain scan thresholds.
@@ -62,9 +60,8 @@ def main() -> None:
     )
     valid_epoch_indices = get_valid_epoch_indices(epochs)
     setting = {
-        "stage1_channels": STAGE1_CHANNELS,
-        "stage1_threshold_scope": STAGE1_THRESHOLD_SCOPE,
-        "stage1_scan_scale": STAGE1_SCAN_SCALE,
+        "threshold_scope": STAGE1_THRESHOLD_SCOPE,
+        "scan_scale": STAGE1_SCAN_SCALE,
         "autoreject_random_state": AUTOREJECT_RANDOM_STATE,
         "autoreject_method": AUTOREJECT_METHOD,
         "autoreject_augment": AUTOREJECT_AUGMENT,
