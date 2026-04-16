@@ -25,11 +25,6 @@ from pyblinker.common.pipeline_utils import (
     finalize_blink_table,
 )
 from pyblinker.config.strategy_c_defaults import (
-    AUTOREJECT_BAYESIAN_OPTIMIZATION,
-    STAGE1_BAYESIAN_SCAN_THRESHOLD_SCALE,
-    STAGE1_GLOBAL_SCAN_THRESHOLD_SCALE,
-    STAGE1_RANDOM_SCAN_THRESHOLD_SCALE,
-    THRESHOLD_SCOPE_GLOBAL,
     validate_strategy_c_options,
 )
 from pyblinker.evaluation_runner import score_channel_results
@@ -37,57 +32,6 @@ from pyblinker.matching.blink_matching import enrich_absolute_times
 from pyblinker.utils.annotation_utils import create_annotation
 
 from .single_channel_autoreject import learn_strategy_c_thresholds
-
-_IGNORED_TEMPLATE_ARGS = {"stage1_threshold_scope", "autoreject_method"}
-_EMPTY_STAGE1_CANDIDATE_COLUMNS = [
-    "epoch_index",
-    "channel",
-    "blink_onset",
-    "blink_duration",
-    "start_blink",
-    "end_blink",
-    "candidate_source",
-    "raw_threshold",
-    "scan_threshold",
-]
-_EMPTY_SELECTED_CHANNEL_COLUMNS = [
-    "ch",
-    "channel",
-    "candidate_source",
-    "raw_threshold",
-    "scan_threshold",
-    "raw_candidate_count",
-    "mapped_candidate_count",
-    "number_good_blinks",
-]
-
-
-def _compute_scan_scale(
-    *,
-    stage1_threshold_scope: str,
-    autoreject_method: str,
-    stage1_rescale_threshold: bool = True,
-    stage1_threshold_scales: dict[str, float] | None = None,
-) -> float:
-    """Compute the scan-threshold scale factor from method/scope/rescale policy.
-
-    Uses YAML-backed config constants as defaults; ``stage1_threshold_scales``
-    may provide per-key overrides.
-    """
-    if not stage1_rescale_threshold:
-        return 1.0
-    scales = {
-        "random_search": STAGE1_RANDOM_SCAN_THRESHOLD_SCALE,
-        "bayesian_optimization": STAGE1_BAYESIAN_SCAN_THRESHOLD_SCALE,
-        "global": STAGE1_GLOBAL_SCAN_THRESHOLD_SCALE,
-    }
-    if stage1_threshold_scales is not None:
-        scales.update({key: float(v) for key, v in stage1_threshold_scales.items()})
-    if stage1_threshold_scope == THRESHOLD_SCOPE_GLOBAL:
-        return float(scales["global"])
-    if autoreject_method == AUTOREJECT_BAYESIAN_OPTIMIZATION:
-        return float(scales["bayesian_optimization"])
-    return float(scales["random_search"])
 
 
 def _scan_strategy_c_channels(
@@ -98,8 +42,7 @@ def _scan_strategy_c_channels(
     stage1_channels: tuple[str, ...] | list[str] | None = None,
     stage1_threshold_scope: str,
     autoreject_method: str,
-    stage1_rescale_threshold: bool = True,
-    stage1_threshold_scales: dict[str, float] | None = None,
+    stage1_scan_scale: float = 1.0,
     autoreject_random_state: int = 42,
     autoreject_augment: bool = False,
     **blink_param_overrides,
@@ -107,19 +50,13 @@ def _scan_strategy_c_channels(
     params = BlinkDetector._build_detector_params(blink_params, dict(blink_param_overrides))
     params["sfreq"] = float(prepared.sfreq)
 
-    scan_scale = _compute_scan_scale(
-        stage1_threshold_scope=stage1_threshold_scope,
-        autoreject_method=autoreject_method,
-        stage1_rescale_threshold=stage1_rescale_threshold,
-        stage1_threshold_scales=stage1_threshold_scales,
-    )
     threshold_result = learn_strategy_c_thresholds(
         prepared,
         valid_epoch_indices,
         stage1_channels=stage1_channels,
         stage1_threshold_scope=stage1_threshold_scope,
         autoreject_method=autoreject_method,
-        stage1_scan_scale=scan_scale,
+        stage1_scan_scale=stage1_scan_scale,
         autoreject_random_state=autoreject_random_state,
         autoreject_augment=autoreject_augment,
     )
@@ -177,8 +114,7 @@ def channel_results_strategy_c(
     stage1_channels: tuple[str, ...] | list[str] | None = None,
     stage1_threshold_scope: str,
     autoreject_method: str,
-    stage1_rescale_threshold: bool = True,
-    stage1_threshold_scales: dict[str, float] | None = None,
+    stage1_scan_scale: float = 1.0,
     autoreject_random_state: int = 42,
     autoreject_augment: bool = False,
     **blink_param_overrides,
@@ -190,8 +126,7 @@ def channel_results_strategy_c(
         stage1_channels=stage1_channels,
         stage1_threshold_scope=stage1_threshold_scope,
         autoreject_method=autoreject_method,
-        stage1_rescale_threshold=stage1_rescale_threshold,
-        stage1_threshold_scales=stage1_threshold_scales,
+        stage1_scan_scale=stage1_scan_scale,
         autoreject_random_state=autoreject_random_state,
         autoreject_augment=autoreject_augment,
         **blink_param_overrides,
@@ -199,59 +134,17 @@ def channel_results_strategy_c(
     return results
 
 
-def _looks_like_prepared(value) -> bool:
-    return (
-        hasattr(value, "data")
-        and hasattr(value, "channel_names")
-        and hasattr(value, "sfreq")
-        and hasattr(value, "epoch_length_samples")
-    )
-
-
 def blink_position_strategy_c(
-    detector_or_prepared,
-    prepared_or_valid_epoch_indices,
-    valid_epoch_indices: list[int] | None = None,
+    prepared: PreparedEpochDetectionInput,
+    valid_epoch_indices: list[int],
+    *,
     setting: dict | None = None,
     **kwargs,
 ) -> list[dict]:
-    """Return Strategy C per-channel blink results in the standard format.
-
-    Supports:
-    - ``blink_position_strategy_c(prepared, valid_epoch_indices, ...)``
-    - ``blink_position_strategy_c(detector, prepared, valid_epoch_indices, ...)``
-    """
-    detector = None
-    if _looks_like_prepared(detector_or_prepared):
-        prepared = detector_or_prepared
-        actual_valid_epoch_indices = prepared_or_valid_epoch_indices
-    else:
-        detector = detector_or_prepared
-        prepared = prepared_or_valid_epoch_indices
-        actual_valid_epoch_indices = valid_epoch_indices
-
-    if isinstance(actual_valid_epoch_indices, dict) and setting is None:
-        setting = actual_valid_epoch_indices
-        actual_valid_epoch_indices = None
-
-    if actual_valid_epoch_indices is None:
-        raise ValueError("Strategy C runner requires valid_epoch_indices.")
-
+    """Return Strategy C per-channel blink results in the standard format."""
     options = dict(setting or {})
-    if detector is not None:
-        options = {
-            "blink_params": detector.params,
-            "stage1_channels": detector.stage1_channels,
-            "stage1_threshold_scope": detector.stage1_threshold_scope,
-            "stage1_rescale_threshold": detector.stage1_rescale_threshold,
-            "stage1_threshold_scales": detector.stage1_threshold_scales,
-            "autoreject_random_state": detector.autoreject_random_state,
-            "autoreject_method": detector.autoreject_method,
-            "autoreject_augment": detector.autoreject_augment,
-            **options,
-        }
     options.update(kwargs)
-    return channel_results_strategy_c(prepared, actual_valid_epoch_indices, **options)
+    return channel_results_strategy_c(prepared, valid_epoch_indices, **options)
 
 
 def _build_stage1_summary(channel_results: list[dict]) -> pd.DataFrame:
@@ -270,7 +163,10 @@ def _build_stage1_summary(channel_results: list[dict]) -> pd.DataFrame:
             }
         )
     if not summary_rows:
-        return pd.DataFrame(columns=_EMPTY_SELECTED_CHANNEL_COLUMNS)
+        return pd.DataFrame(columns=[
+            "ch", "channel", "candidate_source", "raw_threshold", "scan_threshold",
+            "raw_candidate_count", "mapped_candidate_count", "number_good_blinks",
+        ])
     return (
         pd.DataFrame(summary_rows)
         .sort_values(
@@ -294,8 +190,7 @@ def run_stage1_candidate_scan(
         stage1_channels=detector.stage1_channels,
         stage1_threshold_scope=detector.stage1_threshold_scope,
         autoreject_method=detector.autoreject_method,
-        stage1_rescale_threshold=detector.stage1_rescale_threshold,
-        stage1_threshold_scales=detector.stage1_threshold_scales,
+        stage1_scan_scale=detector.stage1_scan_scale,
         autoreject_random_state=detector.autoreject_random_state,
         autoreject_augment=detector.autoreject_augment,
     )
@@ -340,7 +235,11 @@ def run_stage1_candidate_scan(
     detector.stage1_candidates_ = (
         pd.concat(candidate_frames, ignore_index=True, sort=False)
         if candidate_frames
-        else pd.DataFrame(columns=_EMPTY_STAGE1_CANDIDATE_COLUMNS)
+        else pd.DataFrame(columns=[
+            "epoch_index", "channel", "blink_onset", "blink_duration",
+            "start_blink", "end_blink", "candidate_source",
+            "raw_threshold", "scan_threshold",
+        ])
     )
     detector.stage1_rescue_candidates_ = pd.DataFrame()
     detector.stage1_channel_summary_ = summary
@@ -359,7 +258,10 @@ def run_stage1_candidate_scan(
 
 
 def _empty_selected_channel_summary() -> pd.DataFrame:
-    return pd.DataFrame(columns=_EMPTY_SELECTED_CHANNEL_COLUMNS)
+    return pd.DataFrame(columns=[
+        "ch", "channel", "candidate_source", "raw_threshold", "scan_threshold",
+        "raw_candidate_count", "mapped_candidate_count", "number_good_blinks",
+    ])
 
 
 def get_blink(detector):
@@ -480,14 +382,13 @@ def epoch_detection_strategy_c_autoreject(
     stage1_threshold_scope: str,
     autoreject_method: str,
     stage1_channels: tuple[str, ...] | list[str] | None = None,
-    stage1_rescale_threshold: bool = True,
-    stage1_threshold_scales: dict[str, float] | None = None,
+    stage1_scan_scale: float = 1.0,
     autoreject_random_state: int = 42,
     autoreject_augment: bool = False,
     **blink_param_overrides,
 ):
     clean_overrides = dict(blink_param_overrides)
-    for ignored_key in _IGNORED_TEMPLATE_ARGS:
+    for ignored_key in {"stage1_threshold_scope", "autoreject_method"}:
         clean_overrides.pop(ignored_key, None)
 
     method, scope = validate_strategy_c_options(
@@ -509,12 +410,7 @@ def epoch_detection_strategy_c_autoreject(
             tuple(stage1_channels) if stage1_channels is not None else None
         ),
         stage1_threshold_scope=scope,
-        stage1_rescale_threshold=bool(stage1_rescale_threshold),
-        stage1_threshold_scales=(
-            {key: float(v) for key, v in stage1_threshold_scales.items()}
-            if stage1_threshold_scales is not None
-            else None
-        ),
+        stage1_scan_scale=float(stage1_scan_scale),
         autoreject_random_state=int(autoreject_random_state),
         autoreject_method=method,
         autoreject_augment=bool(autoreject_augment),
@@ -530,20 +426,17 @@ def epoch_detection_strategy_c_autoreject(
         stage1_thresholds_={},
         stage1_scan_thresholds_={},
         stage1_backbone_signal_=None,
-        stage1_candidates_=pd.DataFrame(columns=_EMPTY_STAGE1_CANDIDATE_COLUMNS),
+        stage1_candidates_=pd.DataFrame(columns=[
+            "epoch_index", "channel", "blink_onset", "blink_duration",
+            "start_blink", "end_blink", "candidate_source",
+            "raw_threshold", "scan_threshold",
+        ]),
         stage1_rescue_candidates_=pd.DataFrame(),
         stage1_channel_summary_=pd.DataFrame(),
         stage1_representative_channels_=pd.DataFrame(),
     )
     detector.params["sfreq"] = float(epoch.info["sfreq"])
-    detector._get_stage1_scan_threshold_scale = lambda: float(
-        _compute_scan_scale(
-            stage1_threshold_scope=detector.stage1_threshold_scope,
-            autoreject_method=detector.autoreject_method,
-            stage1_rescale_threshold=detector.stage1_rescale_threshold,
-            stage1_threshold_scales=detector.stage1_threshold_scales,
-        )
-    )
+    detector._get_stage1_scan_threshold_scale = lambda: detector.stage1_scan_scale
     detector.run_stage1_candidate_scan = (
         lambda *, prepared, valid_epoch_indices: run_stage1_candidate_scan(
             detector,
@@ -583,11 +476,13 @@ def run_strategy_c(
     channel_results = blink_position_strategy_c(
         prepared,
         valid_epoch_indices,
-        stage1_channels=None,
-        stage1_threshold_scope=scope,
-        stage1_rescale_threshold=True,
-        autoreject_random_state=autoreject_random_state,
-        autoreject_method=method,
+        setting={
+            "stage1_channels": None,
+            "stage1_threshold_scope": scope,
+            "stage1_scan_scale": 1.0,
+            "autoreject_random_state": autoreject_random_state,
+            "autoreject_method": method,
+        },
     )
     ground_truth = enrich_absolute_times(ground_truth_raw, epoch_duration)
     return score_channel_results(
