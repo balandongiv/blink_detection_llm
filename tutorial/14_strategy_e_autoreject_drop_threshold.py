@@ -3,7 +3,9 @@
 Two-stage thresholding:
   Stage A  Autoreject identifies which epochs are likely blink-heavy.
   Stage B  A per-channel sample-level threshold is estimated from those
-           flagged epochs using median + k * MAD robust statistics.
+           flagged epochs using center + k * MAD robust statistics.
+           The center can be the median (default, more robust) or the mean
+           (more sensitive to large peaks, more conservative threshold).
   Stage C  Blink regions are located via scan_threshold_crossings_kleifges
            using the Stage B threshold.
 """
@@ -33,7 +35,7 @@ CSV_PATH = Path(
     r"D:\dataset\drowsy_driving_raja\human_label_annotation\S1\S01_20170519_043933\ear_eog.csv"
 )
 BRAIN_REGION_YAML = REPO_ROOT / "brain_region.yaml"
-EPOCH_DURATION_S = 120.0
+EPOCH_DURATION_S = 60.0
 PEAK_SIDE_TOLERANCE_S = 0.01
 FILTER_LOW = 1.0
 FILTER_HIGH = 20.0
@@ -44,7 +46,9 @@ AUTOREJECT_RANDOM_STATE = 42
 MIN_FLAGGED_EPOCHS = 1          # fall back when fewer flagged epochs are found
 
 # Stage B: robust threshold settings
-STD_THRESHOLD = 3.5             # k in: threshold = median + k * (1.4826 * MAD)
+STD_THRESHOLD = 3.5             # k in: threshold = center + k * (1.4826 * MAD)
+CENTER_METHOD = "mean"        # "median" (robust, detects more blinks) or
+                                # "mean"   (pulled by peaks, more conservative)
 
 VERBOSE = True                  # print Stage A/B diagnostic lines
 
@@ -53,6 +57,7 @@ N_EPOCHS: int | None = None
 
 
 def main() -> None:
+    print(f"Strategy autoreject drop threshold and centre method {CENTER_METHOD}")
     brain_channels = load_brain_region_channels(BRAIN_REGION_YAML)
     raw = load_raw_with_brain_channels(FIF_PATH, brain_channels)
     epochs = mne.make_fixed_length_epochs(
@@ -73,6 +78,7 @@ def main() -> None:
     setting = {
         "autoreject_random_state": AUTOREJECT_RANDOM_STATE,
         "std_threshold": STD_THRESHOLD,
+        "center_method": CENTER_METHOD,
         "min_flagged_epochs": MIN_FLAGGED_EPOCHS,
         "verbose": VERBOSE,
     }

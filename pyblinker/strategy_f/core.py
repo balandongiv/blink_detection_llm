@@ -41,6 +41,7 @@ def blink_position_strategy_f(
 
         - ``autoreject_random_state`` (int, default 42)
         - ``std_threshold`` (float, default 3.5)
+        - ``center_method`` (str, default ``"median"``) — ``"median"`` or ``"mean"``
         - ``min_flagged_epochs`` (int, default 1)
         - ``verbose`` (bool, default False)
     **kwargs:
@@ -59,6 +60,7 @@ def blink_position_strategy_f(
 
     autoreject_random_state = int(options.get("autoreject_random_state", 42))
     std_threshold = float(options.get("std_threshold", 3.5))
+    center_method = str(options.get("center_method", "median"))
     min_flagged_epochs = int(options.get("min_flagged_epochs", 1))
     verbose = bool(options.get("verbose", False))
 
@@ -81,6 +83,7 @@ def blink_position_strategy_f(
         valid_epoch_indices,
         screen_result.flagged_valid_epoch_indices,
         std_threshold=std_threshold,
+        center_method=center_method,
         verbose=verbose,
     )
 
