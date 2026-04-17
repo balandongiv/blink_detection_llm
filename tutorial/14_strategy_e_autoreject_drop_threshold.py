@@ -32,8 +32,8 @@ FIF_PATH = Path(
     r"D:\dataset\drowsy_driving_raja_processed\S1\S01_20170519_043933\seg_data_raw\eeg_eog_raw.fif"
 )
 CSV_PATH = Path(
-    r"D:\dataset\drowsy_driving_raja\human_label_annotation\S1\S01_20170519_043933\ear_eog.csv"
-)
+    r"D:\dataset\drowsy_driving_raja\human_label_annotation_eeg\S1\S01_20170519_043933\ear_eog.csv"
+    )
 BRAIN_REGION_YAML = REPO_ROOT / "brain_region.yaml"
 EPOCH_DURATION_S = 60.0
 PEAK_SIDE_TOLERANCE_S = 0.01
@@ -47,7 +47,7 @@ MIN_FLAGGED_EPOCHS = 1          # fall back when fewer flagged epochs are found
 
 # Stage B: robust threshold settings
 STD_THRESHOLD = 3.5             # k in: threshold = center + k * (1.4826 * MAD)
-CENTER_METHOD = "mean"        # "median" (robust, detects more blinks) or
+CENTER_METHOD = "median"        # "median" (robust, detects more blinks) or
                                 # "mean"   (pulled by peaks, more conservative)
 
 VERBOSE = True                  # print Stage A/B diagnostic lines

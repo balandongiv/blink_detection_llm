@@ -35,7 +35,7 @@ FIF_PATH = Path(
     r"D:\dataset\drowsy_driving_raja_processed\S1\S01_20170519_043933\seg_data_raw\eeg_eog_raw.fif"
 )
 CSV_PATH = Path(
-    r"D:\dataset\drowsy_driving_raja\human_label_annotation\S1\S01_20170519_043933\ear_eog.csv"
+    r"D:\dataset\drowsy_driving_raja\human_label_annotation_eeg\S1\S01_20170519_043933\ear_eog.csv"
 )
 BRAIN_REGION_YAML = REPO_ROOT / "brain_region.yaml"
 EPOCH_DURATION_S = 60.0
