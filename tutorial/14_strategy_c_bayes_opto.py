@@ -30,16 +30,11 @@ PEAK_SIDE_TOLERANCE_S = 0.01
 FILTER_LOW = 1.0
 FILTER_HIGH = 20.0
 RESAMPLE_RATE = None
-STAGE1_CHANNELS = ("__NO_BACKBONE__",)
-NO_BACKBONE_SENTINEL = ("__NO_BACKBONE__",)
+
 STAGE1_THRESHOLD_SCOPE = "per_channel"
-STAGE1_RESCALE_THRESHOLD = True
 AUTOREJECT_METHOD = "bayesian_optimization"
-STAGE1_THRESHOLD_SCALES = {
-    "random_search": 0.08,
-    "bayesian_optimization": 0.12,
-    "global": 0.005,
-}
+# Scale factor applied to raw autoreject thresholds to obtain scan thresholds.
+STAGE1_SCAN_SCALE = 0.12
 AUTOREJECT_RANDOM_STATE = 42
 AUTOREJECT_AUGMENT = False
 
@@ -65,11 +60,8 @@ def main() -> None:
     )
     valid_epoch_indices = get_valid_epoch_indices(epochs)
     setting = {
-        "stage1_channels": STAGE1_CHANNELS,
-        "stage1_threshold_scope": STAGE1_THRESHOLD_SCOPE,
-        "stage1_rescale_threshold": STAGE1_RESCALE_THRESHOLD,
-        "no_backbone_sentinel": NO_BACKBONE_SENTINEL,
-        "stage1_threshold_scales": STAGE1_THRESHOLD_SCALES,
+        "threshold_scope": STAGE1_THRESHOLD_SCOPE,
+        "scan_scale": STAGE1_SCAN_SCALE,
         "autoreject_random_state": AUTOREJECT_RANDOM_STATE,
         "autoreject_method": AUTOREJECT_METHOD,
         "autoreject_augment": AUTOREJECT_AUGMENT,

@@ -53,7 +53,7 @@ def _scan_threshold_crossings(
     return np.asarray(start_blinks, dtype=int), np.asarray(end_blinks, dtype=int)
 
 
-def _apply_minimum_separation(
+def apply_minimum_separation(
     start_blinks: np.ndarray,
     end_blinks: np.ndarray,
     *,
@@ -101,7 +101,7 @@ def get_blink_position_with_threshold(
         return pd.DataFrame({"start_blink": [], "end_blink": []})
 
     min_event_sep = float(params.get("min_event_sep", params["min_event_len"]))
-    start_blinks, end_blinks = _apply_minimum_separation(
+    start_blinks, end_blinks = apply_minimum_separation(
         start_blinks,
         end_blinks,
         sfreq=params["sfreq"],
@@ -134,3 +134,37 @@ def get_blink_position(
         progress_bar=progress_bar,
         min_blink_frames=min_blink_frames,
     )
+
+def scan_threshold_crossings_kleifges(
+        blink_component: np.ndarray,
+        threshold: float,
+        min_blink_frames: float,
+        *,
+        progress_bar: bool,
+        channel_name: str | None,
+        ) -> tuple[np.ndarray, np.ndarray]:
+    """Approach use by kleifges 2017
+	Collect candidate blink onsets/offsets using MATLAB loop semantics."""
+
+    in_blink = False
+    start = 0
+    start_blinks: list[int] = []
+    end_blinks: list[int] = []
+
+    for idx in tqdm(
+            range(blink_component.size),
+            desc=f"Get blink start and end for channel {channel_name}",
+            disable=not progress_bar,
+            ):
+        value = blink_component[idx]
+        if (not in_blink) and (value > threshold):
+            start = idx
+            in_blink = True
+
+        if in_blink and (value < threshold):
+            if (idx - start) > min_blink_frames:
+                start_blinks.append(start)
+                end_blinks.append(idx)
+            in_blink = False
+
+    return np.asarray(start_blinks, dtype=int), np.asarray(end_blinks, dtype=int)

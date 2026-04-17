@@ -10,6 +10,8 @@ epoch_io
     Blink-table normalization and epoch metadata attachment.
 epoch_channel
     EpochChannelBlinkResult dataclass and concatenated-signal mapping.
+epochs
+    MNE EpochsArray construction helpers (e.g. build_stage1_epochs).
 result_aggregation
     Channel-summary aggregation and candidate channel selection.
 pipeline_utils

@@ -44,6 +44,7 @@ N_EPOCHS: int | None = None
 
 
 def main() -> None:
+    print("\n=== Blinking Strategy B ===")
     brain_channels = load_brain_region_channels(BRAIN_REGION_YAML)
     raw = load_raw_with_brain_channels(FIF_PATH, brain_channels)
     epochs = mne.make_fixed_length_epochs(

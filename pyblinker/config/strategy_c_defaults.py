@@ -76,7 +76,7 @@ def normalize_stage1_threshold_scope(stage1_threshold_scope: str | None) -> str:
     if key not in STAGE1_THRESHOLD_SCOPE_ALIASES:
         supported = ", ".join(sorted(STAGE1_THRESHOLD_SCOPE_ALIASES))
         raise ValueError(
-            "Unsupported stage1_threshold_scope="
+            "Unsupported threshold_scope="
             f"{stage1_threshold_scope!r}. Use one of: {supported}."
         )
     return STAGE1_THRESHOLD_SCOPE_ALIASES[key]
