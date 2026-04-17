@@ -28,27 +28,6 @@ _ensure_autoreject_path()
 from autoreject import compute_thresholds, get_rejection_threshold  # noqa: E402
 
 
-def resolve_stage1_channels(
-    prepared: PreparedEpochDetectionInput,
-    *,
-    stage1_channels: tuple[str, ...] | list[str] | None = None,
-) -> tuple[str, ...]:
-    """Return the channels to use for stage-1 threshold estimation.
-
-    ``None`` (or an empty sequence) means all channels in ``prepared``.
-    """
-    if not stage1_channels:
-        return tuple(prepared.channel_names)
-    channel_names = tuple(
-        channel for channel in stage1_channels if channel in prepared.channel_names
-    )
-    if not channel_names:
-        if prepared.channel_names:
-            return tuple(prepared.channel_names)
-        raise ValueError("Strategy C needs at least one EEG channel after preprocessing.")
-    return channel_names
-
-
 def _learn_global_threshold(
     stage1_data: np.ndarray,
     *,
@@ -75,7 +54,6 @@ def learn_strategy_c_thresholds(
     prepared: PreparedEpochDetectionInput,
     valid_epoch_indices: list[int],
     *,
-    stage1_channels: tuple[str, ...] | list[str] | None = None,
     stage1_threshold_scope: str,
     autoreject_method: str,
     stage1_scan_scale: float = 1.0,
@@ -90,8 +68,6 @@ def learn_strategy_c_thresholds(
         Pre-processed epoch data.
     valid_epoch_indices:
         Indices of epochs to include in threshold estimation.
-    stage1_channels:
-        Channels to use for threshold learning. ``None`` means all channels.
     stage1_threshold_scope:
         ``"per_channel"`` or ``"global"``.
     autoreject_method:
@@ -110,12 +86,9 @@ def learn_strategy_c_thresholds(
     SimpleNamespace
         Fields: ``channel_names``, ``raw_thresholds``, ``scan_thresholds``,
         ``global_threshold``, ``threshold_learning_api``,
-        ``stage1_threshold_scope``, ``autoreject_method``, ``scan_scale``.
+        ``threshold_scope``, ``autoreject_method``, ``scan_scale``.
     """
-    channel_names = resolve_stage1_channels(
-        prepared,
-        stage1_channels=stage1_channels,
-    )
+    channel_names = tuple(prepared.channel_names)
     valid_indices = np.asarray(valid_epoch_indices, dtype=int)
 
     if len(valid_indices) == 0:
@@ -132,11 +105,11 @@ def learn_strategy_c_thresholds(
         )
 
     channel_indices = [prepared.channel_names.index(channel) for channel in channel_names]
-    stage1_data = prepared.data[valid_indices][:, channel_indices, :]
+    data = prepared.data[valid_indices][:, channel_indices, :]
 
     if stage1_threshold_scope == "global":
         global_threshold = _learn_global_threshold(
-            stage1_data,
+            data,
             channel_names=channel_names,
             sfreq=prepared.sfreq,
             random_state=autoreject_random_state,
@@ -145,7 +118,7 @@ def learn_strategy_c_thresholds(
         threshold_learning_api = "get_rejection_threshold"
     else:
         epochs = build_stage1_epochs(
-            stage1_data,
+            data,
             channel_names=channel_names,
             sfreq=prepared.sfreq,
         )
@@ -179,5 +152,4 @@ def learn_strategy_c_thresholds(
 
 __all__ = [
     "learn_strategy_c_thresholds",
-    "resolve_stage1_channels",
 ]
