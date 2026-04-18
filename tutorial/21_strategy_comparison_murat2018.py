@@ -1,13 +1,17 @@
-"""Strategy comparison — A, B, C, F across multiple file pairs.
+"""Strategy comparison — A, B, C, F across murat_2018 dataset.
 
-Runs all four strategies on each dataset pair and prints a unified comparison
-table showing best-channel metrics (precision, recall, F1) per strategy/pair.
+Auto-discovers subjects that have a complete pair (matching <id>.fif + <id>.csv)
+under DATASET_ROOT. Subjects with only a .fif (annotation not yet ready) are
+silently skipped.
 
-Pairs are discovered automatically from VideoFrameViewers.yaml files under
-ANNOTATION_BASE_DIR; only sessions with ``status: complete_eeg`` are included.
-
-Toggle ``USE_MULTITHREAD = False`` for sequential debugging.
-Toggle ``VERBOSE = True/False`` to control diagnostic output from Strategy F.
+Toggles
+-------
+USE_MULTITHREAD        False → sequential (easier to debug)
+VERBOSE                diagnostic output from Strategy F stage A/B
+USE_YAML_STATUS_FILTER When True, also reads Murat2018Viewer.yaml in each
+                       subject folder and skips any subject whose status is not
+                       "Completed".  When False (default), only the presence of
+                       <id>.fif + <id>.csv determines inclusion.
 """
 
 from __future__ import annotations
@@ -26,7 +30,6 @@ if str(REPO_ROOT) not in sys.path:
 from pyblinker.analysis.lane_evaluation import evaluate_channel_lanes
 from pyblinker.common.bad_epochs import get_valid_epoch_indices
 from pyblinker.common.epoch_input import prepare_epoch_detection_input
-from pyblinker.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
 from pyblinker.matching.blink_matching import enrich_absolute_times, load_annotation_as_reference
 from pyblinker.strategy_a.kleifges_blinker_2017 import kleifges_strategy_a
 from pyblinker.strategy_b.runner import blink_position_strategy_b
@@ -36,19 +39,19 @@ from pyblinker.strategy_f.runner import channel_results_strategy_f
 # ---------------------------------------------------------------------------
 # Toggles
 # ---------------------------------------------------------------------------
-USE_MULTITHREAD: bool = True   # False → sequential (easier to debug)
-VERBOSE: bool = True           # diagnostic output from Strategy F stage A/B
+USE_MULTITHREAD: bool = True        # False → sequential (easier to debug)
+VERBOSE: bool = True                # diagnostic output from Strategy F stage A/B
+USE_YAML_STATUS_FILTER: bool = False  # True → only include subjects where
+                                      # Murat2018Viewer.yaml status == "Completed"
 
 # ---------------------------------------------------------------------------
-# Dataset root paths
+# Dataset root — subjects live as DATASET_ROOT/<id>/<id>.fif + <id>.csv
 # ---------------------------------------------------------------------------
-ANNOTATION_BASE_DIR = Path(r"D:\dataset\drowsy_driving_raja\human_label_annotation_eeg")
-PROCESSED_BASE_DIR  = Path(r"D:\dataset\drowsy_driving_raja_processed")
+DATASET_ROOT = Path(r"D:\dataset\murat_2018")
 
 # ---------------------------------------------------------------------------
 # Shared parameters
 # ---------------------------------------------------------------------------
-BRAIN_REGION_YAML = REPO_ROOT / "brain_region.yaml"
 EPOCH_DURATION_S = 60.0
 PEAK_SIDE_TOLERANCE_S = 0.01
 FILTER_LOW = 1.0
@@ -82,43 +85,50 @@ MIN_FLAGGED_EPOCHS = 1
 STD_THRESHOLD = 3.5
 CENTER_METHOD = "median"
 
-# ---------------------------------------------------------------------------
-# Dataset pairs — discovered from VideoFrameViewers.yaml (status: complete_eeg)
-# ---------------------------------------------------------------------------
-
-def _discover_pairs() -> list[dict]:
-    """Return pairs whose VideoFrameViewers.yaml has status == 'complete_eeg'."""
-    pairs = []
-    for yaml_path in sorted(ANNOTATION_BASE_DIR.rglob("VideoFrameViewers.yaml")):
-        with yaml_path.open("r", encoding="utf-8") as fh:
-            info = yaml.safe_load(fh)
-        if (info or {}).get("status") != "complete_eeg":
-            continue
-
-        session_dir = yaml_path.parent          # e.g. .../S1/S01_20170519_043933
-        rel = session_dir.relative_to(ANNOTATION_BASE_DIR)   # e.g. S1/S01_20170519_043933
-
-        csv_path = session_dir / "ear_eog.csv"
-        fif_path = PROCESSED_BASE_DIR / rel / "seg_data_raw" / "eeg_eog_raw.fif"
-
-        if not csv_path.exists():
-            print(f"  [skip] CSV not found: {csv_path}")
-            continue
-        if not fif_path.exists():
-            print(f"  [skip] FIF not found: {fif_path}")
-            continue
-
-        pairs.append({
-            "name": str(rel).replace("\\", "/"),
-            "fif":  fif_path,
-            "csv":  csv_path,
-        })
-    return pairs
-
-
-PAIRS = _discover_pairs()
-
 STRATEGIES = ["A", "B", "C", "F"]
+
+
+# ---------------------------------------------------------------------------
+# Auto-discover complete pairs
+# ---------------------------------------------------------------------------
+
+def _yaml_status_is_completed(subject_dir: Path) -> bool:
+    """Return True if Murat2018Viewer.yaml exists and status == 'Completed'."""
+    yaml_path = subject_dir / "Murat2018Viewer.yaml"
+    if not yaml_path.is_file():
+        return False
+    with yaml_path.open("r", encoding="utf-8") as fh:
+        data = yaml.safe_load(fh) or {}
+    return data.get("status", "") == "Completed"
+
+
+def discover_pairs(root: Path, use_yaml_filter: bool = False) -> list[dict]:
+    """Return pairs where both <id>.fif and <id>.csv exist under root/<id>/.
+
+    When *use_yaml_filter* is True, additionally requires that
+    Murat2018Viewer.yaml reports ``status: Completed``.
+    """
+    pairs = []
+    skipped_yaml: list[str] = []
+    for subject_dir in sorted(root.iterdir()):
+        if not subject_dir.is_dir():
+            continue
+        sid = subject_dir.name
+        fif = subject_dir / f"{sid}.fif"
+        csv = subject_dir / f"{sid}.csv"
+        if not (fif.is_file() and csv.is_file()):
+            continue
+        if use_yaml_filter and not _yaml_status_is_completed(subject_dir):
+            skipped_yaml.append(sid)
+            continue
+        pairs.append({"name": sid, "fif": fif, "csv": csv})
+
+    if skipped_yaml:
+        print(
+            f"  [yaml-filter] skipped {len(skipped_yaml)} subject(s) with"
+            f" status != Completed: {', '.join(skipped_yaml)}"
+        )
+    return pairs
 
 
 # ---------------------------------------------------------------------------
@@ -176,8 +186,9 @@ _STRATEGY_RUNNERS = {
 
 def run_one(pair_name: str, fif_path: Path, csv_path: Path, strategy: str) -> dict:
     """Load data, run *strategy*, evaluate, return metrics dict."""
-    brain_channels = load_brain_region_channels(BRAIN_REGION_YAML)
-    raw = load_raw_with_brain_channels(fif_path, brain_channels)
+    # murat_2018 uses channels CH1/CH2 — load all channels directly instead of
+    # filtering by brain_region.yaml (which targets a different dataset).
+    raw = mne.io.read_raw_fif(str(fif_path), preload=True, verbose="ERROR")
     epochs = mne.make_fixed_length_epochs(
         raw, duration=EPOCH_DURATION_S, preload=True, verbose="ERROR"
     )
@@ -228,10 +239,9 @@ def run_one(pair_name: str, fif_path: Path, csv_path: Path, strategy: str) -> di
 # ---------------------------------------------------------------------------
 
 def _print_results(results: list[dict]) -> None:
-    # Sort by pair then strategy for readable output
     results.sort(key=lambda r: (r["pair"], r["strategy"]))
 
-    col_w = {"pair": 8, "strategy": 10, "best_channel": 14,
+    col_w = {"pair": 12, "strategy": 10, "best_channel": 14,
               "tp": 5, "fp": 5, "fn": 5,
               "precision": 10, "recall": 8, "f1": 8}
 
@@ -249,7 +259,7 @@ def _print_results(results: list[dict]) -> None:
     sep = "-" * len(header)
 
     print(f"\n{'=' * len(header)}")
-    print("STRATEGY COMPARISON RESULTS")
+    print("STRATEGY COMPARISON RESULTS  —  murat_2018")
     print(f"{'=' * len(header)}")
     print(header)
     print(sep)
@@ -305,7 +315,7 @@ def _print_overall_summary(results: list[dict]) -> None:
     sep = "-" * len(header)
 
     print(f"{'=' * len(header)}")
-    print("OVERALL SUMMARY  (aggregated across all pairs)")
+    print("OVERALL SUMMARY  (aggregated across all pairs)  —  murat_2018")
     print(f"{'=' * len(header)}")
     print(header)
     print(sep)
@@ -342,9 +352,20 @@ def _print_overall_summary(results: list[dict]) -> None:
 
 
 def main() -> None:
+    filter_label = "csv-pair + yaml-Completed" if USE_YAML_STATUS_FILTER else "csv-pair only"
+    print(f"Scanning {DATASET_ROOT}  [filter: {filter_label}]")
+    pairs = discover_pairs(DATASET_ROOT, use_yaml_filter=USE_YAML_STATUS_FILTER)
+    if not pairs:
+        print(f"No complete pairs found under {DATASET_ROOT}. Exiting.")
+        return
+
+    print(f"Discovered {len(pairs)} complete pair(s):")
+    for p in pairs:
+        print(f"  {p['name']}")
+
     tasks = [
         (pair["name"], pair["fif"], pair["csv"], strategy)
-        for pair in PAIRS
+        for pair in pairs
         for strategy in STRATEGIES
     ]
 
@@ -352,7 +373,7 @@ def main() -> None:
     errors: list[str] = []
 
     if USE_MULTITHREAD:
-        print(f"Running {len(tasks)} tasks with ThreadPoolExecutor …")
+        print(f"\nRunning {len(tasks)} tasks with ThreadPoolExecutor …")
         with ThreadPoolExecutor() as executor:
             future_to_task = {
                 executor.submit(run_one, name, fif, csv, strat): (name, strat)
@@ -369,7 +390,7 @@ def main() -> None:
                     print(msg)
                     errors.append(msg)
     else:
-        print(f"Running {len(tasks)} tasks sequentially …")
+        print(f"\nRunning {len(tasks)} tasks sequentially …")
         for name, fif, csv, strat in tasks:
             print(f"  running  pair={name}  strategy={strat} …")
             try:
