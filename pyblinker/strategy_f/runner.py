@@ -44,7 +44,10 @@ def run_strategy_f(
     epoch_duration: float = 60.0,
     peak_side_tolerance_s: float = 0.01,
     autoreject_random_state: int = 42,
-    std_threshold: float = 3.5,
+    std_threshold: float = 1.5,
+    k_confirm: float | None = None,
+    k_flagged: float | None = None,
+    k_nonflagged: float | None = None,
 ) -> LaneScoringResult:
     """Run Strategy F end-to-end on ``epochs`` and return scored results.
 
@@ -69,6 +72,16 @@ def run_strategy_f(
         Random seed forwarded to autoreject in Stage A.
     std_threshold:
         Multiplier ``k`` for the MAD dispersion term in Stage B.
+    k_confirm:
+        If not None, Stage D peak confirmation threshold multiplier.
+        Only events whose peak amplitude satisfies
+        ``peak >= center + k_confirm * dispersion`` are kept.
+    k_flagged:
+        G3 mode: threshold multiplier for autoreject-flagged epochs.
+        Must be set together with ``k_nonflagged``.
+    k_nonflagged:
+        G3 mode: threshold multiplier for non-flagged epochs (threshold
+        estimated from all valid epochs).
     """
     prepared = prepare_epoch_detection_input(
         epochs,
@@ -81,6 +94,9 @@ def run_strategy_f(
     setting = {
         "autoreject_random_state": autoreject_random_state,
         "std_threshold": std_threshold,
+        "k_confirm": k_confirm,
+        "k_flagged": k_flagged,
+        "k_nonflagged": k_nonflagged,
     }
     channel_results = channel_results_strategy_f(prepared, valid_epoch_indices, setting=setting)
     ground_truth = enrich_absolute_times(ground_truth_raw, epoch_duration)

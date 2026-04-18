@@ -1,28 +1,31 @@
 """Strategy F recall improvement experiments — drowsy_driving_raja_processed.
 
-Root cause
-----------
-Strategy A uses:  threshold = mean(all_valid_epochs)   + 1.5 * 1.4826 * MAD
-Strategy F uses:  threshold = median(flagged_epochs)   + 3.5 * 1.4826 * MAD
+Approach G1: Two-Tier Peak Confirmation
+-----------------------------------------
+Detection gate (Stage C) uses std_threshold=1.5.  Stage D applies a stricter
+confirmation gate: each event is kept only if its peak >=
+  center + k_confirm * dispersion
+(center/dispersion from Stage B — no new data needed).
 
-The 3.5 multiplier (2.33× higher than A's 1.5) was borrowed from BLINKER's
-blink-quality classification context, not from the detection context.  This
-makes F's threshold too conservative, causing it to miss blinks that A catches.
+Approach G3: Epoch-Type Split Threshold
+-----------------------------------------
+Autoreject's flagging signal is used to apply two different thresholds:
+  - Flagged epochs (blink-heavy): center + k_flagged * dispersion  (strict)
+  - Non-flagged epochs (possibly quiet): center + k_nonflagged * dispersion  (permissive)
+The non-flagged threshold is estimated from ALL valid epochs (more inclusive).
 
-Experiment design
------------------
-We hold the two-stage architecture constant (Stage A = autoreject flagging,
-Stage B = robust threshold from flagged epochs) and sweep ``std_threshold``
-from 3.5 down to 1.0 on the drowsy_driving_raja_processed dataset only.
+Hypothesis: flagged epochs already contain strong blinks (strict gate is safe);
+non-flagged epochs may contain weak blinks that a permissive gate can catch.
 
-For each value we report TP, FP, FN, micro_R, micro_F1 and compare against:
-  - Strategy A baseline (fixed)
-  - Strategy F baseline (std_threshold=3.5, fixed)
+Baselines (drowsy_driving_raja_processed, 11 pairs, from G1 run):
+  A:             micro_R=0.9350  micro_F1=0.5960  TP=2746  FP=3531  FN=191
+  G1_kc_none:    micro_R=0.9353  micro_F1=0.6497  TP=2747  FP=2772  FN=190
+  G1_kc2.0:      micro_R=0.9350  micro_F1=0.6683  TP=2746  FP=2535  FN=191
 
-Target (minimum success):
-  Improved F micro_R > A micro_R = 0.9141
-  Improved F micro_F1 > A micro_F1 = 0.4589
-  Improved F micro_F1 as close to current F baseline (0.8375) as possible.
+Success criteria (any variant must satisfy ALL three):
+  1. micro_R  > A micro_R = 0.9350   (must not regress below A)
+  2. micro_F1 > G1_kc_none = 0.6497  (must improve on F_new baseline)
+  3. micro_F1 > A micro_F1 = 0.5960  (must beat A on F1)
 """
 
 from __future__ import annotations
@@ -64,7 +67,7 @@ RESAMPLE_RATE         = None
 N_EPOCHS: int | None  = None   # set to small int for quick debugging
 
 # ---------------------------------------------------------------------------
-# Strategy F fixed settings (everything except std_threshold)
+# Strategy F fixed settings
 # ---------------------------------------------------------------------------
 AUTOREJECT_RANDOM_STATE = 42
 CENTER_METHOD           = "median"
@@ -72,23 +75,20 @@ MIN_FLAGGED_EPOCHS      = 1
 VERBOSE                 = False   # set True for per-pair threshold diagnostics
 
 # ---------------------------------------------------------------------------
-# Experiment: std_threshold values to test
-#
-# Current F baseline = 3.5.
-# Strategy A uses std_threshold = 1.5 (DEFAULT_PARAMS["std_threshold"]).
-# We sweep downward to find where F matches / beats A on recall
-# while retaining the highest possible F1.
+# G1: Two-Tier Peak Confirmation (kept as reference, detection gate k=1.5)
 # ---------------------------------------------------------------------------
-# Experiment 3: k=1.5 with max_event_len filter (seconds).
-# None = no filter; 0.5 = half-second cap; 1.0 = 1-second cap.
-# Biologically, normal blinks are 100–500ms; longer events are drift artifacts.
-STD_THRESHOLD_SWEEP: list = []   # disabled for this experiment
+STD_THRESHOLD   = 1.5
+K_CONFIRM_SWEEP = [None, 2.0]   # baseline + best G1 variant for context
 
-# When True, also test center_method="mean" at std_threshold=2.5 and 1.5.
-ALSO_TEST_MEAN_CENTER = False
-
-# Max-event-len experiment: hold k=1.5, sweep max_event_len
-MAX_EVENT_LEN_SWEEP = [None, 2.0, 1.0, 0.7, 0.5, 0.4, 0.3]
+# ---------------------------------------------------------------------------
+# G3: Epoch-Type Split Threshold experiment
+#
+# k_flagged    ∈ {3.5, 3.0, 2.5}  — strict gate for autoreject-flagged epochs
+# k_nonflagged ∈ {1.5, 1.0}       — permissive gate for non-flagged epochs
+# All 6 combinations are tested; focus on k_flagged=3.5 + k_nonflagged=1.5 first.
+# ---------------------------------------------------------------------------
+K_FLAGGED_SWEEP    = [3.5, 3.0, 2.5]
+K_NONFLAGGED_SWEEP = [1.5, 1.0]
 
 USE_MULTITHREAD: bool = True
 
@@ -127,30 +127,35 @@ PAIRS = _discover_pairs()
 # ---------------------------------------------------------------------------
 
 def _build_variants() -> list[dict]:
+    """Build the experiment grid: G1 reference variants + G3 epoch-split variants."""
     variants = []
-    for k in STD_THRESHOLD_SWEEP:
-        variants.append({
-            "label": f"F_k{k:.1f}",
-            "std_threshold": k,
-            "center_method": "median",
-            "max_event_len": None,
-        })
-    if ALSO_TEST_MEAN_CENTER:
-        for k in [2.5, 1.5]:
-            variants.append({
-                "label": f"F_k{k:.1f}_mean",
-                "std_threshold": k,
-                "center_method": "mean",
-                "max_event_len": None,
-            })
-    for mel in MAX_EVENT_LEN_SWEEP:
-        lbl = f"F_k1.5_mel{mel}" if mel is not None else "F_k1.5_nomel"
+
+    # --- G1 reference (baseline + best prior result for comparison) ---
+    for k_c in K_CONFIRM_SWEEP:
+        lbl = f"G1_kc{k_c:.1f}" if k_c is not None else "G1_kc_none"
         variants.append({
             "label": lbl,
-            "std_threshold": 1.5,
-            "center_method": "median",
-            "max_event_len": mel,
+            "std_threshold": STD_THRESHOLD,
+            "center_method": CENTER_METHOD,
+            "max_event_len": None,
+            "k_confirm": k_c,
+            "k_flagged": None,
+            "k_nonflagged": None,
         })
+
+    # --- G3: epoch-type split threshold ---
+    for k_f in K_FLAGGED_SWEEP:
+        for k_nf in K_NONFLAGGED_SWEEP:
+            variants.append({
+                "label": f"G3_kf{k_f:.1f}_knf{k_nf:.1f}",
+                "std_threshold": STD_THRESHOLD,  # fallback only (unused in G3 mode)
+                "center_method": CENTER_METHOD,
+                "max_event_len": None,
+                "k_confirm": None,
+                "k_flagged": k_f,
+                "k_nonflagged": k_nf,
+            })
+
     return variants
 
 
@@ -163,7 +168,8 @@ VARIANTS = _build_variants()
 
 def run_one(pair_name: str, fif_path: Path, csv_path: Path, variant_label: str,
             std_threshold: float, center_method: str,
-            max_event_len=None) -> dict:
+            max_event_len=None, k_confirm=None,
+            k_flagged=None, k_nonflagged=None) -> dict:
     """Run one strategy variant on one dataset pair and return metrics."""
     brain_channels = load_brain_region_channels(BRAIN_REGION_YAML)
     raw = load_raw_with_brain_channels(fif_path, brain_channels)
@@ -195,6 +201,9 @@ def run_one(pair_name: str, fif_path: Path, csv_path: Path, variant_label: str,
             "min_flagged_epochs": MIN_FLAGGED_EPOCHS,
             "verbose": VERBOSE,
             "max_event_len": max_event_len,
+            "k_confirm": k_confirm,
+            "k_flagged": k_flagged,
+            "k_nonflagged": k_nonflagged,
         }
         channel_results = channel_results_strategy_f(prepared, valid_epoch_indices,
                                                      setting=setting)
@@ -344,13 +353,17 @@ def main() -> None:
 
     # Build task list: Strategy A + all F variants × all pairs
     # Strategy A label is "A"; std_threshold and center_method are ignored for A.
+    # Tasks: (name, fif, csv, label, std_threshold, center_method,
+    #          max_event_len, k_confirm, k_flagged, k_nonflagged)
     tasks = []
     for pair in PAIRS:
-        tasks.append((pair["name"], pair["fif"], pair["csv"], "A", 0.0, "median", None))
+        tasks.append((pair["name"], pair["fif"], pair["csv"],
+                      "A", 0.0, "median", None, None, None, None))
         for v in VARIANTS:
             tasks.append((pair["name"], pair["fif"], pair["csv"],
                           v["label"], v["std_threshold"], v["center_method"],
-                          v.get("max_event_len", None)))
+                          v.get("max_event_len", None), v.get("k_confirm", None),
+                          v.get("k_flagged", None), v.get("k_nonflagged", None)))
 
     variant_order = ["A"] + [v["label"] for v in VARIANTS]
 
@@ -361,8 +374,8 @@ def main() -> None:
         print(f"Running {len(tasks)} tasks with ThreadPoolExecutor …\n")
         with ThreadPoolExecutor() as executor:
             future_map = {
-                executor.submit(run_one, name, fif, csv, label, k, cm, mel): (name, label)
-                for name, fif, csv, label, k, cm, mel in tasks
+                executor.submit(run_one, nm, fif, csv, lbl, k, cm, mel, kc, kf, knf): (nm, lbl)
+                for nm, fif, csv, lbl, k, cm, mel, kc, kf, knf in tasks
             }
             for future in as_completed(future_map):
                 pair_name, label = future_map[future]
@@ -377,15 +390,15 @@ def main() -> None:
                     errors.append(msg)
     else:
         print(f"Running {len(tasks)} tasks sequentially …\n")
-        for name, fif, csv, label, k, cm, mel in tasks:
-            print(f"  running  pair={name}  variant={label} …")
+        for nm, fif, csv, lbl, k, cm, mel, kc, kf, knf in tasks:
+            print(f"  running  pair={nm}  variant={lbl} …")
             try:
-                r = run_one(name, fif, csv, label, k, cm, mel)
+                r = run_one(nm, fif, csv, lbl, k, cm, mel, kc, kf, knf)
                 results.append(r)
-                print(f"  done     pair={name}  variant={label}  "
+                print(f"  done     pair={nm}  variant={lbl}  "
                       f"R={r['recall']:.4f}  F1={r['f1']:.4f}")
             except Exception as exc:
-                msg = f"  ERROR pair={name}  variant={label}: {exc}"
+                msg = f"  ERROR pair={nm}  variant={lbl}: {exc}"
                 print(msg)
                 errors.append(msg)
 
