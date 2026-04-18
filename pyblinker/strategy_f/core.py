@@ -59,14 +59,22 @@ def blink_position_strategy_f(
     options.update(kwargs)
 
     autoreject_random_state = int(options.get("autoreject_random_state", 42))
-    std_threshold = float(options.get("std_threshold", 3.5))
+    # std_threshold: multiplier for the MAD dispersion term in Stage B.
+    # 1.5 matches Strategy A's original Kleifges/BLINKER detection multiplier,
+    # giving recall that meets or exceeds Strategy A while keeping FP well
+    # below A's level. (The old default of 3.5 was borrowed from BLINKER's
+    # blink-quality classification context and was too conservative for detection.)
+    std_threshold = float(options.get("std_threshold", 1.5))
     center_method = str(options.get("center_method", "median"))
     min_flagged_epochs = int(options.get("min_flagged_epochs", 1))
     verbose = bool(options.get("verbose", False))
+    max_event_len = options.get("max_event_len", None)  # seconds; None = no cap
 
     params = BlinkDetector._build_detector_params(None, {})
     params["sfreq"] = float(prepared.sfreq)
-    min_blink_frames = float(params["min_event_len"] * params["sfreq"])
+    sfreq = params["sfreq"]
+    min_blink_frames = float(params["min_event_len"] * sfreq)
+    max_blink_frames = float(max_event_len * sfreq) if max_event_len is not None else None
 
     # ------------------------------------------------------------------ Stage A
     screen_result = screen_epochs_with_autoreject(
@@ -105,6 +113,14 @@ def blink_position_strategy_f(
             progress_bar=False,
             channel_name=channel_name,
         )
+
+        # Optional: discard events longer than max_blink_frames (removes slow
+        # drifts and muscle artifacts that are not physiological blinks).
+        if max_blink_frames is not None and len(start_blinks) > 0:
+            durations = end_blinks - start_blinks
+            keep = durations <= max_blink_frames
+            start_blinks = start_blinks[keep]
+            end_blinks = end_blinks[keep]
 
         df_positions = pd.DataFrame({"start_blink": start_blinks, "end_blink": end_blinks})
         mapped_candidates = map_concatenated_blinks_to_epochs(
