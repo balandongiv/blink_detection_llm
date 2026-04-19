@@ -3,8 +3,8 @@
 import numpy as np
 import pytest
 
-from pyblinker.fitutils import mad
-from pyblinker.strategy_f.blink_threshold import (
+from src.fitutils import mad
+from src.strategy_f.blink_threshold import (
     SCALING_FACTOR,
     compute_threshold_from_samples,
 )

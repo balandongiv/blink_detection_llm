@@ -11,12 +11,12 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from pyblinker.analysis.lane_evaluation import evaluate_channel_lanes
-from pyblinker.common.bad_epochs import get_valid_epoch_indices
-from pyblinker.common.epoch_input import prepare_epoch_detection_input
-from pyblinker.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
-from pyblinker.matching.blink_matching import enrich_absolute_times, load_annotation_as_reference
-from pyblinker.strategy_c.runner import blink_position_strategy_c
+from src.analysis.lane_evaluation import evaluate_channel_lanes
+from src.common.bad_epochs import get_valid_epoch_indices
+from src.common.epoch_input import prepare_epoch_detection_input
+from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
+from src.matching.blink_matching import enrich_absolute_times, load_annotation_as_reference
+from src.strategy_c.runner import blink_position_strategy_c
 
 FIF_PATH = Path(
     r"D:\dataset\drowsy_driving_raja_processed\S1\S01_20170519_043933\seg_data_raw\eeg_eog_raw.fif"

@@ -27,9 +27,9 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from pyblinker.blinker import BlinkDetector
-from pyblinker.common.validation import match_blink_tables
-from pyblinker.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
-from pyblinker.matching.blink_matching import load_annotation_as_reference
+from src.common.validation import match_blink_tables
+from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
+from src.matching.blink_matching import load_annotation_as_reference
 
 # ---------------------------------------------------------------------------
 # Toggles

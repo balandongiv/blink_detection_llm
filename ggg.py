@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from pyblinker._runtime import configure_mne_home
+from src._runtime import configure_mne_home
 
 import mne
 

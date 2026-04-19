@@ -27,14 +27,14 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from pyblinker.analysis.lane_evaluation import evaluate_channel_lanes
-from pyblinker.common.bad_epochs import get_valid_epoch_indices
-from pyblinker.common.epoch_input import prepare_epoch_detection_input
-from pyblinker.matching.blink_matching import enrich_absolute_times, load_annotation_as_reference
-from pyblinker.strategy_a.kleifges_blinker_2017 import kleifges_strategy_a
-from pyblinker.strategy_b.runner import blink_position_strategy_b
-from pyblinker.strategy_c.runner import blink_position_strategy_c
-from pyblinker.strategy_f.runner import channel_results_strategy_f
+from src.analysis.lane_evaluation import evaluate_channel_lanes
+from src.common.bad_epochs import get_valid_epoch_indices
+from src.common.epoch_input import prepare_epoch_detection_input
+from src.matching.blink_matching import enrich_absolute_times, load_annotation_as_reference
+from src.strategy_a.kleifges_blinker_2017 import kleifges_strategy_a
+from src.strategy_b.runner import blink_position_strategy_b
+from src.strategy_c.runner import blink_position_strategy_c
+from src.strategy_f.runner import channel_results_strategy_f
 
 # ---------------------------------------------------------------------------
 # Toggles

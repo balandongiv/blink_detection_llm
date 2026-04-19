@@ -11,13 +11,13 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from pyblinker.blinker.pyblinker import BlinkDetector
-from pyblinker.blinker.get_blink_positions import get_blink_position
-from pyblinker.common.bad_epochs import get_valid_epoch_indices
-from pyblinker.common.epoch_channel import map_concatenated_blinks_to_epochs
-from pyblinker.common.epoch_input import prepare_epoch_detection_input
-from pyblinker.common.validation import match_blink_tables
-from pyblinker.utils.peak_overlap_metric import (
+from src.blinker.pyblinker import BlinkDetector
+from src.blinker.get_blink_positions import get_blink_position
+from src.common.bad_epochs import get_valid_epoch_indices
+from src.common.epoch_channel import map_concatenated_blinks_to_epochs
+from src.common.epoch_input import prepare_epoch_detection_input
+from src.common.validation import match_blink_tables
+from src.utils.peak_overlap_metric import (
     calculate_interval_overlap_ratio,
     is_peak_overlap_match,
 )

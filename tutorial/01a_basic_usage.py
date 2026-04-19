@@ -4,7 +4,7 @@
 import mne
 import numpy as np
 import os
-from pyblinker.blinker import BlinkDetector
+from src.blinker import BlinkDetector
 # 2) Specify the EEG file path
 # Replace this path with the location of your .fif EEG recording file
 

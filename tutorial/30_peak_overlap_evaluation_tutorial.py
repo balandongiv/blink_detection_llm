@@ -22,10 +22,10 @@ _RUNNER_MOD = importlib.util.module_from_spec(_RUNNER_SPEC)  # type: ignore[arg-
 sys.modules[_RUNNER_SPEC.name] = _RUNNER_MOD
 _RUNNER_SPEC.loader.exec_module(_RUNNER_MOD)  # type: ignore[union-attr]
 
-from pyblinker.common.validation import (
+from src.common.validation import (
     match_blink_tables,
 )
-from pyblinker.utils.peak_overlap_metric import (
+from src.utils.peak_overlap_metric import (
     calculate_interval_overlap_ratio,
     is_peak_overlap_match,
 )
