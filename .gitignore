@@ -230,3 +230,10 @@ blinker_pyblinker_validation/experiment_results/
 /.tmp_mne_home/
 /experiment_output/
 /tutorial/output
+/auxil/main.aux
+/auxil/main.bbl
+/auxil/main.blg
+/auxil/main.run.xml
+/auxil/main.out
+/auxil/main.bcf
+/writing/main.tex

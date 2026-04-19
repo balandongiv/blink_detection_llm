@@ -1,0 +1,35 @@
+\subsection{Problem Definition}
+
+Let a blink annotation be an interval \(g_i = [s_i, e_i]\) and a detector output be an interval \(d_j = [\hat{s}_j, \hat{e}_j]\). A detected region is counted as a true positive if it overlaps at least one unmatched ground-truth region. Unmatched detections are false positives; unmatched ground-truth regions are false negatives. This event-level treatment follows the logic of interval-based detection rather than pointwise accuracy, which is appropriate because blink boundaries are uncertain, annotation granularity varies, and non-event samples dominate the timeline \citep{saito2015precision,salles2024softed}.
+
+
+
+\subsection{Datasets}
+
+The primary naturalistic dataset is the sustained-attention driving corpus of \citet{cao2019multichannel}, which contains 62 sessions of 32-channel EEG recorded during a 90-minute lane-keeping task. Its official event schema includes deviation onset, response onset, and response offset, and the published preprocessed version explicitly notes manual removal of apparent eye blinks. Therefore, this corpus is suitable for the present study only in its raw form and only when paired with externally available blink-region annotations.
+
+The second dataset named in the project brief requires correction. PMID 30325349 refers to the Scientific Data motor-imagery corpus of \citet{kaya2018large}, not to a blink-annotated benchmark. It is therefore inappropriate as a primary supervised blink dataset. In the present design it is repurposed as an auxiliary robustness corpus for false-positive stress testing: because it contains frontal EEG but lacks blink-event labels, it can help measure how often a threshold family spuriously fires in out-of-domain EEG.
+
+Because the paper aims to be scientifically robust rather than merely brief-compliant, we recommend adding the 2025 multimodal ocular-activity dataset by \citet{guttmann2025dataset} as a companion benchmark. Its synchronized EEG, eye tracking, and high-speed video make it the strongest official source for validating blink-region decisions and studying boundary uncertainty.
+
+\subsection{Preprocessing}
+
+All threshold families are evaluated under the same preprocessing backbone. We recommend using frontal or prefrontal channels only, after polarity normalization if needed, detrending, and a blink-oriented band-pass in the low-frequency region. Candidate maxima are then detected from the preprocessed signal or a derived blink component, and candidate windows are expanded by local valley search or hysteresis rules. This standardization is necessary because the literature shows that filter choice, candidate signal choice, and reference scheme can strongly alter the apparent success of a threshold \citep{chang2016detection,kleifges2017blinker,tran2021detection,zhang2023method}.
+
+\subsection{Threshold Families}
+
+We propose five threshold families. The first is a classical mean-standard-deviation family, \(\theta = \mu + k\sigma\), included because BLINKER's initial candidate gate effectively uses a variant of that logic after filtering. The second is a mean-plus-robust-spread family, \(\theta = \mu + k \cdot 1.4826\,\mathrm{MAD}\), included because it matches the simplified code variants discussed in the project brief. The third is a median-plus-robust-spread family, \(\theta = \tilde{x} + k \cdot 1.4826\,\mathrm{MAD}\), which is expected to be less sensitive to skewed baselines and large outliers. The fourth is an adaptive rolling-median/rolling-MAD hysteresis family, with a high onset threshold and a lower offset threshold, proposed as the main new derivative because it preserves local adaptability while retaining interpretability. The fifth is a literature-derived hybrid family, represented by cascaded thresholding prior to GMM or template screening, as in \citet{cao2021unsupervised} and related adaptive systems.
+
+The key critique motivating families two through four is that the background-dominated baseline of continuous EEG can make a single global threshold too permissive. If the threshold is estimated mostly from non-blink samples, then drift, small ocular movements, muscle transients, and transient nonstationarities can cross the gate. The benchmark therefore asks whether robustness should be introduced through the location statistic, the scale statistic, the time scale, or the decision logic.
+
+\section{Methods}
+
+\subsection{LLM-Guided Candidate Derivation}
+
+The LLM component is deliberately narrow. The model is not asked to label data or choose winners. Instead, it receives a structured literature summary and proposes mathematically explicit threshold variants, for example asymmetry-aware onset/offset rules, quantile-MAD hybrids, or drift-compensated local thresholds. Human researchers then filter these suggestions for interpretability, computational feasibility, and absence of label leakage before implementation. This design aligns with recent peer-reviewed work on scientific hypothesis generation, which treats LLMs as idea generators whose outputs must still be experimentally vetted \citep{gottweis2025toward}.
+
+\subsection{Evaluation}
+
+The primary metrics are event-level precision, recall, and F1 under non-zero-overlap matching, with secondary analyses using temporally tolerant variants or IoU-weighted summaries. Precision, recall, and F1 are preferred because blink events are sparse relative to non-blink samples; raw accuracy would be inflated by true negatives and would obscure detector behavior on the rare events of interest. Soft temporal metrics are reported secondarily because interval boundaries are often approximate and neighboring detections can still be operationally useful \citep{saito2015precision,salles2024softed}.
+
+Per-session estimates should be macro-averaged, with bootstrap confidence intervals across sessions and a paired nonparametric comparison of threshold families on session-level F1. For the motor-imagery corpus, the relevant endpoint is not F1 but false-positive burden per minute and per hour, since the corpus is used only for robustness stress testing.
