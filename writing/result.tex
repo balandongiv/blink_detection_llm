@@ -1,30 +1,4 @@
 
 \section{Experiments and Results}
 
-Because no new benchmark was executed in this conversion step, the prose below is submission-ready but the numerical cells are intentionally left as placeholders for post-run insertion.
-
-We evaluate the five threshold families under identical preprocessing, candidate generation, and event matching. Hyperparameters are tuned only on the training fold of each dataset. The primary supervised benchmark uses session-wise cross-validation on the driving dataset with manual blink-region annotations; the multimodal ocular dataset is used for external validation; and the Kaya motor-imagery dataset is used only to assess out-of-domain false positives \citep{cao2019multichannel,kaya2018large,guttmann2025dataset}.
-
-Based on the reviewed literature, we expect global mean-based thresholds to be competitive in recall but unstable in precision, especially under naturalistic drift and mixed ocular activity. We expect median-plus-MAD and rolling-MAD hysteresis to improve precision without catastrophic recall loss, because these families more directly address skew, outliers, and local baseline drift. We further expect hybrid systems to remain strongest when data include structured confounds such as eye movements, muscle activity, or epileptiform patterns, but at the cost of greater pipeline complexity.
-
-\begin{table}[t]
-    \centering
-    \caption{Planned result table. Numerical cells are placeholders for benchmark output.}
-    \label{tab:planned-results}
-    \footnotesize
-    \setlength{\tabcolsep}{3pt}
-    \begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{3.2cm}>{\centering\arraybackslash}p{2.2cm}>{\centering\arraybackslash}p{1.4cm}>{\centering\arraybackslash}p{1.6cm}>{\raggedright\arraybackslash}X@{}}
-\toprule
-Threshold family & Driving P/R/F1 & Ext. F1 & Kaya FP/h & Anticipated failure mode \\
-\midrule
-Mean + SD & [fill]/[fill]/[fill] & [fill] & [fill] & Baseline drift and small eye movements \\
-Mean + robust MAD & [fill]/[fill]/[fill] & [fill] & [fill] & Permissive if mean remains biased \\
-Median + robust MAD & [fill]/[fill]/[fill] & [fill] & [fill] & Missed low-amplitude blinks \\
-Rolling median/MAD + hysteresis & [fill]/[fill]/[fill] & [fill] & [fill] & Boundary fragmentation if window is poorly chosen \\
-Cascaded threshold + GMM/template screening & [fill]/[fill]/[fill] & [fill] & [fill] & Complexity and tuning overhead \\
-\bottomrule
-    \end{tabularx}
-    \normalsize
-\end{table}
-
-Ablation analysis should then ask three specific questions. First, does replacing the mean with the median improve cross-subject stability? Second, does making the scale estimator robust improve precision more than recall degrades? Third, does local adaptation outperform global calibration when evaluated on long sessions with nonstationary vigilance and drift? The answer to those questions matters more scientifically than the headline win of any single detector, because it reveals what kind of thresholding assumption is actually justified for blink-region detection.
+For experiment, we will compare agains the Blinker algorith, then the matlab . we assume they also can work on epoch

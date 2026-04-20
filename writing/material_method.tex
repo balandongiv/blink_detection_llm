@@ -1,3 +1,7 @@
+\input{method/step1_select_bad_epoch}
+\input{method/step2_get_threshold_candidates}
+\input{method/step3_get_blink_regions}
+
 \subsection{Problem Definition}
 
 Let a blink annotation be an interval \(g_i = [s_i, e_i]\) and a detector output be an interval \(d_j = [\hat{s}_j, \hat{e}_j]\). A detected region is counted as a true positive if it overlaps at least one unmatched ground-truth region. Unmatched detections are false positives; unmatched ground-truth regions are false negatives. This event-level treatment follows the logic of interval-based detection rather than pointwise accuracy, which is appropriate because blink boundaries are uncertain, annotation granularity varies, and non-event samples dominate the timeline \citep{saito2015precision,salles2024softed}.
@@ -18,15 +22,10 @@ All threshold families are evaluated under the same preprocessing backbone. We r
 
 \subsection{Threshold Families}
 
-We propose five threshold families. The first is a classical mean-standard-deviation family, \(\theta = \mu + k\sigma\), included because BLINKER's initial candidate gate effectively uses a variant of that logic after filtering. The second is a mean-plus-robust-spread family, \(\theta = \mu + k \cdot 1.4826\,\mathrm{MAD}\), included because it matches the simplified code variants discussed in the project brief. The third is a median-plus-robust-spread family, \(\theta = \tilde{x} + k \cdot 1.4826\,\mathrm{MAD}\), which is expected to be less sensitive to skewed baselines and large outliers. The fourth is an adaptive rolling-median/rolling-MAD hysteresis family, with a high onset threshold and a lower offset threshold, proposed as the main new derivative because it preserves local adaptability while retaining interpretability. The fifth is a literature-derived hybrid family, represented by cascaded thresholding prior to GMM or template screening, as in \citet{cao2021unsupervised} and related adaptive systems.
-
-The key critique motivating families two through four is that the background-dominated baseline of continuous EEG can make a single global threshold too permissive. If the threshold is estimated mostly from non-blink samples, then drift, small ocular movements, muscle transients, and transient nonstationarities can cross the gate. The benchmark therefore asks whether robustness should be introduced through the location statistic, the scale statistic, the time scale, or the decision logic.
 
 \section{Methods}
 
-\subsection{LLM-Guided Candidate Derivation}
 
-The LLM component is deliberately narrow. The model is not asked to label data or choose winners. Instead, it receives a structured literature summary and proposes mathematically explicit threshold variants, for example asymmetry-aware onset/offset rules, quantile-MAD hybrids, or drift-compensated local thresholds. Human researchers then filter these suggestions for interpretability, computational feasibility, and absence of label leakage before implementation. This design aligns with recent peer-reviewed work on scientific hypothesis generation, which treats LLMs as idea generators whose outputs must still be experimentally vetted \citep{gottweis2025toward}.
 
 \subsection{Evaluation}
 

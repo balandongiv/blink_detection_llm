@@ -237,3 +237,6 @@ blinker_pyblinker_validation/experiment_results/
 /auxil/main.out
 /auxil/main.bcf
 /writing/main.tex
+/writing/out/
+/out/main.synctex.gz
+/out/main.pdf

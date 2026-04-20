@@ -166,7 +166,7 @@ _STRATEGY_RUNNERS = {
     "A": _run_strategy_a,
     # "B": _run_strategy_b,
     # "C": _run_strategy_c,
-    # "F": _run_strategy_f,
+    "F": _run_strategy_f,
 }
 
 
