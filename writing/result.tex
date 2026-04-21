@@ -2,6 +2,89 @@
 \section{Experiments and Results}
 \label{sec:results}
 
+\begin{table}[h]
+\small
+\centering
+\caption{Summary of experiments (Sec.~\ref{sec:exp_setup}--\ref{sec:exp7}).
+Experiments 1--7 test the robustness and correctness of the proposed three-stage pipeline
+across conditions, epoch durations, boundary tolerances, pre-rejection scenarios, event
+morphologies, and parameter sensitivity.
+}
+\label{tab:exp_overview}
+\begin{tabularx}{\textwidth}{p{3.2cm}X}
+\toprule
+\textbf{Script} & \textbf{Experiment and Description} \\
+\midrule
+\texttt{40\_exp1\_exp2\_\newline strategy\_\newline comparison.py}
+&
+\textbf{Exp 1 \& 2:} Compares all five conditions (BLINKER-concat, MNE-annot, DBO,
+Proposed-Mean, Proposed-Med) on both Raja and murat2018 datasets at 60-second epochs.
+Proposed-Mean runs before Proposed-Med (as specified in experimental design).
+Includes per-session macro-F1 results, Wilcoxon signed-rank tests with Bonferroni
+correction for 10 pairwise comparisons (one-tailed for proposed-vs-baseline,
+two-tailed for Mean-vs-Med), and micro-/macro-averaged metrics per condition.
+\\
+\midrule
+\texttt{41\_exp3\_epoch\_\newline duration.py}
+&
+\textbf{Exp 3:} Evaluates Proposed-Med (Strategy F with median estimator) across
+four epoch durations: 20, 30, 60, and 120 seconds. For each duration, re-runs the
+entire pipeline from scratch (Stage A--C) since epoch-level statistics change with
+epoch length. Reports per-session macro-F1, number of flagged epochs ($n_{\text{flagged}}$),
+and estimated threshold $\theta_c$. Two-tailed Wilcoxon signed-rank tests compare
+each non-reference duration against the 60-second baseline (Bonferroni correction
+for 3 comparisons).
+\\
+\midrule
+\texttt{42\_exp4\_boundary\_\newline tolerance.py}
+&
+\textbf{Exp 4:} Tests Proposed-Med stability across five boundary tolerances
+for event-level matching: 0, 50, 100, 150, and 200 milliseconds. Runs the pipeline
+once per session and evaluates against all tolerance levels to avoid redundant
+computation. Reports macro-averaged precision, recall, and F1 at each tolerance,
+and computes the range of macro-F1 across the five levels (range $<$ 1 percentage
+point indicates stability).
+\\
+\midrule
+\texttt{43\_exp5\_user\_\newline rejection.py}
+&
+\textbf{Exp 5:} Simulates user-initiated pre-rejection of epochs by withholding
+0\%, 20\%, and 40\% of valid epochs before Stage A. For each non-zero withholding
+rate, 20 independent random draws are performed; session-level F1 is averaged
+across the 20 replicates before Wilcoxon testing. Ground truth remains fixed
+(blinks in withheld epochs count as false negatives). Two-tailed Wilcoxon tests
+compare each non-zero rate against the 0\% reference (Bonferroni correction for
+2 comparisons).
+\\
+\midrule
+\texttt{44\_exp6\_\newline morphological.py}
+&
+\textbf{Exp 6:} Performs morphological analysis of detected and missed blinks by
+extracting 500-millisecond waveform windows centred on the peak of each blink event
+(both detected and ground-truth). Events are categorized as true positive (TP),
+false negative (FN), or false positive (FP). Waveforms are drawn from the frontal
+channel with the highest mean peak amplitude. Generates butterfly plots (overlaid
+single-trial waveforms with mean highlighted) for TP, FN, and FP categories,
+saved as PNG files for visual inspection of failure modes.
+\\
+\midrule
+\texttt{45\_exp7\_nmin\_\newline sensitivity.py}
+&
+\textbf{Exp 7:} Two-part analysis of the fallback threshold $n_{\min}$ (minimum
+suspicious-epoch count for Stage B to use flagged epochs).
+\textit{Part A} (threshold-variance): For sessions with $\geq 20$ flagged epochs,
+randomly subsamples the flagged set to $n \in \{2, 3, 5, 7, 10, 15, 20\}$;
+for each $n$, computes Stage~B threshold over 50 independent subsamples and
+records the inter-subsample standard deviation. The smallest $n$ at which variance
+stabilises provides an empirical lower bound for $n_{\min}$.
+\textit{Part B} (fallback-frequency): For each epoch duration in {20, 30, 60, 120} s
+and each candidate $n_{\min} \in \{3, 5, 10\}$, reports the fraction of sessions
+triggering fallback ($|\mathcal{B}| < n_{\min}$).
+\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
 \subsection{Experimental Setup}
 \label{sec:exp_setup}
 
