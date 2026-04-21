@@ -56,7 +56,7 @@ from src.utils.peak_overlap_metric import is_peak_overlap_match
 # Toggles
 # ---------------------------------------------------------------------------
 USE_MULTITHREAD: bool = True
-VERBOSE: bool = False
+VERBOSE: bool = True
 
 # ---------------------------------------------------------------------------
 # Paths

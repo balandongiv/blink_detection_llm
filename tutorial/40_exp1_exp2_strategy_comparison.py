@@ -61,7 +61,7 @@ from src.strategy_f.runner import channel_results_strategy_f
 # Toggles
 # ---------------------------------------------------------------------------
 USE_MULTITHREAD: bool = True
-VERBOSE: bool = False
+VERBOSE: bool = True
 
 # ---------------------------------------------------------------------------
 # Paths

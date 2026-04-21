@@ -53,7 +53,7 @@ from src.strategy_f.blink_threshold import compute_flagged_epoch_threshold
 # Toggles
 # ---------------------------------------------------------------------------
 USE_MULTITHREAD: bool = True
-VERBOSE: bool = False
+VERBOSE: bool = True
 
 # ---------------------------------------------------------------------------
 # Paths
