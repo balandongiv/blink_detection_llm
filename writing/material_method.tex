@@ -1,14 +1,19 @@
+\section{Method}
+\label{sec:method}
+
 \input{method/step1_select_bad_epoch}
 \input{method/step2_get_threshold_candidates}
 \input{method/step3_get_blink_regions}
 
 \subsection{Problem Definition}
+\label{sec:eval}
 
 Let a blink annotation be an interval \(g_i = [s_i, e_i]\) and a detector output be an interval \(d_j = [\hat{s}_j, \hat{e}_j]\). A detected region is counted as a true positive if it overlaps at least one unmatched ground-truth region. Unmatched detections are false positives; unmatched ground-truth regions are false negatives. This event-level treatment follows the logic of interval-based detection rather than pointwise accuracy, which is appropriate because blink boundaries are uncertain, annotation granularity varies, and non-event samples dominate the timeline \citep{saito2015precision,salles2024softed}.
 
 
 
 \subsection{Datasets}
+\label{sec:datasets}
 We validated our methods on four open datasets with data from over 200 subjects. This
 allowed us to evaluate experimentally strengths and potential limitations of different
 rejection methods. The datasets contained either EEG or MEG data. To obtain solid
@@ -27,9 +32,6 @@ Because the paper aims to be scientifically robust rather than merely brief-comp
 All threshold families are evaluated under the same preprocessing backbone. We recommend using frontal or prefrontal channels only, after polarity normalization if needed, detrending, and a blink-oriented band-pass in the low-frequency region. Candidate maxima are then detected from the preprocessed signal or a derived blink component, and candidate windows are expanded by local valley search or hysteresis rules. This standardization is necessary because the literature shows that filter choice, candidate signal choice, and reference scheme can strongly alter the apparent success of a threshold \citep{chang2016detection,kleifges2017blinker,tran2021detection,zhang2023method}.
 
 \subsection{Threshold Families}
-
-
-\section{Methods}
 
 
 
