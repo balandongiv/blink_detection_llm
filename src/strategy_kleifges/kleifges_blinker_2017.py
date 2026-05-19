@@ -12,11 +12,9 @@ def kleifges_strategy(
     prepared: PreparedEpochDetectionInput,
     valid_epoch_indices: list[int],
 ) -> list[dict]:
-    """In this experimentation, we employ the kleifges approach,its a bare as we remove
-    the logic that filter short blink (i.e.,  min_event_sep = float(params.get("min_event_sep", params["min_event_len"])
+    """In this experimentation, we employ the kleifges approach,its a bare as we remove the logic that filter short blink (i.e.,  min_event_sep = float(params.get("min_event_sep", params["min_event_len"])
 
-    We only concern the logic of getting the threshold, which is calculate via compute_basic_statistics,
-    and the filter strategy which is implemented via the scan_threshold_crossings function.
+    We only concern the logic of getting the threshold, which is calculated via compute_basic_statistics, and the filter strategy which is implemented via the scan_threshold_crossings function.
 
     Run Strategy A blink detection on each channel and map results to epochs.
 
@@ -31,9 +29,7 @@ def kleifges_strategy(
     params = BlinkDetector._build_detector_params(None, {})
     params["sfreq"] = float(prepared.sfreq)
 
-    epoch_boundaries = build_epoch_boundaries(
-        len(valid_epoch_indices), prepared.epoch_length_samples
-    )
+    epoch_boundaries = build_epoch_boundaries(len(valid_epoch_indices), prepared.epoch_length_samples)
 
     results = []
     for channel_index, channel_name in enumerate(prepared.channel_names):
