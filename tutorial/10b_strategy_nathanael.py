@@ -1,6 +1,6 @@
-"""Strategy B — MNE EOG-based blink detection tutorial.
+"""Strategy nathanael — MNE EOG-based blink detection tutorial.
 
-Runs Strategy B end-to-end using MNE's ``find_eog_events`` on 60-second
+Runs Strategy 10b nathanael end-to-end using MNE's ``find_eog_events`` on 60-second
 epochs, then scores each channel lane against a human-annotated ground truth.
 """
 
@@ -19,7 +19,7 @@ from blink_evaluation import evaluate_channels, load_ground_truth_annotations
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
 from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
-from src.strategy_b.runner import blink_position_strategy_b
+from src.strategy_nathanael_mne.runner import blink_position_strategy_nathanael
 
 FIF_PATH = Path(
     r"D:\dataset\drowsy_driving_raja_processed\S1\S01_20170519_043933\seg_data_raw\eeg_eog_raw.fif"
@@ -59,7 +59,7 @@ def main() -> None:
         resample_rate=RESAMPLE_RATE,
     )
     valid_epoch_indices = get_valid_epoch_indices(epochs)
-    channel_results = blink_position_strategy_b(
+    channel_results = blink_position_strategy_nathanael(
         prepared,
         valid_epoch_indices,
         half_window_s=MNE_HALF_WINDOW_S,
