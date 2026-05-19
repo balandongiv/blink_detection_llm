@@ -33,9 +33,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from src.analysis.lane_evaluation import evaluate_channel_lanes
+from blink_evaluation import evaluate_channels, load_annotation_as_reference, enrich_absolute_times
+from blink_evaluation.io import dataframe_to_annotations
 from src.common.epoch_input import prepare_epoch_detection_input
-from src.matching.blink_matching import enrich_absolute_times, load_annotation_as_reference
 from src.strategy_kleifges.kleifges_blinker_2017 import kleifges_strategy
 from src.strategy_b.runner import blink_position_strategy_b
 from src.strategy_c.runner import blink_position_strategy_c
@@ -58,7 +58,6 @@ DATASET_ROOT = Path(r"D:\dataset\sustained_attention_driving")
 # ---------------------------------------------------------------------------
 EPOCH_DURATION_S = 60.0
 HEALTH_DROP_THRESHOLD = 3      # drop epoch if health <= this value (30s granularity)
-PEAK_SIDE_TOLERANCE_S = 0.01
 FILTER_LOW = 1.0
 FILTER_HIGH = 20.0
 RESAMPLE_RATE = None
@@ -281,31 +280,29 @@ def run_one(
     ground_truth_valid = ground_truth_raw[
         ground_truth_raw["epoch_index"].isin(valid_epoch_indices)
     ].reset_index(drop=True)
-    ground_truth = enrich_absolute_times(ground_truth_valid, EPOCH_DURATION_S)
+    ground_truth_df = enrich_absolute_times(ground_truth_valid, EPOCH_DURATION_S)
+    gt_annotations = dataframe_to_annotations(ground_truth_df)
 
-    scored = evaluate_channel_lanes(
+    scored = evaluate_channels(
         channel_results,
-        ground_truth,
-        n_epochs=n_total,
-        sfreq=float(prepared.sfreq),
+        gt_annotations,
         epoch_duration=EPOCH_DURATION_S,
-        peak_side_tolerance_s=PEAK_SIDE_TOLERANCE_S,
     )
 
-    m = scored.best_metrics
+    em = scored.best_eval_result.event_metrics
     result = {
         "session": session_name,
         "strategy": strategy,
-        "best_channel": scored.best_result["channel"],
+        "best_channel": scored.best_channel,
         "n_total": n_total,
         "n_valid": n_valid,
         "n_dropped": n_dropped,
-        "tp": m.true_positives,
-        "fp": m.false_positives,
-        "fn": m.false_negatives,
-        "precision": m.precision,
-        "recall": m.recall,
-        "f1": m.f1,
+        "tp": em.tp,
+        "fp": em.fp,
+        "fn": em.fn,
+        "precision": em.precision,
+        "recall": em.recall,
+        "f1": em.f1,
     }
     cache.parent.mkdir(parents=True, exist_ok=True)
     cache.write_text(json.dumps(result, indent=2), encoding="utf-8")

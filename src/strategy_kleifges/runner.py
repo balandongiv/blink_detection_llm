@@ -12,11 +12,12 @@ from __future__ import annotations
 import mne
 import pandas as pd
 
-from src.analysis.lane_evaluation import LaneScoringResult
+import mne
+
+from blink_evaluation import ChannelEvaluationResult
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import PreparedEpochDetectionInput, prepare_epoch_detection_input
 from src.evaluation_runner import score_channel_results
-from src.matching.blink_matching import enrich_absolute_times
 
 from .kleifges_blinker_2017 import kleifges_strategy
 
@@ -35,24 +36,14 @@ def channel_results_strategy_a(
 
 def run_strategy_a(
     epochs: mne.Epochs,
-    ground_truth_raw: pd.DataFrame,
+    gt_annotations: mne.Annotations,
     *,
     filter_low: float = 1.0,
     filter_high: float = 20.0,
     resample_rate: float | None = None,
     epoch_duration: float = 60.0,
-    peak_side_tolerance_s: float = 0.01,
-) -> LaneScoringResult:
-    """Run Strategy A end-to-end on ``epochs`` and return scored results.
-
-    Parameters
-    ----------
-    epochs:
-        Pre-loaded MNE Epochs object.
-    ground_truth_raw:
-        Epoch-relative ground-truth blink table (columns: ``epoch_index``,
-        ``blink_onset``, ``blink_duration``).  Will be enriched internally.
-    """
+) -> ChannelEvaluationResult:
+    """Run Strategy A end-to-end on ``epochs`` and return scored results."""
     prepared = prepare_epoch_detection_input(
         epochs,
         pick_types_options={"eeg": True},
@@ -62,14 +53,10 @@ def run_strategy_a(
     )
     valid_epoch_indices = get_valid_epoch_indices(epochs)
     channel_results = channel_results_strategy_a(prepared, valid_epoch_indices)
-    ground_truth = enrich_absolute_times(ground_truth_raw, epoch_duration)
     return score_channel_results(
         channel_results,
-        ground_truth,
-        n_epochs=len(epochs),
-        sfreq=float(prepared.sfreq),
+        gt_annotations,
         epoch_duration=epoch_duration,
-        peak_side_tolerance_s=peak_side_tolerance_s,
     )
 
 

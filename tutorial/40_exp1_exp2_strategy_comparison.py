@@ -47,11 +47,10 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from src.analysis.lane_evaluation import evaluate_channel_lanes
+from blink_evaluation import evaluate_channels, load_ground_truth_annotations
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
 from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
-from src.matching.blink_matching import enrich_absolute_times, load_annotation_as_reference
 from src.strategy_kleifges.kleifges_blinker_2017 import kleifges_strategy
 from src.strategy_b.runner import blink_position_strategy_b
 from src.strategy_c.runner import blink_position_strategy_c
@@ -75,7 +74,6 @@ MURAT_DATASET_ROOT   = Path(r"D:\dataset\murat_2018")
 # Shared parameters
 # ---------------------------------------------------------------------------
 EPOCH_DURATION_S       = 60.0
-PEAK_SIDE_TOLERANCE_S  = 0.01
 FILTER_LOW             = 1.0
 FILTER_HIGH            = 20.0
 RESAMPLE_RATE          = None
@@ -269,30 +267,24 @@ def run_one(pair: dict, condition: str) -> dict:
     valid_epoch_indices = get_valid_epoch_indices(epochs)
     channel_results = _CONDITION_RUNNERS[condition](prepared, valid_epoch_indices)
 
-    ground_truth = enrich_absolute_times(
-        load_annotation_as_reference(pair["csv"], EPOCH_DURATION_S),
-        EPOCH_DURATION_S,
-    )
-    scored = evaluate_channel_lanes(
+    gt_annotations = load_ground_truth_annotations(pair["csv"], EPOCH_DURATION_S)
+    scored = evaluate_channels(
         channel_results,
-        ground_truth,
-        n_epochs=len(epochs),
-        sfreq=float(prepared.sfreq),
+        gt_annotations,
         epoch_duration=EPOCH_DURATION_S,
-        peak_side_tolerance_s=PEAK_SIDE_TOLERANCE_S,
     )
-    m = scored.best_metrics
+    em = scored.best_eval_result.event_metrics
     return {
         "dataset":      pair["dataset"],
         "session":      pair["name"],
         "condition":    condition,
-        "best_channel": scored.best_result["channel"],
-        "tp":           m.true_positives,
-        "fp":           m.false_positives,
-        "fn":           m.false_negatives,
-        "precision":    m.precision,
-        "recall":       m.recall,
-        "f1":           m.f1,
+        "best_channel": scored.best_channel,
+        "tp":           em.tp,
+        "fp":           em.fp,
+        "fn":           em.fn,
+        "precision":    em.precision,
+        "recall":       em.recall,
+        "f1":           em.f1,
     }
 
 

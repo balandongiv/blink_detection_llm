@@ -45,11 +45,11 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from src.analysis.lane_evaluation import evaluate_channel_lanes
+from blink_evaluation import evaluate_channels, load_annotation_as_reference, enrich_absolute_times
+from blink_evaluation.io import dataframe_to_annotations
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
 from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
-from src.matching.blink_matching import enrich_absolute_times, load_annotation_as_reference
 from src.strategy_f.runner import channel_results_strategy_f
 from src.utils.peak_overlap_metric import is_peak_overlap_match
 
@@ -300,31 +300,24 @@ def run_one_session(pair: dict) -> dict:
         load_annotation_as_reference(pair["csv"], EPOCH_DURATION_S),
         EPOCH_DURATION_S,
     )
-    scored = evaluate_channel_lanes(
-        channel_results,
-        ground_truth,
-        n_epochs=len(epochs),
-        sfreq=sfreq,
-        epoch_duration=EPOCH_DURATION_S,
-        peak_side_tolerance_s=PEAK_SIDE_TOLERANCE_S,
-    )
-    best_result     = scored.best_result
-    best_channel    = best_result["channel"]
+    gt_annotations  = dataframe_to_annotations(ground_truth)
+    scored          = evaluate_channels(channel_results, gt_annotations, epoch_duration=EPOCH_DURATION_S)
+    best_channel    = scored.best_channel
     best_predicted  = scored.best_predicted
-    signal_by_epoch = best_result["signal_by_epoch"]
+    signal_by_epoch = scored.best_channel_result["signal_by_epoch"]
 
     tp_pred_idx, fp_pred_idx, fn_gt_idx = _match_events(
         best_predicted, ground_truth, signal_by_epoch, sfreq
     )
 
-    m = scored.best_metrics
+    em = scored.best_eval_result.event_metrics
     return {
         "dataset":      pair["dataset"],
         "session":      pair["name"],
         "best_channel": best_channel,
-        "n_tp":         m.true_positives,
-        "n_fp":         m.false_positives,
-        "n_fn":         m.false_negatives,
+        "n_tp":         em.tp,
+        "n_fp":         em.fp,
+        "n_fn":         em.fn,
         "tp_records":   _build_records(best_predicted, tp_pred_idx, signal_by_epoch, sfreq),
         "fp_records":   _build_records(best_predicted, fp_pred_idx, signal_by_epoch, sfreq),
         "fn_records":   _build_records(ground_truth,   fn_gt_idx,   signal_by_epoch, sfreq),

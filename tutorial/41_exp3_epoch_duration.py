@@ -35,11 +35,10 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from src.analysis.lane_evaluation import evaluate_channel_lanes
+from blink_evaluation import evaluate_channels, load_ground_truth_annotations
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
 from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
-from src.matching.blink_matching import enrich_absolute_times, load_annotation_as_reference
 from src.strategy_f.runner import channel_results_strategy_f
 
 # ---------------------------------------------------------------------------
@@ -61,7 +60,6 @@ MURAT_DATASET_ROOT   = Path(r"D:\dataset\murat_2018")
 # ---------------------------------------------------------------------------
 EPOCH_DURATIONS_S      = [20.0, 30.0, 60.0, 120.0]
 REFERENCE_EPOCH_S      = 60.0   # Wilcoxon comparisons are against this duration
-PEAK_SIDE_TOLERANCE_S  = 0.01
 FILTER_LOW             = 1.0
 FILTER_HIGH            = 20.0
 RESAMPLE_RATE          = None
@@ -167,20 +165,10 @@ def run_one(pair: dict, epoch_duration_s: float) -> dict:
     }
     channel_results = channel_results_strategy_f(prepared, valid_epoch_indices, setting=setting)
 
-    ground_truth = enrich_absolute_times(
-        load_annotation_as_reference(pair["csv"], epoch_duration_s),
-        epoch_duration_s,
-    )
-    scored = evaluate_channel_lanes(
-        channel_results,
-        ground_truth,
-        n_epochs=len(epochs),
-        sfreq=float(prepared.sfreq),
-        epoch_duration=epoch_duration_s,
-        peak_side_tolerance_s=PEAK_SIDE_TOLERANCE_S,
-    )
-    m = scored.best_metrics
-    br = scored.best_result
+    gt_annotations = load_ground_truth_annotations(pair["csv"], float(epoch_duration_s))
+    scored = evaluate_channels(channel_results, gt_annotations, epoch_duration=epoch_duration_s)
+    em = scored.best_eval_result.event_metrics
+    br = scored.best_channel_result or {}
 
     # Strategy-F diagnostics from the best channel
     n_flagged        = int(br.get("n_flagged", 0))
@@ -191,12 +179,12 @@ def run_one(pair: dict, epoch_duration_s: float) -> dict:
         "dataset":              pair["dataset"],
         "session":              pair["name"],
         "epoch_duration_s":     epoch_duration_s,
-        "tp":                   m.true_positives,
-        "fp":                   m.false_positives,
-        "fn":                   m.false_negatives,
-        "precision":            m.precision,
-        "recall":               m.recall,
-        "f1":                   m.f1,
+        "tp":                   em.tp,
+        "fp":                   em.fp,
+        "fn":                   em.fn,
+        "precision":            em.precision,
+        "recall":               em.recall,
+        "f1":                   em.f1,
         "n_flagged":            n_flagged,
         "n_valid_epochs":       len(valid_epoch_indices),
         "threshold_center":     thresh_center,

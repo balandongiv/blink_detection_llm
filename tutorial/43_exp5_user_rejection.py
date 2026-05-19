@@ -41,11 +41,10 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from src.analysis.lane_evaluation import evaluate_channel_lanes
+from blink_evaluation import evaluate_channels, load_ground_truth_annotations
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
 from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
-from src.matching.blink_matching import enrich_absolute_times, load_annotation_as_reference
 from src.strategy_f.runner import channel_results_strategy_f
 
 # ---------------------------------------------------------------------------
@@ -66,7 +65,6 @@ MURAT_DATASET_ROOT   = Path(r"D:\dataset\murat_2018")
 # Experiment parameters
 # ---------------------------------------------------------------------------
 EPOCH_DURATION_S        = 60.0
-PEAK_SIDE_TOLERANCE_S   = 0.01
 WITHHOLDING_RATES       = [0.0, 0.2, 0.4]
 REFERENCE_RATE          = 0.0
 N_REPLICATIONS          = 20    # independent random draws per non-zero rate
@@ -143,12 +141,9 @@ _DATASET_LOADERS = {"raja": _load_raja_raw, "murat2018": _load_murat_raw}
 # ---------------------------------------------------------------------------
 
 def _evaluate_with_reduced_epochs(
-    pair: dict,
     prepared,
     valid_epoch_indices: list[int],
-    ground_truth,
-    n_epochs_total: int,
-    sfreq: float,
+    gt_annotations,
     withheld_set: set[int],
 ) -> float:
     """Run Proposed-Med on the subset of valid epochs that excludes *withheld_set*.
@@ -172,16 +167,8 @@ def _evaluate_with_reduced_epochs(
         "verbose":            VERBOSE,
     }
     channel_results = channel_results_strategy_f(prepared, reduced_valid, setting=setting)
-
-    scored = evaluate_channel_lanes(
-        channel_results,
-        ground_truth,
-        n_epochs=n_epochs_total,
-        sfreq=sfreq,
-        epoch_duration=EPOCH_DURATION_S,
-        peak_side_tolerance_s=PEAK_SIDE_TOLERANCE_S,
-    )
-    return scored.best_metrics.f1
+    scored = evaluate_channels(channel_results, gt_annotations, epoch_duration=EPOCH_DURATION_S)
+    return scored.best_eval_result.event_metrics.f1
 
 
 # ---------------------------------------------------------------------------
@@ -212,13 +199,8 @@ def run_one_session(pair: dict) -> list[dict]:
         resample_rate=RESAMPLE_RATE,
     )
     valid_epoch_indices = get_valid_epoch_indices(epochs)
-    n_epochs_total = len(epochs)
-    sfreq = float(prepared.sfreq)
 
-    ground_truth = enrich_absolute_times(
-        load_annotation_as_reference(pair["csv"], EPOCH_DURATION_S),
-        EPOCH_DURATION_S,
-    )
+    gt_annotations = load_ground_truth_annotations(pair["csv"], EPOCH_DURATION_S)
 
     records: list[dict] = []
 
@@ -228,8 +210,7 @@ def run_one_session(pair: dict) -> list[dict]:
         if rate == REFERENCE_RATE or n_withhold == 0:
             # No withholding: single deterministic run
             f1 = _evaluate_with_reduced_epochs(
-                pair, prepared, valid_epoch_indices, ground_truth,
-                n_epochs_total, sfreq, withheld_set=set()
+                prepared, valid_epoch_indices, gt_annotations, withheld_set=set()
             )
             rep_f1s = [f1]
         else:
@@ -239,8 +220,7 @@ def run_one_session(pair: dict) -> list[dict]:
                 rng = random.Random(RANDOM_SEED + rep)
                 withheld = set(rng.sample(valid_epoch_indices, n_withhold))
                 f1_rep = _evaluate_with_reduced_epochs(
-                    pair, prepared, valid_epoch_indices, ground_truth,
-                    n_epochs_total, sfreq, withheld_set=withheld
+                    prepared, valid_epoch_indices, gt_annotations, withheld_set=withheld
                 )
                 rep_f1s.append(f1_rep)
 

@@ -11,11 +11,10 @@ from __future__ import annotations
 import mne
 import pandas as pd
 
-from src.analysis.lane_evaluation import LaneScoringResult
+from blink_evaluation import ChannelEvaluationResult
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import PreparedEpochDetectionInput, prepare_epoch_detection_input
 from src.evaluation_runner import score_channel_results
-from src.matching.blink_matching import enrich_absolute_times
 
 from .core import blink_position_strategy_f
 
@@ -36,28 +35,27 @@ def channel_results_strategy_f(
 
 def run_strategy_f(
     epochs: mne.Epochs,
-    ground_truth_raw: pd.DataFrame,
+    gt_annotations: mne.Annotations,
     *,
     filter_low: float = 1.0,
     filter_high: float = 20.0,
     resample_rate: float | None = None,
     epoch_duration: float = 60.0,
-    peak_side_tolerance_s: float = 0.01,
     autoreject_random_state: int = 42,
     std_threshold: float = 1.5,
     k_confirm: float | None = None,
     k_flagged: float | None = None,
     k_nonflagged: float | None = None,
-) -> LaneScoringResult:
+) -> ChannelEvaluationResult:
     """Run Strategy F end-to-end on ``epochs`` and return scored results.
 
     Parameters
     ----------
     epochs:
         Pre-loaded MNE Epochs object.
-    ground_truth_raw:
-        Epoch-relative ground-truth blink table (columns: ``epoch_index``,
-        ``blink_onset``, ``blink_duration``).  Will be enriched internally.
+    gt_annotations:
+        Ground-truth blink annotations.  Use
+        :func:`~blink_evaluation.load_ground_truth_annotations` to load from CSV.
     filter_low:
         High-pass filter cut-off in Hz.
     filter_high:
@@ -66,8 +64,6 @@ def run_strategy_f(
         If not None, data are resampled to this rate before processing.
     epoch_duration:
         Duration of each epoch in seconds.
-    peak_side_tolerance_s:
-        Tolerance in seconds for matching detected blinks to ground truth.
     autoreject_random_state:
         Random seed forwarded to autoreject in Stage A.
     std_threshold:
@@ -99,14 +95,10 @@ def run_strategy_f(
         "k_nonflagged": k_nonflagged,
     }
     channel_results = channel_results_strategy_f(prepared, valid_epoch_indices, setting=setting)
-    ground_truth = enrich_absolute_times(ground_truth_raw, epoch_duration)
     return score_channel_results(
         channel_results,
-        ground_truth,
-        n_epochs=len(epochs),
-        sfreq=float(prepared.sfreq),
+        gt_annotations,
         epoch_duration=epoch_duration,
-        peak_side_tolerance_s=peak_side_tolerance_s,
     )
 
 

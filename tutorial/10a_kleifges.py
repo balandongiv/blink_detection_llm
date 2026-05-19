@@ -23,14 +23,13 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from src.analysis.lane_evaluation import evaluate_channel_lanes
+from blink_evaluation import evaluate_channels, load_ground_truth_annotations
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.strategy_kleifges.kleifges_blinker_2017 import (
     kleifges_strategy,
 )
 from src.common.epoch_input import prepare_epoch_detection_input
 from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
-from src.matching.blink_matching import enrich_absolute_times, load_annotation_as_reference
 
 FIF_PATH = Path(
     r"D:\dataset\drowsy_driving_raja_processed\S1\S01_20170519_043933\seg_data_raw\eeg_eog_raw.fif"
@@ -40,7 +39,6 @@ CSV_PATH = Path(
 )
 BRAIN_REGION_YAML = REPO_ROOT / "brain_region.yaml"
 EPOCH_DURATION_S = 30.0
-PEAK_SIDE_TOLERANCE_S = 0.01
 FILTER_LOW = 1.0
 FILTER_HIGH = 20.0
 RESAMPLE_RATE = None
@@ -69,24 +67,18 @@ def main() -> None:
     )
     valid_epoch_indices = get_valid_epoch_indices(epochs)
     predicted_annotations = kleifges_strategy(prepared, valid_epoch_indices)
-    ground_truth = enrich_absolute_times(
-        load_annotation_as_reference(CSV_PATH, EPOCH_DURATION_S),
-        EPOCH_DURATION_S,
-    )
+    gt_annotations = load_ground_truth_annotations(CSV_PATH, EPOCH_DURATION_S)
 
-    scored = evaluate_channel_lanes(
+    scored = evaluate_channels(
         predicted_annotations,
-        ground_truth,
-        n_epochs=len(epochs),
-        sfreq=float(prepared.sfreq),
+        gt_annotations,
         epoch_duration=EPOCH_DURATION_S,
-        peak_side_tolerance_s=PEAK_SIDE_TOLERANCE_S,
     )
 
-    m = scored.best_metrics
-    print(f"\nbest_channel={scored.best_result['channel']}")
-    print(f"tp={m.true_positives}  fp={m.false_positives}  fn={m.false_negatives}")
-    print(f"precision={m.precision:.4f}  recall={m.recall:.4f}  f1={m.f1:.4f}")
+    em = scored.best_eval_result.event_metrics
+    print(f"\nbest_channel={scored.best_channel}")
+    print(f"tp={em.tp}  fp={em.fp}  fn={em.fn}")
+    print(f"precision={em.precision:.4f}  recall={em.recall:.4f}  f1={em.f1:.4f}")
     print(f"\n=== Lane Summary (top 10) ===")
     print(scored.lane_summary.head(10).to_string(index=False))
     print(f"\n=== Best Channel Predicted Blinks (first 20) ===")

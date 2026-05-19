@@ -39,8 +39,8 @@ from time import perf_counter
 import mne
 import pandas as pd
 
-from src.analysis.lane_evaluation import LaneScoringResult
-from src.dataset_config import EPOCH_DURATION_S, FILTER_HIGH, FILTER_LOW, PEAK_SIDE_TOLERANCE_S
+from blink_evaluation import ChannelEvaluationResult
+from src.dataset_config import EPOCH_DURATION_S, FILTER_HIGH, FILTER_LOW
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
 from src.strategy_kleifges.runner import channel_results_strategy_a
@@ -69,14 +69,13 @@ DEFAULT_STRATEGIES: list[str] = [
 def _run_one_strategy(
     strategy: str,
     epochs: mne.Epochs,
-    ground_truth: pd.DataFrame,
+    gt_annotations: mne.Annotations,
     *,
     filter_low: float,
     filter_high: float,
     epoch_duration: float,
-    peak_side_tolerance_s: float,
-) -> LaneScoringResult:
-    """Run one named strategy and return its :class:`~pyblinker.analysis.lane_evaluation.LaneScoringResult`."""
+) -> ChannelEvaluationResult:
+    """Run one named strategy and return its :class:`~blink_evaluation.ChannelEvaluationResult`."""
     prepared = prepare_epoch_detection_input(
         epochs,
         pick_types_options={"eeg": True},
@@ -85,8 +84,6 @@ def _run_one_strategy(
         resample_rate=None,
     )
     valid_epoch_indices = get_valid_epoch_indices(epochs)
-    n_epochs = len(epochs)
-    sfreq = float(prepared.sfreq)
 
     if strategy == "strategy_a":
         channel_results = channel_results_strategy_a(prepared, valid_epoch_indices)
@@ -118,8 +115,6 @@ def _run_one_strategy(
             resample_rate=None,
         )
         channel_results = blink_position_strategy_c(detector, prepared_c, valid_epoch_indices)
-        # Use strategy C's own prepared for sfreq
-        sfreq = float(prepared_c.sfreq)
 
     elif strategy == "strategy_d":
         channel_results = blink_position_strategy_d(prepared, valid_epoch_indices)
@@ -130,23 +125,19 @@ def _run_one_strategy(
 
     return score_channel_results(
         channel_results,
-        ground_truth,
-        n_epochs=n_epochs,
-        sfreq=sfreq,
+        gt_annotations,
         epoch_duration=epoch_duration,
-        peak_side_tolerance_s=peak_side_tolerance_s,
     )
 
 
 def run_strategy_comparison(
     epochs: mne.Epochs,
-    ground_truth: pd.DataFrame,
+    gt_annotations: mne.Annotations,
     *,
     strategies: list[str] | None = None,
     filter_low: float = FILTER_LOW,
     filter_high: float = FILTER_HIGH,
     epoch_duration: float = EPOCH_DURATION_S,
-    peak_side_tolerance_s: float = PEAK_SIDE_TOLERANCE_S,
 ) -> pd.DataFrame:
     """Run multiple strategies on the same epochs and return a comparison summary.
 
@@ -154,10 +145,9 @@ def run_strategy_comparison(
     ----------
     epochs:
         Pre-loaded MNE Epochs object.
-    ground_truth:
-        Enriched ground-truth DataFrame (must already have ``absolute_onset_s``
-        and ``absolute_offset_s`` columns from
-        :func:`~pyblinker.matching.blink_matching.enrich_absolute_times`).
+    gt_annotations:
+        Ground-truth blink annotations.  Use
+        :func:`~blink_evaluation.load_ground_truth_annotations` to load from CSV.
     strategies:
         Strategy names to run.  Defaults to :data:`DEFAULT_STRATEGIES`.
         Pass any :data:`~pyblinker.epoch_detection_strategy_e.runner.ALL_E_VARIANTS`
@@ -168,8 +158,6 @@ def run_strategy_comparison(
         Band-pass filter upper edge in Hz.
     epoch_duration:
         Epoch duration in seconds.
-    peak_side_tolerance_s:
-        Peak-overlap tolerance in seconds.
 
     Returns
     -------
@@ -200,22 +188,21 @@ def run_strategy_comparison(
             scored = _run_one_strategy(
                 strategy,
                 epochs,
-                ground_truth,
+                gt_annotations,
                 filter_low=filter_low,
                 filter_high=filter_high,
                 epoch_duration=epoch_duration,
-                peak_side_tolerance_s=peak_side_tolerance_s,
             )
-            m = scored.best_metrics
+            em = scored.best_eval_result.event_metrics
             row.update(
                 {
-                    "best_channel": scored.best_result["channel"] if scored.best_result else "",
-                    "tp": int(m.true_positives),
-                    "fp": int(m.false_positives),
-                    "fn": int(m.false_negatives),
-                    "precision": float(m.precision),
-                    "recall": float(m.recall),
-                    "f1": float(m.f1),
+                    "best_channel": scored.best_channel or "",
+                    "tp": int(em.tp),
+                    "fp": int(em.fp),
+                    "fn": int(em.fn),
+                    "precision": float(em.precision),
+                    "recall": float(em.recall),
+                    "f1": float(em.f1),
                 }
             )
         except Exception:  # noqa: BLE001

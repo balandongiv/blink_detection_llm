@@ -8,7 +8,7 @@ import mne
 import numpy as np
 import pandas as pd
 
-from src.analysis.lane_evaluation import LaneScoringResult
+from blink_evaluation import ChannelEvaluationResult
 from src.blinker.get_blink_positions import scan_threshold_crossings_kleifges
 from src.blinker.pyblinker import BlinkDetector
 from src.common.bad_epochs import get_valid_epoch_indices
@@ -28,7 +28,6 @@ from src.config.strategy_c_defaults import (
     validate_strategy_c_options,
 )
 from src.evaluation_runner import score_channel_results
-from src.matching.blink_matching import enrich_absolute_times
 from src.utils.annotation_utils import create_annotation
 
 from .single_channel_autoreject import learn_strategy_c_thresholds
@@ -441,15 +440,14 @@ def epoch_detection_strategy_c_autoreject(
 
 def run_strategy_c(
     epochs: mne.Epochs,
-    ground_truth_raw: pd.DataFrame,
+    gt_annotations: mne.Annotations,
     *,
     filter_low: float = 1.0,
     filter_high: float = 20.0,
     epoch_duration: float = 60.0,
-    peak_side_tolerance_s: float = 0.01,
     autoreject_method: str | None = None,
     autoreject_random_state: int = 42,
-) -> LaneScoringResult:
+) -> ChannelEvaluationResult:
     """Run Strategy C end-to-end on ``epochs`` and return scored results."""
 
     method, scope = validate_strategy_c_options(
@@ -474,14 +472,10 @@ def run_strategy_c(
             "autoreject_method": method,
         },
     )
-    ground_truth = enrich_absolute_times(ground_truth_raw, epoch_duration)
     return score_channel_results(
         channel_results,
-        ground_truth,
-        n_epochs=len(epochs),
-        sfreq=float(prepared.sfreq),
+        gt_annotations,
         epoch_duration=epoch_duration,
-        peak_side_tolerance_s=peak_side_tolerance_s,
     )
 
 

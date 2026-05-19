@@ -28,11 +28,11 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from src.analysis.false_negative_analysis import collect_false_negatives
-from src.analysis.lane_evaluation import evaluate_channel_lanes
+from blink_evaluation import evaluate_channels, load_annotation_as_reference, enrich_absolute_times
+from blink_evaluation.io import dataframe_to_annotations
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
 from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
-from src.matching.blink_matching import enrich_absolute_times, load_annotation_as_reference
 from src.strategy_kleifges.kleifges_blinker_2017 import kleifges_strategy
 from src.strategy_f.runner import channel_results_strategy_f
 
@@ -82,33 +82,30 @@ def _run_strategy_f(prepared, valid_epoch_indices):
 def _score_strategy(
     strategy_name: str,
     channel_results: list[dict],
-    ground_truth: pd.DataFrame,
+    ground_truth_df: pd.DataFrame,
     *,
-    n_epochs: int,
     sfreq: float,
 ) -> tuple[object, pd.DataFrame]:
-    scored = evaluate_channel_lanes(
+    gt_annotations = dataframe_to_annotations(ground_truth_df)
+    scored = evaluate_channels(
         channel_results,
-        ground_truth,
-        n_epochs=n_epochs,
-        sfreq=sfreq,
+        gt_annotations,
         epoch_duration=EPOCH_DURATION_S,
-        peak_side_tolerance_s=PEAK_SIDE_TOLERANCE_S,
     )
     false_negatives = collect_false_negatives(
         scored.best_predicted,
-        ground_truth,
-        signal_by_epoch=scored.best_result["signal_by_epoch"],
+        ground_truth_df,
+        signal_by_epoch=scored.best_channel_result["signal_by_epoch"],
         sfreq=sfreq,
         peak_side_tolerance_s=PEAK_SIDE_TOLERANCE_S,
     ).sort_values(["absolute_onset_s", "epoch_index", "blink_onset"], ignore_index=True)
 
-    metrics = scored.best_metrics
+    em = scored.best_eval_result.event_metrics
     print(
-        f"{strategy_name}: channel={scored.best_result['channel']} "
-        f"TP={metrics.true_positives} FP={metrics.false_positives} "
-        f"FN={metrics.false_negatives} recall={metrics.recall:.4f} "
-        f"f1={metrics.f1:.4f}"
+        f"{strategy_name}: channel={scored.best_channel} "
+        f"TP={em.tp} FP={em.fp} "
+        f"FN={em.fn} recall={em.recall:.4f} "
+        f"f1={em.f1:.4f}"
     )
     return scored, false_negatives
 
@@ -232,7 +229,7 @@ def main() -> None:
         resample_rate=RESAMPLE_RATE,
     )
     valid_epoch_indices = get_valid_epoch_indices(epochs)
-    ground_truth = enrich_absolute_times(
+    ground_truth_df = enrich_absolute_times(
         load_annotation_as_reference(CSV_PATH, EPOCH_DURATION_S),
         EPOCH_DURATION_S,
     )
@@ -240,22 +237,20 @@ def main() -> None:
     f_scored, f_false_negatives = _score_strategy(
         "Strategy F",
         _run_strategy_f(prepared, valid_epoch_indices),
-        ground_truth,
-        n_epochs=len(epochs),
+        ground_truth_df,
         sfreq=float(prepared.sfreq),
     )
     _, a_false_negatives = _score_strategy(
         "Strategy A",
         kleifges_strategy(prepared, valid_epoch_indices),
-        ground_truth,
-        n_epochs=len(epochs),
+        ground_truth_df,
         sfreq=float(prepared.sfreq),
     )
 
     manual = _manual_annotations_with_epoch_columns(CSV_PATH)
     details = _attach_original_manual_labels(f_false_negatives, manual)
     details = _mark_strategy_a_recovery(details, a_false_negatives)
-    details.insert(0, "strategy_f_best_channel", f_scored.best_result["channel"])
+    details.insert(0, "strategy_f_best_channel", f_scored.best_channel)
     details.to_csv(OUTPUT_DETAILS_CSV, index=False)
 
     _write_annotation_csv(f_false_negatives, OUTPUT_ANNOTATION_CSV)

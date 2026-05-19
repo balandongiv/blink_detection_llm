@@ -37,11 +37,10 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from src.analysis.lane_evaluation import evaluate_channel_lanes
+from blink_evaluation import evaluate_channels, load_ground_truth_annotations
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
 from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
-from src.matching.blink_matching import enrich_absolute_times, load_annotation_as_reference
 from src.strategy_f.runner import channel_results_strategy_f
 
 # ---------------------------------------------------------------------------
@@ -62,8 +61,9 @@ MURAT_DATASET_ROOT   = Path(r"D:\dataset\murat_2018")
 # Experiment parameters
 # ---------------------------------------------------------------------------
 EPOCH_DURATION_S        = 60.0
-# Boundary tolerances in seconds (0 ms, 50 ms, 100 ms, 150 ms, 200 ms)
-TOLERANCES_S            = [0.0, 0.050, 0.100, 0.150, 0.200]
+# IoU thresholds for event matching (0 = any overlap, 0.5 = strict ≥50% overlap)
+IOU_THRESHOLDS          = [0.0, 0.1, 0.2, 0.3, 0.5]
+REFERENCE_IOU           = 0.1   # default IoU threshold used elsewhere
 FILTER_LOW              = 1.0
 FILTER_HIGH             = 20.0
 RESAMPLE_RATE           = None
@@ -163,16 +163,11 @@ def _run_session(pair: dict) -> dict:
     }
     channel_results = channel_results_strategy_f(prepared, valid_epoch_indices, setting=setting)
 
-    ground_truth = enrich_absolute_times(
-        load_annotation_as_reference(pair["csv"], EPOCH_DURATION_S),
-        EPOCH_DURATION_S,
-    )
+    gt_annotations = load_ground_truth_annotations(pair["csv"], EPOCH_DURATION_S)
     return {
         "pair":            pair,
         "channel_results": channel_results,
-        "ground_truth":    ground_truth,
-        "n_epochs":        len(epochs),
-        "sfreq":           float(prepared.sfreq),
+        "gt_annotations":  gt_annotations,
     }
 
 
@@ -185,34 +180,29 @@ def run_one_session_all_tolerances(pair: dict) -> list[dict]:
     -------
     List of metric dicts, one per tolerance value.
     """
-    session_data = _run_session(pair)
+    session_data    = _run_session(pair)
     channel_results = session_data["channel_results"]
-    ground_truth    = session_data["ground_truth"]
-    n_epochs        = session_data["n_epochs"]
-    sfreq           = session_data["sfreq"]
+    gt_annotations  = session_data["gt_annotations"]
 
     records: list[dict] = []
-    for tol_s in TOLERANCES_S:
-        scored = evaluate_channel_lanes(
+    for iou_thr in IOU_THRESHOLDS:
+        scored = evaluate_channels(
             channel_results,
-            ground_truth,
-            n_epochs=n_epochs,
-            sfreq=sfreq,
+            gt_annotations,
             epoch_duration=EPOCH_DURATION_S,
-            peak_side_tolerance_s=tol_s,
+            iou_threshold=iou_thr,
         )
-        m = scored.best_metrics
+        em = scored.best_eval_result.event_metrics
         records.append({
-            "dataset":        pair["dataset"],
-            "session":        pair["name"],
-            "tolerance_ms":   int(round(tol_s * 1000)),
-            "tolerance_s":    tol_s,
-            "tp":             m.true_positives,
-            "fp":             m.false_positives,
-            "fn":             m.false_negatives,
-            "precision":      m.precision,
-            "recall":         m.recall,
-            "f1":             m.f1,
+            "dataset":       pair["dataset"],
+            "session":       pair["name"],
+            "iou_threshold": iou_thr,
+            "tp":            em.tp,
+            "fp":            em.fp,
+            "fn":            em.fn,
+            "precision":     em.precision,
+            "recall":        em.recall,
+            "f1":            em.f1,
         })
     return records
 
@@ -225,12 +215,12 @@ def _print_per_session_table(results: list[dict], dataset_name: str) -> None:
     rows = [r for r in results if r["dataset"] == dataset_name]
     if not rows:
         return
-    rows.sort(key=lambda r: (r["session"], r["tolerance_ms"]))
+    rows.sort(key=lambda r: (r["session"], r["iou_threshold"]))
 
     W_sess = max(len(r["session"]) for r in rows)
     W_sess = max(W_sess, 8)
     header = (
-        f"{'session':<{W_sess}}  {'tol_ms':>7}  "
+        f"{'session':<{W_sess}}  {'iou_thr':>7}  "
         f"{'tp':>5}  {'fp':>5}  {'fn':>5}  "
         f"{'precision':>10}  {'recall':>8}  {'f1':>8}"
     )
@@ -248,7 +238,7 @@ def _print_per_session_table(results: list[dict], dataset_name: str) -> None:
             print(sep)
         prev_session = r["session"]
         print(
-            f"{r['session']:<{W_sess}}  {r['tolerance_ms']:>7}  "
+            f"{r['session']:<{W_sess}}  {r['iou_threshold']:>7.2f}  "
             f"{r['tp']:>5}  {r['fp']:>5}  {r['fn']:>5}  "
             f"{r['precision']:>10.4f}  {r['recall']:>8.4f}  {r['f1']:>8.4f}"
         )
@@ -256,39 +246,40 @@ def _print_per_session_table(results: list[dict], dataset_name: str) -> None:
 
 
 def _print_tolerance_summary(results: list[dict], dataset_name: str) -> None:
-    """Print macro-averaged P/R/F1 per tolerance and report the F1 range."""
+    """Print macro-averaged P/R/F1 per IoU threshold and report the F1 range."""
     rows = results if dataset_name == "all" else [
         r for r in results if r["dataset"] == dataset_name
     ]
     if not rows:
         return
 
-    buckets: dict[int, list[dict]] = defaultdict(list)
+    buckets: dict[float, list[dict]] = defaultdict(list)
     for r in rows:
-        buckets[r["tolerance_ms"]].append(r)
+        buckets[r["iou_threshold"]].append(r)
 
     header = (
-        f"{'tol_ms':>7}  {'N':>5}  "
+        f"{'iou_thr':>7}  {'N':>5}  "
         f"{'macro_P':>9}  {'macro_R':>9}  {'macro_F1':>9}"
     )
     sep = "-" * len(header)
 
     print(f"\n{'=' * len(header)}")
-    print(f"EXP 4 — TOLERANCE SUMMARY  —  {dataset_name.upper()}")
+    print(f"EXP 4 — IoU THRESHOLD SUMMARY  —  {dataset_name.upper()}")
     print(f"{'=' * len(header)}")
     print(header)
     print(sep)
 
     f1_values: list[float] = []
-    for tol_ms in sorted(buckets):
-        bucket = buckets[tol_ms]
+    for iou_thr in sorted(buckets):
+        bucket = buckets[iou_thr]
         macro_p  = float(np.mean([r["precision"] for r in bucket]))
         macro_r  = float(np.mean([r["recall"]    for r in bucket]))
         macro_f1 = float(np.mean([r["f1"]        for r in bucket]))
         f1_values.append(macro_f1)
+        ref_marker = " ←ref" if iou_thr == REFERENCE_IOU else ""
         print(
-            f"{tol_ms:>7}  {len(bucket):>5}  "
-            f"{macro_p:>9.4f}  {macro_r:>9.4f}  {macro_f1:>9.4f}"
+            f"{iou_thr:>7.2f}  {len(bucket):>5}  "
+            f"{macro_p:>9.4f}  {macro_r:>9.4f}  {macro_f1:>9.4f}{ref_marker}"
         )
 
     if f1_values:
@@ -310,7 +301,7 @@ def main() -> None:
 
     print(f"Raja sessions  : {len(raja_pairs)}")
     print(f"Murat subjects : {len(murat_pairs)}")
-    print(f"Tolerances (ms): {[int(t * 1000) for t in TOLERANCES_S]}")
+    print(f"IoU thresholds : {IOU_THRESHOLDS}")
 
     results: list[dict] = []
     errors:  list[str]  = []
