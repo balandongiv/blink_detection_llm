@@ -1,8 +1,9 @@
-"""Strategy A — Step 1 inspection tutorial.
+"""Kleifges approach inspection tutorial for a single FIF file.
 
-This tutorial runs Strategy A **Step 1 only**: blink candidate detection via
-``get_blink_position`` concatenated across valid epochs, followed by per-channel
-lane scoring against a human-annotated ground truth.
+This tutorial runs the Kleifges approach **Step 1 only** on a single FIF file:
+blink candidate detection via ``get_blink_position`` concatenated across valid
+epochs, followed by per-channel lane scoring against a human-annotated ground
+truth.
 
 It intentionally stops after ``evaluate_channel_lanes`` and prints a compact
 summary to stdout.  The downstream refinement steps (MAD-based epoch filtering,
@@ -24,8 +25,8 @@ if str(REPO_ROOT) not in sys.path:
 
 from src.analysis.lane_evaluation import evaluate_channel_lanes
 from src.common.bad_epochs import get_valid_epoch_indices
-from src.strategy_a.kleifges_blinker_2017 import (
-    kleifges_strategy_a,
+from src.strategy_kleifges.kleifges_blinker_2017 import (
+    kleifges_strategy,
 )
 from src.common.epoch_input import prepare_epoch_detection_input
 from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
@@ -38,18 +39,19 @@ CSV_PATH = Path(
     r"D:\dataset\drowsy_driving_raja\human_label_annotation_eeg\S1\S01_20170519_043933\ear_eog.csv"
 )
 BRAIN_REGION_YAML = REPO_ROOT / "brain_region.yaml"
-EPOCH_DURATION_S = 60.0
+EPOCH_DURATION_S = 30.0
 PEAK_SIDE_TOLERANCE_S = 0.01
 FILTER_LOW = 1.0
 FILTER_HIGH = 20.0
 RESAMPLE_RATE = None
 
-# Set to a positive integer to process only the first N epochs (useful for quick inspection).
+# Set to a positive integer to process only the first N epochs from this single FIF file
+# (useful for quick inspection).
 N_EPOCHS: int | None = None
 
 
 def main() -> None:
-    print("\n=== Blinking Strategy A ===")
+    print("\n=== Blinking Kleifges Approach ===")
     brain_channels = load_brain_region_channels(BRAIN_REGION_YAML)
     raw = load_raw_with_brain_channels(FIF_PATH, brain_channels)
     epochs = mne.make_fixed_length_epochs(
@@ -66,7 +68,7 @@ def main() -> None:
         resample_rate=RESAMPLE_RATE,
     )
     valid_epoch_indices = get_valid_epoch_indices(epochs)
-    predicted_annotations = kleifges_strategy_a(prepared, valid_epoch_indices)
+    predicted_annotations = kleifges_strategy(prepared, valid_epoch_indices)
     ground_truth = enrich_absolute_times(
         load_annotation_as_reference(CSV_PATH, EPOCH_DURATION_S),
         EPOCH_DURATION_S,

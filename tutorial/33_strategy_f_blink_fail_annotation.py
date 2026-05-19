@@ -33,7 +33,7 @@ from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
 from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
 from src.matching.blink_matching import enrich_absolute_times, load_annotation_as_reference
-from src.strategy_a.kleifges_blinker_2017 import kleifges_strategy_a
+from src.strategy_kleifges.kleifges_blinker_2017 import kleifges_strategy
 from src.strategy_f.runner import channel_results_strategy_f
 
 
@@ -246,7 +246,7 @@ def main() -> None:
     )
     _, a_false_negatives = _score_strategy(
         "Strategy A",
-        kleifges_strategy_a(prepared, valid_epoch_indices),
+        kleifges_strategy(prepared, valid_epoch_indices),
         ground_truth,
         n_epochs=len(epochs),
         sfreq=float(prepared.sfreq),

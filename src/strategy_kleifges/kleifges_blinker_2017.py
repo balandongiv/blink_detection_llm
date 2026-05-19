@@ -8,7 +8,7 @@ from .thresholding import compute_basic_statistics, scan_threshold_crossings
 import pandas as pd
 from src.blinker.get_blink_positions import scan_threshold_crossings_kleifges
 
-def kleifges_strategy_a(
+def kleifges_strategy(
     prepared: PreparedEpochDetectionInput,
     valid_epoch_indices: list[int],
 ) -> list[dict]:
@@ -67,4 +67,4 @@ def kleifges_strategy_a(
     return results
 
 
-__all__ = ["kleifges_strategy_a"]
+__all__ = ["kleifges_strategy"]

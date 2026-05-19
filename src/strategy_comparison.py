@@ -43,7 +43,7 @@ from src.analysis.lane_evaluation import LaneScoringResult
 from src.dataset_config import EPOCH_DURATION_S, FILTER_HIGH, FILTER_LOW, PEAK_SIDE_TOLERANCE_S
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
-from src.strategy_a.runner import channel_results_strategy_a
+from src.strategy_kleifges.runner import channel_results_strategy_a
 from src.strategy_b.runner import blink_position_strategy_b
 from src.strategy_c.runner import blink_position_strategy_c
 from src.strategy_d.runner import blink_position_strategy_d

@@ -31,7 +31,7 @@ from src.analysis.lane_evaluation import evaluate_channel_lanes
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
 from src.matching.blink_matching import enrich_absolute_times, load_annotation_as_reference
-from src.strategy_a.kleifges_blinker_2017 import kleifges_strategy_a
+from src.strategy_kleifges.kleifges_blinker_2017 import kleifges_strategy
 from src.strategy_b.runner import blink_position_strategy_b
 from src.strategy_c.runner import blink_position_strategy_c
 from src.strategy_f.runner import channel_results_strategy_f
@@ -136,7 +136,7 @@ def discover_pairs(root: Path, use_yaml_filter: bool = False) -> list[dict]:
 # ---------------------------------------------------------------------------
 
 def _run_strategy_a(prepared, valid_epoch_indices):
-    return kleifges_strategy_a(prepared, valid_epoch_indices)
+    return kleifges_strategy(prepared, valid_epoch_indices)
 
 
 def _run_strategy_b(prepared, valid_epoch_indices):
