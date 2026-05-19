@@ -32,7 +32,7 @@ if str(REPO_ROOT) not in sys.path:
 from blink_evaluation import evaluate_channels, load_ground_truth_annotations
 from src.common.epoch_input import prepare_epoch_detection_input
 from src.strategy_kleifges.kleifges_blinker_2017 import kleifges_strategy
-from src.strategy_b.runner import blink_position_strategy_b
+from src.strategy_nathanael_mne.runner import blink_position_strategy_nathanael
 from src.strategy_c.runner import blink_position_strategy_c
 from src.strategy_f.runner import channel_results_strategy_f
 
@@ -150,7 +150,7 @@ def _run_strategy_a(prepared, valid_epoch_indices):
 
 
 def _run_strategy_b(prepared, valid_epoch_indices):
-    return blink_position_strategy_b(
+    return blink_position_strategy_nathanael(
         prepared,
         valid_epoch_indices,
         half_window_s=MNE_HALF_WINDOW_S,
