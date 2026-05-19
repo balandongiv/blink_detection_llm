@@ -1,4 +1,10 @@
-"""Cross-strategy channel lane evaluation utilities."""
+"""Cross-strategy channel lane evaluation utilities.
+
+Evaluation is performed with the ``blink_evaluation`` library using IoU-based
+event matching.  The ``peak_side_tolerance_s`` parameter is forwarded as
+interval padding (``pad``) in the IoU matcher so the tolerance sweep in
+experiment 4 continues to work without modification.
+"""
 
 from __future__ import annotations
 
@@ -6,10 +12,10 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-from src.common.validation import (
-    BlinkValidationMetrics,
-    match_blink_tables,
-)
+from blink_evaluation import evaluate_annotations
+from blink_evaluation.io import dataframe_to_annotations
+
+from src.common.validation import BlinkValidationMetrics
 from src.matching.blink_matching import enrich_absolute_times
 
 
@@ -39,61 +45,83 @@ def evaluate_channel_lanes(
     sfreq: float,
     epoch_duration: float,
     peak_side_tolerance_s: float = 0.01,
+    iou_threshold: float = 0.1,
 ) -> LaneScoringResult:
     """Score every channel result against ground truth and select the best one.
 
     Parameters
     ----------
     channel_results:
-        List of per-channel dicts as returned by
-        :func:`~pyblinker.epoch_detection_strategy_a.kleifges_blinker_2017.blink_position_strategy_a`.
+        List of per-channel dicts as returned by the strategy runners.
         Each dict must have keys: ``channel``, ``df_positions``, ``mapped_candidates``,
         ``signal_by_epoch``.
     ground_truth:
-        Enriched ground_truth blink DataFrame.  Must already have ``absolute_onset_s``
+        Enriched ground-truth blink DataFrame.  Must already have ``absolute_onset_s``
         and ``absolute_offset_s`` columns — call
-        :func:`~pyblinker.matching.blink_matching.enrich_absolute_times` before passing.
+        :func:`~src.matching.blink_matching.enrich_absolute_times` before passing.
     n_epochs:
-        Total number of epochs (used for agreement metrics).
+        Total number of epochs (kept for API compatibility, not used internally).
     sfreq:
-        Sampling frequency in Hz.
+        Sampling frequency in Hz (kept for API compatibility, not used internally).
     epoch_duration:
         Epoch duration in seconds, used to enrich ``mapped_candidates`` with absolute times.
     peak_side_tolerance_s:
-        Tolerance passed to the peak-overlap matcher.
+        Forwarded as interval padding in the IoU matcher (``pad``).  A value of 0.05 s
+        expands each predicted and reference interval by 0.05 s on each side before
+        computing intersection-over-union.
+    iou_threshold:
+        Minimum IoU (after padding) required for a predicted–reference pair to count
+        as a true positive.
 
     Returns
     -------
     LaneScoringResult
         Contains ``lane_summary``, ``best_result``, ``best_metrics``, ``best_predicted``.
     """
+    gt_annotations = dataframe_to_annotations(ground_truth)
+
     lane_rows: list[dict] = []
     best_result = None
-    best_metrics = None
+    best_metrics: BlinkValidationMetrics | None = None
 
     for channel_result in channel_results:
         predicted = enrich_absolute_times(channel_result["mapped_candidates"], epoch_duration)
-        metrics = match_blink_tables(
-            predicted,
-            ground_truth,
-            n_epochs=n_epochs,
-            signal_by_epoch=channel_result["signal_by_epoch"],
-            sfreq=sfreq,
-            peak_side_tolerance_s=peak_side_tolerance_s,
+        pred_annotations = dataframe_to_annotations(predicted)
+
+        eval_result = evaluate_annotations(
+            gt_annotations,
+            pred_annotations,
+            target_label="blink",
+            iou_threshold=iou_threshold,
+            pad=peak_side_tolerance_s,
         )
+
+        em = eval_result.event_metrics
+        metrics = BlinkValidationMetrics(
+            true_positives=em.tp,
+            false_positives=em.fp,
+            false_negatives=em.fn,
+            precision=em.precision,
+            recall=em.recall,
+            f1=em.f1,
+            epoch_blink_agreement=0.0,
+            blink_count_agreement=0.0,
+        )
+
         lane_rows.append(
             {
                 "channel": channel_result["channel"],
                 "raw_candidate_count": int(len(channel_result["df_positions"])),
                 "mapped_candidate_count": int(len(channel_result["mapped_candidates"])),
-                "tp": int(metrics.true_positives),
-                "fp": int(metrics.false_positives),
-                "fn": int(metrics.false_negatives),
-                "precision": float(metrics.precision),
-                "recall": float(metrics.recall),
-                "f1": float(metrics.f1),
+                "tp": em.tp,
+                "fp": em.fp,
+                "fn": em.fn,
+                "precision": em.precision,
+                "recall": em.recall,
+                "f1": em.f1,
             }
         )
+
         if best_metrics is None or (
             metrics.f1,
             metrics.true_positives,

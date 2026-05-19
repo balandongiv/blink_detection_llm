@@ -27,7 +27,8 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from pyblinker.blinker import BlinkDetector
-from src.common.validation import match_blink_tables
+from blink_evaluation import evaluate_annotations
+from blink_evaluation.io import dataframe_to_annotations
 from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
 from src.matching.blink_matching import load_annotation_as_reference
 
@@ -152,27 +153,28 @@ def run_one(pair_name: str, fif_path: Path, csv_path: Path) -> dict:
 
     predicted = _annotations_to_continuous_prediction(annotations)
     reference = _reference_to_continuous_lane(csv_path)
-    signal = detector.raw_data.get_data(picks=channel)[0]
 
-    metrics = match_blink_tables(
-        predicted,
-        reference,
-        n_epochs=1,
-        signal_by_epoch={0: signal},
-        sfreq=float(detector.sfreq),
-        peak_side_tolerance_s=PEAK_SIDE_TOLERANCE_S,
+    pred_ann = dataframe_to_annotations(predicted, onset_col="blink_onset")
+    gt_ann = dataframe_to_annotations(reference, onset_col="blink_onset")
+    result = evaluate_annotations(
+        gt_ann,
+        pred_ann,
+        target_label="blink",
+        iou_threshold=0.1,
+        pad=PEAK_SIDE_TOLERANCE_S,
     )
+    em = result.event_metrics
 
     return {
         "pair": pair_name,
         "strategy": STRATEGY_NAME,
         "best_channel": channel,
-        "tp": metrics.true_positives,
-        "fp": metrics.false_positives,
-        "fn": metrics.false_negatives,
-        "precision": metrics.precision,
-        "recall": metrics.recall,
-        "f1": metrics.f1,
+        "tp": em.tp,
+        "fp": em.fp,
+        "fn": em.fn,
+        "precision": em.precision,
+        "recall": em.recall,
+        "f1": em.f1,
         "detected": int(len(predicted)),
         "good_blinks": int(n_good_blinks),
         "raw_candidates": int(len(df_positions)),

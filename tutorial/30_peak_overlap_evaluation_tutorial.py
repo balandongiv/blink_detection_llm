@@ -22,9 +22,9 @@ _RUNNER_MOD = importlib.util.module_from_spec(_RUNNER_SPEC)  # type: ignore[arg-
 sys.modules[_RUNNER_SPEC.name] = _RUNNER_MOD
 _RUNNER_SPEC.loader.exec_module(_RUNNER_MOD)  # type: ignore[union-attr]
 
-from src.common.validation import (
-    match_blink_tables,
-)
+from blink_evaluation import evaluate_annotations
+from blink_evaluation.io import dataframe_to_annotations
+from src.common.validation import BlinkValidationMetrics
 from src.utils.peak_overlap_metric import (
     calculate_interval_overlap_ratio,
     is_peak_overlap_match,
@@ -201,22 +201,24 @@ def build_tutorial_report(
     repaired_matches = pd.read_csv(run_dir / "strategy_c_boundary_repair_best_matches.csv")
     repaired_pred_status = pd.read_csv(run_dir / "strategy_c_boundary_repair_best_pred_status.csv")
 
-    baseline_metrics = match_blink_tables(
-        baseline_candidates,
-        reference,
-        n_epochs=len(epochs),
-        signal_by_epoch=signal_by_epoch,
-        sfreq=sfreq,
-        peak_side_tolerance_s=peak_side_tolerance_s,
-    )
-    repaired_metrics = match_blink_tables(
-        repaired_candidates,
-        reference,
-        n_epochs=len(epochs),
-        signal_by_epoch=signal_by_epoch,
-        sfreq=sfreq,
-        peak_side_tolerance_s=peak_side_tolerance_s,
-    )
+    def _eval(predicted: pd.DataFrame) -> BlinkValidationMetrics:
+        pred_ann = dataframe_to_annotations(predicted)
+        gt_ann   = dataframe_to_annotations(reference)
+        result   = evaluate_annotations(
+            gt_ann, pred_ann,
+            target_label="blink",
+            iou_threshold=0.1,
+            pad=peak_side_tolerance_s,
+        )
+        em = result.event_metrics
+        return BlinkValidationMetrics(
+            true_positives=em.tp, false_positives=em.fp, false_negatives=em.fn,
+            precision=em.precision, recall=em.recall, f1=em.f1,
+            epoch_blink_agreement=0.0, blink_count_agreement=0.0,
+        )
+
+    baseline_metrics = _eval(baseline_candidates)
+    repaired_metrics = _eval(repaired_candidates)
 
     cases: list[tuple[dict, pd.Series | None, pd.Series | None]] = []
     target_refs = [

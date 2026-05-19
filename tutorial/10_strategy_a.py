@@ -4,11 +4,8 @@ This tutorial runs Strategy A **Step 1 only**: blink candidate detection via
 ``get_blink_position`` concatenated across valid epochs, followed by per-channel
 lane scoring against a human-annotated ground truth.
 
-It intentionally stops after ``evaluate_channel_lanes`` and prints a compact
-summary to stdout.  The downstream refinement steps (MAD-based epoch filtering,
-multi-channel voting, blink-table normalization, and annotation export) are not
-exercised here — see ``tutorial/32_strategy_a_step1_peak_overlap_fn_report.py``
-for a full FN analysis report that continues from the same scoring point.
+Evaluation is performed with the ``blink_evaluation`` library using IoU-based
+event matching (``iou_threshold=0.1``).
 """
 
 from __future__ import annotations
@@ -17,16 +14,17 @@ from pathlib import Path
 import sys
 
 import mne
+import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from src.analysis.lane_evaluation import evaluate_channel_lanes
+from blink_evaluation import evaluate_annotations
+from blink_evaluation.io import dataframe_to_annotations
+
 from src.common.bad_epochs import get_valid_epoch_indices
-from src.strategy_a.kleifges_blinker_2017 import (
-    kleifges_strategy_a,
-)
+from src.strategy_a.kleifges_blinker_2017 import kleifges_strategy_a
 from src.common.epoch_input import prepare_epoch_detection_input
 from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
 from src.matching.blink_matching import enrich_absolute_times, load_annotation_as_reference
@@ -39,7 +37,7 @@ CSV_PATH = Path(
 )
 BRAIN_REGION_YAML = REPO_ROOT / "brain_region.yaml"
 EPOCH_DURATION_S = 60.0
-PEAK_SIDE_TOLERANCE_S = 0.01
+IOU_THRESHOLD = 0.1
 FILTER_LOW = 1.0
 FILTER_HIGH = 20.0
 RESAMPLE_RATE = None
@@ -55,8 +53,8 @@ def main() -> None:
     epochs = mne.make_fixed_length_epochs(
         raw, duration=EPOCH_DURATION_S, preload=True, verbose="ERROR"
     )
-    if N_EPOCHS is not None:
-        epochs = epochs[:N_EPOCHS]
+
+    print(f"Total epochs: {len(epochs)}")
 
     prepared = prepare_epoch_detection_input(
         epochs,
@@ -66,29 +64,73 @@ def main() -> None:
         resample_rate=RESAMPLE_RATE,
     )
     valid_epoch_indices = get_valid_epoch_indices(epochs)
+
+    # Find the blink candidates
     channel_results = kleifges_strategy_a(prepared, valid_epoch_indices)
-    ground_truth = enrich_absolute_times(
+
+    ground_truth_df = enrich_absolute_times(
         load_annotation_as_reference(CSV_PATH, EPOCH_DURATION_S),
         EPOCH_DURATION_S,
     )
+    gt_annotations = dataframe_to_annotations(ground_truth_df)
 
-    scored = evaluate_channel_lanes(
-        channel_results,
-        ground_truth,
-        n_epochs=len(epochs),
-        sfreq=float(prepared.sfreq),
-        epoch_duration=EPOCH_DURATION_S,
-        peak_side_tolerance_s=PEAK_SIDE_TOLERANCE_S,
+    lane_rows: list[dict] = []
+    best_channel: str | None = None
+    best_eval_result = None
+
+    for cr in channel_results:
+        predicted_df = enrich_absolute_times(cr["mapped_candidates"], EPOCH_DURATION_S)
+        pred_annotations = dataframe_to_annotations(predicted_df)
+
+        result = evaluate_annotations(
+            gt_annotations,
+            pred_annotations,
+            target_label="blink",
+            iou_threshold=IOU_THRESHOLD,
+        )
+
+        em = result.event_metrics
+        lane_rows.append(
+            {
+                "channel": cr["channel"],
+                "raw_candidate_count": int(len(cr["df_positions"])),
+                "mapped_candidate_count": int(len(cr["mapped_candidates"])),
+                "tp": em.tp,
+                "fp": em.fp,
+                "fn": em.fn,
+                "precision": em.precision,
+                "recall": em.recall,
+                "f1": em.f1,
+            }
+        )
+
+        if best_eval_result is None or (
+            em.f1,
+            em.tp,
+            -em.fp,
+            cr["channel"],
+        ) > (
+            best_eval_result.event_metrics.f1,
+            best_eval_result.event_metrics.tp,
+            -best_eval_result.event_metrics.fp,
+            best_channel,
+        ):
+            best_channel = cr["channel"]
+            best_eval_result = result
+
+    lane_summary = (
+        pd.DataFrame(lane_rows)
+        .sort_values(["f1", "tp", "fp", "channel"], ascending=[False, False, True, True])
+        .reset_index(drop=True)
     )
 
-    m = scored.best_metrics
-    print(f"\nbest_channel={scored.best_result['channel']}")
-    print(f"tp={m.true_positives}  fp={m.false_positives}  fn={m.false_negatives}")
+    m = best_eval_result.event_metrics
+    print(f"\nbest_channel={best_channel}")
+    print(f"tp={m.tp}  fp={m.fp}  fn={m.fn}")
     print(f"precision={m.precision:.4f}  recall={m.recall:.4f}  f1={m.f1:.4f}")
     print(f"\n=== Lane Summary (top 10) ===")
-    print(scored.lane_summary.head(10).to_string(index=False))
+    print(lane_summary.head(10).to_string(index=False))
     print(f"\n=== Best Channel Predicted Blinks (first 20) ===")
-
 
 
 if __name__ == "__main__":

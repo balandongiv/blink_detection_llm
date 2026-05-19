@@ -16,7 +16,8 @@ from src.blinker.get_blink_positions import get_blink_position
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_channel import map_concatenated_blinks_to_epochs
 from src.common.epoch_input import prepare_epoch_detection_input
-from src.common.validation import match_blink_tables
+from blink_evaluation import evaluate_annotations
+from blink_evaluation.io import dataframe_to_annotations
 from src.utils.peak_overlap_metric import (
     calculate_interval_overlap_ratio,
     is_peak_overlap_match,
@@ -182,45 +183,45 @@ def main() -> None:
 
     reference = enrich_absolute_times(load_annotation_as_reference(CSV_PATH, epoch_duration=EPOCH_DURATION_S))
 
+    gt_annotations = dataframe_to_annotations(reference)
+
     lane_rows = []
     best_result = None
-    best_metrics = None
+    best_eval_result = None
     for channel_result in channel_results:
         predicted = enrich_absolute_times(channel_result["mapped_candidates"])
-        metrics = match_blink_tables(
-            predicted,
-            reference,
-            n_epochs=len(epochs),
-            signal_by_epoch=channel_result["signal_by_epoch"],
-            sfreq=float(prepared.sfreq),
-            peak_side_tolerance_s=PEAK_SIDE_TOLERANCE_S,
+        pred_annotations = dataframe_to_annotations(predicted)
+        eval_result = evaluate_annotations(
+            gt_annotations,
+            pred_annotations,
+            target_label="blink",
+            iou_threshold=0.1,
+            pad=PEAK_SIDE_TOLERANCE_S,
         )
+        em = eval_result.event_metrics
         lane_rows.append(
             {
                 "channel": channel_result["channel"],
                 "raw_candidate_count": int(len(channel_result["df_positions"])),
                 "mapped_candidate_count": int(len(channel_result["mapped_candidates"])),
-                "tp": int(metrics.true_positives),
-                "fp": int(metrics.false_positives),
-                "fn": int(metrics.false_negatives),
-                "precision": float(metrics.precision),
-                "recall": float(metrics.recall),
-                "f1": float(metrics.f1),
+                "tp": int(em.tp),
+                "fp": int(em.fp),
+                "fn": int(em.fn),
+                "precision": float(em.precision),
+                "recall": float(em.recall),
+                "f1": float(em.f1),
             }
         )
-        if best_metrics is None or (
-            metrics.f1,
-            metrics.true_positives,
-            -metrics.false_positives,
-            channel_result["channel"],
+        if best_eval_result is None or (
+            em.f1, em.tp, -em.fp, channel_result["channel"]
         ) > (
-            best_metrics.f1,
-            best_metrics.true_positives,
-            -best_metrics.false_positives,
+            best_eval_result.event_metrics.f1,
+            best_eval_result.event_metrics.tp,
+            -best_eval_result.event_metrics.fp,
             best_result["channel"],
         ):
             best_result = channel_result
-            best_metrics = metrics
+            best_eval_result = eval_result
 
     lane_summary = pd.DataFrame(lane_rows).sort_values(
         ["f1", "tp", "fp", "channel"],
@@ -230,7 +231,7 @@ def main() -> None:
     signal_channel = best_result["channel"]
     signal_by_epoch = best_result["signal_by_epoch"]
     predicted = enrich_absolute_times(best_result["mapped_candidates"])
-    metrics = best_metrics
+    metrics = best_eval_result.event_metrics
 
     example_ref = reference.iloc[0]
     example_pred = nearest_row(
@@ -252,9 +253,9 @@ def main() -> None:
 
     print()
     print("Metrics Against Ground Truth")
-    print(f"tp={metrics.true_positives}")
-    print(f"fp={metrics.false_positives}")
-    print(f"fn={metrics.false_negatives}")
+    print(f"tp={metrics.tp}")
+    print(f"fp={metrics.fp}")
+    print(f"fn={metrics.fn}")
     print(f"precision={metrics.precision:.4f}")
     print(f"recall={metrics.recall:.4f}")
     print(f"f1={metrics.f1:.4f}")

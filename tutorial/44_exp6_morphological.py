@@ -44,13 +44,14 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from blink_evaluation import evaluate_annotations
+from blink_evaluation.io import dataframe_to_annotations
 from src.analysis.lane_evaluation import evaluate_channel_lanes
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
 from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
 from src.matching.blink_matching import enrich_absolute_times, load_annotation_as_reference
 from src.strategy_f.runner import channel_results_strategy_f
-from src.utils.peak_overlap_metric import is_peak_overlap_match
 
 # ---------------------------------------------------------------------------
 # Toggles
@@ -148,50 +149,28 @@ _DATASET_LOADERS = {"raja": _load_raja_raw, "murat2018": _load_murat_raw}
 def _match_events(
     predicted,
     ground_truth,
-    signal_by_epoch: dict,
-    sfreq: float,
 ) -> tuple[list[int], list[int], list[int]]:
-    """Greedy overlap matching (same algorithm as match_blink_tables).
+    """IoU-based optimal matching via blink_evaluation.
 
-    Returns indices into *predicted* and *ground_truth* DataFrames.
+    Returns 0-based integer indices into the reset-indexed *predicted* and
+    *ground_truth* DataFrames.
     """
-    predicted   = predicted.reset_index(drop=True)
+    predicted    = predicted.reset_index(drop=True)
     ground_truth = ground_truth.reset_index(drop=True)
 
-    matched_pred: set[int] = set()
-    matched_gt:   set[int] = set()
+    pred_ann = dataframe_to_annotations(predicted)
+    gt_ann   = dataframe_to_annotations(ground_truth)
 
-    epoch_indices = sorted(
-        set(predicted["epoch_index"].tolist())
-        | set(ground_truth["epoch_index"].tolist())
+    result = evaluate_annotations(
+        gt_ann, pred_ann,
+        target_label="blink",
+        iou_threshold=0.1,
+        pad=PEAK_SIDE_TOLERANCE_S,
     )
 
-    for ep in epoch_indices:
-        pred_group = predicted[predicted["epoch_index"] == ep]
-        gt_group   = ground_truth[ground_truth["epoch_index"] == ep]
-        unmatched_gt = set(gt_group.index.tolist())
-        epoch_signal = np.asarray(signal_by_epoch.get(int(ep), []), dtype=float)
-
-        for pi, pred_row in pred_group.sort_values("blink_onset").iterrows():
-            best_gi = None
-            for gi in list(unmatched_gt):
-                gt_row = gt_group.loc[gi]
-                if is_peak_overlap_match(
-                    pred_row, gt_row,
-                    epoch_signal=epoch_signal,
-                    sfreq=sfreq,
-                    peak_side_tolerance_s=PEAK_SIDE_TOLERANCE_S,
-                ):
-                    best_gi = gi
-                    break
-            if best_gi is not None:
-                matched_pred.add(pi)
-                matched_gt.add(best_gi)
-                unmatched_gt.remove(best_gi)
-
-    tp_pred = list(matched_pred)
-    fp_pred = [i for i in predicted.index if i not in matched_pred]
-    fn_gt   = [i for i in ground_truth.index if i not in matched_gt]
+    tp_pred = [m.pred_index for m in result.true_positives]
+    fp_pred = [e.index for e in result.false_positives]
+    fn_gt   = [e.index for e in result.false_negatives]
     return tp_pred, fp_pred, fn_gt
 
 
@@ -292,11 +271,12 @@ def run_one_session(pair: dict) -> dict:
     )
     best_result  = scored.best_result
     best_channel = best_result["channel"]
-    best_predicted = scored.best_predicted
+    best_predicted = scored.best_predicted.reset_index(drop=True)
+    ground_truth   = ground_truth.reset_index(drop=True)
     signal_by_epoch = best_result["signal_by_epoch"]
 
     tp_pred_idx, fp_pred_idx, fn_gt_idx = _match_events(
-        best_predicted, ground_truth, signal_by_epoch, sfreq
+        best_predicted, ground_truth
     )
 
     def _windows_from_df(df, indices: list[int]) -> list[np.ndarray]:

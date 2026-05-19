@@ -173,6 +173,7 @@ def get_valid_epochs_from_health(
         return list(range(n_epochs))
 
     df = pd.read_csv(epoch_health_path)
+    df["health"] = pd.to_numeric(df["health"], errors="coerce")
     valid: list[int] = []
     for i in range(n_epochs):
         epoch_start = i * epoch_duration_s
