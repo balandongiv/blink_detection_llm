@@ -1,0 +1,5 @@
+eeg_regions:
+  frontal_minimal:
+    - E3
+    - E9
+    - E22

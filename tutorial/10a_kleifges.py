@@ -1,0 +1,89 @@
+"""Kleifges approach inspection tutorial for a single FIF file.
+
+This tutorial runs the Kleifges approach **Step 1 only** on a single FIF file:
+blink candidate detection via ``get_blink_position`` concatenated across valid
+epochs, followed by per-channel lane scoring against a human-annotated ground
+truth.
+
+It intentionally stops after ``evaluate_channel_lanes`` and prints a compact
+summary to stdout.  The downstream refinement steps (MAD-based epoch filtering,
+multi-channel voting, blink-table normalization, and annotation export) are not
+exercised here — see ``tutorial/32_strategy_a_step1_peak_overlap_fn_report.py``
+for a full FN analysis report that continues from the same scoring point.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+import sys
+
+import mne
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from blink_evaluation import evaluate_channels, load_ground_truth_annotations
+from src.common.bad_epochs import get_valid_epoch_indices
+from src.strategy_kleifges.kleifges_blinker_2017 import (
+    kleifges_strategy,
+)
+from src.common.epoch_input import prepare_epoch_detection_input
+from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
+
+FIF_PATH = Path(
+    r"D:\dataset\drowsy_driving_raja_processed\S1\S01_20170519_043933\seg_data_raw\eeg_eog_raw.fif"
+)
+CSV_PATH = Path(
+    r"D:\dataset\drowsy_driving_raja\human_label_annotation_eeg\S1\S01_20170519_043933\ear_eog.csv"
+)
+BRAIN_REGION_YAML = REPO_ROOT / "brain_region.yaml"
+EPOCH_DURATION_S = 30.0
+FILTER_LOW = 1.0
+FILTER_HIGH = 20.0
+RESAMPLE_RATE = None
+
+# Set to a positive integer to process only the first N epochs from this single FIF file
+# (useful for quick inspection).
+N_EPOCHS: int | None = None
+
+
+def main() -> None:
+    print("\n=== Blinking Kleifges Approach ===")
+    brain_channels = load_brain_region_channels(BRAIN_REGION_YAML)
+    raw = load_raw_with_brain_channels(FIF_PATH, brain_channels)
+    epochs = mne.make_fixed_length_epochs(
+        raw, duration=EPOCH_DURATION_S, preload=True, verbose="ERROR"
+    )
+    if N_EPOCHS is not None:
+        epochs = epochs[:N_EPOCHS]
+
+    prepared = prepare_epoch_detection_input(
+        epochs,
+        pick_types_options={"eeg": True},
+        filter_low=FILTER_LOW,
+        filter_high=FILTER_HIGH,
+        resample_rate=RESAMPLE_RATE,
+    )
+    valid_epoch_indices = get_valid_epoch_indices(epochs)
+    predicted_annotations = kleifges_strategy(prepared, valid_epoch_indices)
+    gt_annotations = load_ground_truth_annotations(CSV_PATH, EPOCH_DURATION_S)
+
+    scored = evaluate_channels(
+        predicted_annotations,
+        gt_annotations,
+        epoch_duration=EPOCH_DURATION_S,
+    )
+
+    em = scored.best_eval_result.event_metrics
+    print(f"\nbest_channel={scored.best_channel}")
+    print(f"tp={em.tp}  fp={em.fp}  fn={em.fn}")
+    print(f"precision={em.precision:.4f}  recall={em.recall:.4f}  f1={em.f1:.4f}")
+    print(f"\n=== Lane Summary (top 10) ===")
+    print(scored.lane_summary.head(10).to_string(index=False))
+    print(f"\n=== Best Channel Predicted Blinks (first 20) ===")
+
+
+
+if __name__ == "__main__":
+    main()

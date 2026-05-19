@@ -1,0 +1,16 @@
+# Core scientific computing
+numpy >2.0.0
+pandas
+PyWavelets
+
+# Visualization
+matplotlib
+seaborn
+tqdm
+
+# Neuroimaging / signal analysis
+mne
+edfio>=0.4.0
+
+# Utilities
+gdown

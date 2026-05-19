@@ -1,0 +1,333 @@
+
+\section{Experiments and Results}
+\label{sec:results}
+
+\input{tab_experiment_code_summary}
+\subsection{Experimental Setup}
+\label{sec:exp_setup}
+
+All experiments are evaluated on the driving corpus described in Section~\ref{sec:datasets}.
+Unless otherwise stated, each continuous session is divided into non-overlapping
+60-second epochs, and the evaluation is conducted at the event level using the
+overlap-based matching criterion introduced in Section~\ref{sec:eval}.
+
+\paragraph{Conditions.}
+Five conditions are compared throughout the main experiments.
+
+\begin{description}
+  \item[BLINKER-concat.]
+    The BLINKER algorithm is applied to the full concatenation of all valid epochs,
+    treating the session as a single continuous signal and deriving a single threshold
+    from the entire recording~\citep{kleifges2017blinker}.
+    This condition represents the current practice of running a continuous-signal
+    detector on epoch-structured data without any epoch-aware adaptation.
+
+  \item[DBO.]
+    Direct Bayesian Optimisation of the sample-level amplitude threshold,
+    applied to the concatenated signal without any preceding epoch-screening stage.
+    This ablation isolates the value added by Stage A: if DBO alone recovers
+    competitive performance, the epoch-screening step is unnecessary.
+
+  \item[MNE-annot.]
+    The MNE-Python \texttt{annotate\_amplitude} routine, which marks contiguous
+    segments whose peak-to-peak amplitude exceeds a configurable threshold,
+    used here with its default parameterisation.
+    This baseline represents widespread preprocessing practice in the neuroimaging
+    community and provides a reference point grounded in community tooling.
+
+  \item[Proposed-Mean.]
+    The full three-stage pipeline described in Section~\ref{sec:method}, with the
+    sample-level threshold at Stage~B estimated from the arithmetic mean and
+    standard deviation of samples pooled from suspicious epochs.
+
+  \item[Proposed-Med.]
+    The three-stage pipeline with the sample-level threshold at Stage~B estimated
+    from the median and median absolute deviation (MAD). This is the primary
+    proposed configuration.
+\end{description}
+
+\subsection{Evaluation Metrics}
+\label{sec:metrics}
+
+\paragraph{Event-level precision, recall, and F1.}
+A detected interval is counted as a true positive if it overlaps at least one
+unmatched ground-truth blink region; unmatched detections are false positives,
+and unmatched ground-truth regions are false negatives.
+Per-session precision, recall, and F1 are computed from these event-level counts.
+
+\paragraph{Macro versus micro F1.}
+We adopt \textbf{macro-averaged F1} as the primary reporting metric.
+Macro F1 computes precision, recall, and F1 independently for each session and
+then reports the unweighted mean of the session-level F1 scores.
+This gives every session equal weight regardless of how many blink events it
+contains. The goal of epoch-based blink detection in driving studies is to produce
+a detector that works reliably session by session, not one that merely accumulates
+favourable aggregate counts. Micro F1, which pools all true positives, false
+positives, and false negatives across sessions before computing a single ratio,
+is dominated by sessions with large blink counts and can mask consistent failure
+modes on sessions with atypically few blinks. Both metrics are reported, but all
+hypothesis tests are conducted on the vector of session-level F1 scores, for
+which each session contributes exactly one observation.
+
+\paragraph{Wilcoxon signed-rank test.}
+Pairwise comparisons between conditions use the Wilcoxon signed-rank test on
+matched pairs of session-level F1 scores.
+The test is preferred over a paired $t$-test because session-level F1
+distributions are bounded and often skewed.
+For comparisons in which the proposed method is hypothesised to outperform a
+baseline, a one-tailed test is used; stability analyses use two-tailed tests.
+Bonferroni correction is applied for the number of conditions compared within
+each experiment, and we report exact $p$-values alongside the matched-pairs
+rank-biserial correlation $r$ as an effect-size estimate.
+
+\subsection{Experiment 1: Compare different Strategy}
+\subsubsection{Strategy A: Naive Epoch Concatenation as a Proxy for Existing Practice}
+\label{sec:exp1}
+
+\paragraph{Motivation.}
+In driving and other epoch-structured paradigms, it is common to run a
+continuous-signal blink detector on the raw or minimally preprocessed recording
+and subsequently map detections back to the epoch grid.
+BLINKER-concat embodies this practice: its threshold is derived from a signal
+pool that mixes blink-heavy and blink-free epochs.
+The central claim of the proposed pipeline is that this mixing dilutes the
+amplitude statistics used for threshold estimation, pushing the threshold upward
+and reducing recall.
+Experiment~1 tests this claim directly.
+
+\paragraph{Hypothesis.}
+Naive concatenation will produce systematically lower session-level F1 than the
+proposed epoch-aware pipeline, primarily through reduced recall rather than
+reduced precision.
+
+\paragraph{Design.}
+All five conditions are applied to every session under 60-second epochs.
+Per-session macro F1, precision, and recall are summarised in
+Table~\ref{tab:exp1_main}.
+
+
+\subsubsection{Strategy B: MNE-Based Annotation as a Community Baseline}
+\label{sec:exp3}
+
+\paragraph{Motivation.}
+MNE-Python is the most widely used open-source EEG analysis platform in
+neuroscience.
+Its \texttt{annotate\_amplitude} routine provides a threshold-based artifact
+marking mechanism that many practitioners reach for when a specialised blink
+detector is unavailable.
+Establishing its performance under an event-level blink criterion, for which it
+was not designed, characterises the gap that specialised methods must close.
+
+\paragraph{Design.}
+The MNE-annot condition is drawn from Table~\ref{tab:exp1_main}.
+As a secondary diagnostic, the detection timestamps produced by MNE-annot
+are aligned to those from Proposed-Med, and the distribution of temporal
+offsets at onset and offset boundaries is reported.
+Systematic offsets indicate whether MNE-annot consistently detects the right
+events but with shifted boundaries, or whether the discrepancies arise from
+entirely different detection triggers.
+
+\subsubsection{Strategy C: Direct Bayesian Optimisation Without Epoch Screening}
+\label{sec:exp2}
+
+\paragraph{Motivation.}
+Bayesian optimisation (BO) has shown promise for threshold tuning in related
+biosignal detection problems.
+A natural question is whether applying BO directly to the concatenated signal,
+bypassing Stage~A entirely, is sufficient to achieve competitive performance.
+The DBO condition answers this question.
+
+\paragraph{Hypothesis.}
+DBO will outperform BLINKER-concat---because BO can adapt the threshold
+to each session---but will underperform Proposed-Med.
+The expected shortfall arises because DBO optimises the threshold over a
+distribution that mixes blink-containing and blink-free signal segments, whereas
+Stage~A concentrates Stage~B estimation on segments enriched for blink-like
+excursions.
+The magnitude of the gap should scale with the fraction of clean epochs in the
+session.
+
+\paragraph{Diagnostic.}
+For each session we record the fraction of epochs identified as suspicious
+by Stage~A, and plot this fraction against the session-level F1 gap between DBO
+and Proposed-Med.
+A positive association would confirm that Stage~A's filtering benefit scales
+with the proportion of clean epochs in the session---the more clean epochs,
+the more dilution DBO suffers, and the more beneficial the epoch-screening
+stage becomes.
+\subsubsection{Strategy F}
+
+\input{tab_comparison_60s_epoch}
+
+\subsection{Experiment 2: Effect of Threshold Estimator at Stage B}
+\label{sec:exp4}
+
+\paragraph{Motivation.}
+For the strategy F,under it its Stage B, the Stage~B estimates the sample-level threshold from samples pooled across the
+suspicious epoch set $\mathcal{S}$.
+Because $\mathcal{S}$ is selected precisely because it contains high-amplitude
+excursions, the pooled distribution is not symmetric around a clean baseline:
+it is contaminated by the very peaks the threshold is meant to capture.
+The mean and standard deviation are sensitive to these extreme values; the median
+and MAD are not.
+
+\paragraph{Hypothesis.}
+Proposed-Med will outperform Proposed-Mean on precision---because the MAD-based
+threshold is less inflated by within-epoch peaks---while achieving comparable or
+superior recall, leading to a higher F1.
+The benefit of the robust estimator is expected to be larger for sessions whose
+suspicious-epoch pools contain extreme outlier amplitudes.
+
+\paragraph{Design.}
+Proposed-Mean and Proposed-Med are compared using the Wilcoxon signed-rank test
+on session-level F1 (Table~\ref{tab:exp1_main}).
+A supplementary scatter plot shows the per-session F1 difference against the
+95th-percentile amplitude in the suspicious-epoch pool,
+used here as a proxy for outlier severity.
+\paragraph{Instruction Agent}
+We can run this together with the Experiment 1, but the strategy F should run first the mean, and second the median.
+
+\subsection{Experiment 3: Stability Across Epoch Durations}
+\label{sec:exp5}
+
+\paragraph{Motivation.}
+Epoch duration is routinely chosen on paradigm-specific or theoretical grounds
+and is rarely optimised for the blink detector itself.
+In driving studies, epoch lengths ranging from 20 seconds to several minutes
+appear in the literature.
+A robust pipeline should produce stable event-level F1 across this range,
+because the underlying physiology of blinks does not change with the epoch
+grid imposed during analysis.
+
+\paragraph{Design.}
+Proposed-Med is evaluated under epoch durations of 20, 30, 60, and 120 seconds.
+For each duration the full pipeline is re-run from scratch, since epoch-level
+peak-to-peak statistics change with epoch length.
+Primary outcomes are per-session macro F1; secondary outcomes are the number of
+suspicious epochs returned by Stage~A and the estimated sample-level threshold
+$\theta_c$.
+Table~\ref{tab:epoch_duration} reports results and two-tailed Wilcoxon $p$-values
+relative to the 60-second reference.
+
+\paragraph{Instruction Agent}
+This is only for the strategy F, but we evaluate using different epoch size
+
+\input{tab_effect_different_epoch_size}
+
+
+
+\subsection{Experiment 4: Stability Across Peak-Side Boundary Tolerance}
+\label{sec:exp7}
+
+\paragraph{Motivation.}
+Event-level matching requires specifying how much temporal mismatch between a
+detected interval and a ground-truth interval is tolerable.
+Blink boundaries in annotation are inherently uncertain: different annotators and
+annotation tools locate onset and offset slightly differently.
+A detector whose F1 score is highly sensitive to the matching tolerance is
+fragile in practice, because its apparent performance depends on an arbitrary
+methodological choice rather than on true detection quality.
+
+\paragraph{Design.}
+Proposed-Med is evaluated under five boundary tolerances, $\{0, 50, 100, 150, 200\}$
+milliseconds, applied symmetrically to both onset and offset.
+A tolerance of zero requires at least one sample of exact overlap; larger
+tolerances extend the matching window beyond the annotated boundary.
+Stability is assessed by reporting macro F1, precision, and recall at each level,
+and by computing the range of macro F1 across the five levels.
+A range smaller than one percentage point indicates that the evaluation is
+insensitive to reasonable boundary-tolerance choices.
+
+\subsection{Experiment 5: Robustness Under User-Initiated Pre-Rejection}
+\label{sec:exp8}
+
+\paragraph{Motivation.}
+In operational driving-study pipelines, an analyst routinely discards epochs
+on quality grounds---gross movement artefacts, electrode pop-offs, or signal
+saturation---before any automated processing begins.
+To mimic this real-world scenario, we simulate user-initiated pre-rejection by
+withholding a random subset of valid epochs from the pipeline's input.
+These pre-rejected epochs are removed from $\mathcal{E}$ and never enter Stage~A.
+The pipeline must therefore tolerate a reduced and potentially non-representative
+input set, which is a distinct challenge from the epoch-screening performed
+internally by Stage~A.
+
+\paragraph{Design.}
+For each session, a random subset of valid epochs is withheld before Stage~A
+at withholding rates of 0\%, 20\%, and 40\%.
+The full pipeline is then run on the remaining valid epochs.
+Per-session macro F1 is recorded; each withholding rate is replicated over
+20 independent random draws of the withheld set, and session-level F1 is
+averaged across replications before the Wilcoxon test.
+Two-tailed Wilcoxon tests compare each non-zero withholding rate against the
+zero-withholding reference.
+
+This experiment establishes that the pipeline handles the realistic case in which
+the analyst has already removed some epochs before invoking the blink detector,
+and characterises the withholding rate at which pre-rejection begins to harm
+performance.
+
+\subsection{Experiment 6: Morphological Analysis of Missed and Spurious Blinks}
+\label{sec:exp9}
+
+\paragraph{Motivation.}
+Aggregate F1 scores report whether the detector is accurate overall, but they do
+not reveal which blink morphologies the algorithm consistently misses or
+misidentifies.
+False negatives may cluster at short blinks, at blinks with atypical waveform
+shapes, or at blinks co-occurring with saccadic activity.
+Identifying these failure modes guides future algorithmic refinement.
+
+\paragraph{Design.}
+For the Proposed-Med condition, we extract a 500-millisecond waveform window
+centred on the peak of each ground-truth blink and categorise it as true positive
+(TP), false negative (FN), or the nearest unmatched detected peak as false
+positive (FP).
+Butterfly plots---overlaid single-trial waveforms from the frontal channel with
+the highest mean blink amplitude---are constructed separately for TP, FN, and FP
+events.
+
+If false-negative blinks are morphologically distinct---for instance,
+consistently lower peak amplitude, compressed rise-time, or co-occurring
+saccadic deflections in adjacent channels---those features will be visually
+salient in the FN butterfly relative to the TP butterfly.
+FP butterflies similarly reveal whether spurious detections arise from saccades,
+slow drifts, or muscle transients, pointing to specific thresholding assumptions
+that may need revision.
+
+\subsection{Experiment 7: Sensitivity to the Minimum Suspicious-Epoch Count $n_{\min}$}
+\label{sec:exp6}
+
+\paragraph{Motivation.}
+Stage~B falls back from $\mathcal{S}=\mathcal{B}$ to $\mathcal{S}=\mathcal{E}$
+when the number of suspicious epochs is smaller than $n_{\min}$.
+Setting $n_{\min}$ too low risks deriving a threshold from a handful of epochs
+that may not represent the full range of blink amplitudes in the session;
+setting it too high triggers the fallback unnecessarily and discards the
+epoch-filtering benefit of Stage~A.
+The appropriate value of $n_{\min}$ is currently left as a design choice,
+and this experiment provides empirical guidance.
+
+\paragraph{Threshold-variance analysis.}
+For sessions in which Stage~A returns at least 20 suspicious epochs, we randomly
+subsample $\mathcal{B}$ down to $n \in \{2, 3, 5, 7, 10, 15, 20\}$ epochs and
+recompute the Stage~B threshold $\theta_c$ for 50 independent subsamples at
+each level.
+The inter-subsample standard deviation of $\theta_c$ is plotted against $n$.
+The smallest $n$ at which this variance stabilises---identified as a knee point
+in the curve---provides an empirical lower bound for $n_{\min}$.
+
+\paragraph{Fallback-frequency analysis.}
+For each epoch duration in Experiment~5, and for candidate values
+$n_{\min} \in \{3, 5, 10\}$, we compute the fraction of sessions for which
+$|\mathcal{B}| < n_{\min}$ and the fallback therefore triggers.
+Shorter epochs increase the absolute epoch count, which may raise $|\mathcal{B}|$
+even when the contamination fraction is constant.
+This analysis therefore reveals whether the choice of $n_{\min}$ interacts with
+epoch duration, and which combinations of duration and $n_{\min}$ lead to
+excessive fallback.
+
+Together, the two analyses yield a principled recommendation: use the smallest
+$n_{\min}$ at which threshold-variance stabilises, and verify that this value
+does not trigger the fallback for more than a small fraction of sessions under
+the chosen epoch duration.

@@ -1,0 +1,143 @@
+"""Stage A: Epoch-level screening using autoreject thresholds.
+
+Uses ``compute_thresholds`` to learn per-channel PTP thresholds, then flags
+epochs where at least one channel exceeds its threshold.  This avoids the
+channel-position requirement of ``AutoReject.fit()`` while still leveraging
+the autoreject threshold-learning machinery.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+import sys
+from types import SimpleNamespace
+
+import numpy as np
+
+from src.common.epoch_input import PreparedEpochDetectionInput
+from src.common.epochs import build_stage1_epochs
+
+
+def _ensure_autoreject_path() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    candidates = (
+        repo_root / "autoreject",
+        repo_root.parent / "find_blink_epoch_worktree" / "autoreject",
+    )
+    for candidate in candidates:
+        if candidate.exists() and str(candidate) not in sys.path:
+            sys.path.insert(0, str(candidate))
+
+
+_ensure_autoreject_path()
+
+from autoreject import compute_thresholds  # noqa: E402
+
+
+def screen_epochs_with_autoreject(
+    prepared: PreparedEpochDetectionInput,
+    valid_epoch_indices: list[int],
+    *,
+    random_state: int = 42,
+    autoreject_method: str = "bayesian_optimization",
+    min_flagged_epochs: int = 1,
+    verbose: bool = False,
+) -> SimpleNamespace:
+    """Identify suspicious epochs using autoreject PTP thresholds (Stage A).
+
+    Per-channel PTP thresholds are learned via ``compute_thresholds``.  An epoch
+    is flagged as suspicious when the peak-to-peak amplitude of *any* channel
+    exceeds that channel's threshold.
+
+    Parameters
+    ----------
+    prepared:
+        Pre-processed epoch data.
+    valid_epoch_indices:
+        Indices of epochs to screen.
+    random_state:
+        Random seed forwarded to ``compute_thresholds``.
+    autoreject_method:
+        Threshold estimation method (``"bayesian_optimization"`` or
+        ``"random_search"``).
+    min_flagged_epochs:
+        Minimum number of flagged epochs required.  If fewer are found the
+        returned ``flagged_valid_epoch_indices`` list will be empty and the
+        caller should fall back to all valid epochs.
+
+    Returns
+    -------
+    SimpleNamespace with fields:
+        - ``flagged_epoch_mask``: boolean mask of shape (n_valid_epochs,)
+        - ``flagged_valid_epoch_indices``: original epoch indices that were flagged
+        - ``channel_thresholds``: dict mapping channel_name -> PTP threshold
+        - ``n_flagged``: number of flagged epochs
+    """
+    channel_names = tuple(prepared.channel_names)
+    valid_indices = np.asarray(valid_epoch_indices, dtype=int)
+
+    if verbose:
+        print(f"[Stage A] screening {len(valid_indices)} valid epoch(s) with autoreject ({autoreject_method})")
+
+    if len(valid_indices) == 0:
+        if verbose:
+            print("[Stage A] no valid epochs — skipping screening")
+        return SimpleNamespace(
+            flagged_epoch_mask=np.array([], dtype=bool),
+            flagged_valid_epoch_indices=[],
+            channel_thresholds={ch: 0.0 for ch in channel_names},
+            n_flagged=0,
+        )
+
+    data = prepared.data[valid_indices, :, :]
+
+    stage1_epochs = build_stage1_epochs(
+        data,
+        channel_names=channel_names,
+        sfreq=prepared.sfreq,
+    )
+
+    # Learn per-channel PTP thresholds (augment=False avoids the location check)
+    raw_thresholds = compute_thresholds(
+        stage1_epochs,
+        method=autoreject_method,
+        random_state=int(random_state),
+        augment=False,
+        verbose=False,
+        n_jobs=1,
+    )
+    channel_thresholds = {ch: float(raw_thresholds[ch]) for ch in channel_names}
+
+    # Flag epochs where any channel's PTP exceeds its threshold
+    threshold_array = np.array([channel_thresholds[ch] for ch in channel_names])  # (n_channels,)
+    # data shape: (n_valid_epochs, n_channels, n_times)
+    ptp = data.max(axis=-1) - data.min(axis=-1)  # (n_valid_epochs, n_channels)
+    flagged_epoch_mask = np.any(ptp > threshold_array[np.newaxis, :], axis=1)  # (n_valid_epochs,)
+
+    flagged_local_indices = np.where(flagged_epoch_mask)[0]
+    flagged_valid_epoch_indices = [int(valid_indices[i]) for i in flagged_local_indices]
+
+    if verbose:
+        print(
+            f"[Stage A] {len(flagged_valid_epoch_indices)} / {len(valid_indices)} epoch(s) "
+            f"exceeded PTP threshold (epoch indices: {flagged_valid_epoch_indices})"
+        )
+
+    if len(flagged_valid_epoch_indices) < min_flagged_epochs:
+        if verbose:
+            print(
+                f"[Stage A] flagged count {len(flagged_valid_epoch_indices)} "
+                f"< min_flagged_epochs {min_flagged_epochs} — clearing flagged list"
+            )
+        flagged_valid_epoch_indices = []
+        flagged_epoch_mask = np.zeros(len(valid_indices), dtype=bool)
+
+    return SimpleNamespace(
+        flagged_epoch_mask=flagged_epoch_mask,
+        flagged_valid_epoch_indices=flagged_valid_epoch_indices,
+        channel_thresholds=channel_thresholds,
+        n_flagged=len(flagged_valid_epoch_indices),
+    )
+
+
+__all__ = ["screen_epochs_with_autoreject"]

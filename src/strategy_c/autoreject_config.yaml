@@ -1,0 +1,25 @@
+autoreject_methods:
+  random_search: "random_search"
+  bayesian_optimization: "bayesian_optimization"
+  default: "random_search"
+  aliases:
+    random: "random_search"
+    bayesian: "bayesian_optimization"
+    bayes: "bayesian_optimization"
+    bo: "bayesian_optimization"
+
+threshold_scopes:
+  per_channel: "per_channel"
+  global: "global"
+  default: "per_channel"
+  aliases:
+    per-channel: "per_channel"
+    channel: "per_channel"
+    shared: "global"
+
+stage1_threshold_scales:
+  random: 0.08
+  bayesian: 0.12
+  global: 0.005
+
+

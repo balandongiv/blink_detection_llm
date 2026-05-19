@@ -1,0 +1,30 @@
+# Core scientific computing
+numpy > 2.0.0
+scipy
+scikit-learn
+PyWavelets
+
+# Visualization
+matplotlib
+seaborn
+tqdm
+
+# Neuroimaging / signal analysis
+mne
+pooch
+
+# IO
+h5py
+openpyxl
+
+# Utilities
+gdown
+
+# Development & tooling
+pre-commit
+pyside6
+
+# Testing
+pytest
+pytest-cov
+pytest-xdist
