@@ -52,7 +52,7 @@ from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
 from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
 from src.strategy_kleifges.kleifges_blinker_2017 import kleifges_strategy
-from src.strategy_b.runner import blink_position_strategy_b
+from src.strategy_nathanael_mne.runner import blink_position_strategy_nathanael
 from src.strategy_c.runner import blink_position_strategy_c
 from src.strategy_f.runner import channel_results_strategy_f
 
@@ -178,7 +178,7 @@ def _run_blinker_concat(prepared, valid_epoch_indices):
 
 
 def _run_mne_annot(prepared, valid_epoch_indices):
-    return blink_position_strategy_b(
+    return blink_position_strategy_nathanael(
         prepared,
         valid_epoch_indices,
         half_window_s=MNE_HALF_WINDOW_S,

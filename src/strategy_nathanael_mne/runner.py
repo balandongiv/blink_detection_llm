@@ -83,7 +83,7 @@ def summarize_candidate_regions(
     )
 
 
-def blink_position_strategy_b(
+def blink_position_strategy_nathanael(
     prepared: PreparedEpochDetectionInput,
     valid_epoch_indices: list[int],
     *,
@@ -160,7 +160,7 @@ def run_strategy_b(
         resample_rate=resample_rate,
     )
     valid_epoch_indices = get_valid_epoch_indices(epochs)
-    channel_results = blink_position_strategy_b(
+    channel_results = blink_position_strategy_nathanael(
         prepared,
         valid_epoch_indices,
         half_window_s=half_window_s,
@@ -175,4 +175,4 @@ def run_strategy_b(
     )
 
 
-__all__ = ["blink_position_strategy_b", "run_strategy_b", "summarize_candidate_regions"]
+__all__ = ["blink_position_strategy_nathanael", "run_strategy_b", "summarize_candidate_regions"]
