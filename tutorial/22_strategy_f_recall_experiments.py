@@ -2,8 +2,7 @@
 
 Approach G1: Two-Tier Peak Confirmation
 -----------------------------------------
-Detection gate (Stage C) uses std_threshold=1.5.  Stage D applies a stricter
-confirmation gate: each event is kept only if its peak >=
+Detection gate (Stage C) uses std_threshold=1.5.  Stage D applies a stricter confirmation gate: each event is kept only if its peak >=
   center + k_confirm * dispersion
 (center/dispersion from Stage B — no new data needed).
 

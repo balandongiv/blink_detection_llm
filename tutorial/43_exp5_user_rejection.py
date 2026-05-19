@@ -1,23 +1,17 @@
 """Experiment 5: Robustness under user-initiated pre-rejection.
 
-Simulates the real-world scenario where an analyst has already discarded a
-fraction of epochs on quality grounds before the pipeline is invoked.
-Pre-rejected epochs are withheld from the pipeline's valid epoch set and never
-enter Stage A; the pipeline must tolerate this reduced input.
+Simulates the real-world scenario where an analyst has already discarded a fraction of epochs on quality grounds before the pipeline is invoked.
+Pre-rejected epochs are withheld from the pipeline's valid epoch set and never enter Stage A; the pipeline must tolerate this reduced input.
 
 Design
 ------
-For each session, a random subset of valid epochs is withheld from Stage A at
-withholding rates of 0%, 20%, and 40%.  Each non-zero rate is replicated over
-N_REPLICATIONS independent random draws; per-session F1 is averaged across
+For each session, a random subset of valid epochs is withheld from Stage A at withholding rates of 0%, 20%, and 40%.  Each non-zero rate is replicated over N_REPLICATIONS independent random draws; per-session F1 is averaged across
 replications before statistical testing.
 
-Ground truth is held fixed (blinks in withheld epochs appear as false negatives),
-so the experiment specifically tests how the pipeline handles a non-representative
+Ground truth is held fixed (blinks in withheld epochs appear as false negatives), so the experiment specifically tests how the pipeline handles a non-representative
 reduced input set.
 
-Two-tailed Wilcoxon signed-rank tests compare each non-zero rate against 0%,
-with Bonferroni correction for 2 non-reference rates.
+Two-tailed Wilcoxon signed-rank tests compare each non-zero rate against 0%, with Bonferroni correction for 2 non-reference rates.
 
 Datasets
 --------
