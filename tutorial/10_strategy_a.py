@@ -66,14 +66,14 @@ def main() -> None:
         resample_rate=RESAMPLE_RATE,
     )
     valid_epoch_indices = get_valid_epoch_indices(epochs)
-    channel_results = kleifges_strategy_a(prepared, valid_epoch_indices)
+    predicted_annotations = kleifges_strategy_a(prepared, valid_epoch_indices)
     ground_truth = enrich_absolute_times(
         load_annotation_as_reference(CSV_PATH, EPOCH_DURATION_S),
         EPOCH_DURATION_S,
     )
 
     scored = evaluate_channel_lanes(
-        channel_results,
+        predicted_annotations,
         ground_truth,
         n_epochs=len(epochs),
         sfreq=float(prepared.sfreq),
