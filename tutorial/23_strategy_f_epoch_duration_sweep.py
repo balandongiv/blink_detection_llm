@@ -1,6 +1,6 @@
 """Strategy F epoch-duration sweep across the Raja EEG annotation dataset.
 
-This tutorial extends ``14_strategy_f_autoreject_drop_threshold.py`` from one
+This tutorial extends ``10d_strategy_autoreject_drop_threshold.py`` from one
 fixed 60-second subject run to an all-subject sweep over multiple epoch sizes.
 
 Epoch durations tested:
@@ -59,7 +59,7 @@ N_EPOCHS: int | None = None
 
 
 # ---------------------------------------------------------------------------
-# Strategy F settings copied from tutorial/14_strategy_f_autoreject_drop_threshold.py
+# Strategy F settings copied from tutorial/10d_strategy_autoreject_drop_threshold.py
 # ---------------------------------------------------------------------------
 AUTOREJECT_RANDOM_STATE = 42
 MIN_FLAGGED_EPOCHS = 1
