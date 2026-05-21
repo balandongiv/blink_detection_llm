@@ -86,19 +86,19 @@ def main() -> None:
     gt_annotations = load_ground_truth_annotations(CSV_PATH, EPOCH_DURATION_S)
 
     # -- Save inputs for blink_evaluation development -------------------------
-    PICKLE_DIR.mkdir(parents=True, exist_ok=True)
-    eval_inputs = {
-        "channel_results": predicted_annotations,
-        "gt_annotations": gt_annotations,
-        "epoch_duration": EPOCH_DURATION_S,
-        "peak_required": True,
-        "peak_tolerance": 0.1,
-        "fif_path": str(FIF_PATH),
-    }
-    pickle_path = PICKLE_DIR / "kleifges_eval_inputs.pkl"
-    with open(pickle_path, "wb") as f:
-        pickle.dump(eval_inputs, f)
-    print(f"Eval inputs pickled: {pickle_path}")
+    # PICKLE_DIR.mkdir(parents=True, exist_ok=True)
+    # eval_inputs = {
+    #     "channel_results": predicted_annotations,
+    #     "gt_annotations": gt_annotations,
+    #     "epoch_duration": EPOCH_DURATION_S,
+    #     "peak_required": True,
+    #     "peak_tolerance": 0.1,
+    #     "fif_path": str(FIF_PATH),
+    # }
+    # pickle_path = PICKLE_DIR / "kleifges_eval_inputs.pkl"
+    # with open(pickle_path, "wb") as f:
+    #     pickle.dump(eval_inputs, f)
+    # print(f"Eval inputs pickled: {pickle_path}")
     # -------------------------------------------------------------------------
 
     scored = evaluate_channels(
