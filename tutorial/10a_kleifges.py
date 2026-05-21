@@ -14,19 +14,23 @@ for a full FN analysis report that continues from the same scoring point.
 
 from __future__ import annotations
 
+import pickle
 from pathlib import Path
 import sys
 
 import mne
+import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from blink_evaluation import (
+    build_annotations_from_events,
+    build_events_masterlist_df,
     evaluate_channels,
-    export_scored_prediction_csv,
     load_ground_truth_annotations,
+    save_scored_annotations_csv,
 )
 from blink_evaluation.blink_epoch_report import create_blink_epoch_report
 from src.common.bad_epochs import get_valid_epoch_indices
@@ -42,10 +46,12 @@ FIF_PATH = Path(
 CSV_PATH = Path(
     r"D:\dataset\drowsy_driving_raja\human_label_annotation_eeg\S1\S01_20170519_043933\ear_eog.csv"
 )
-PREDICTION_CSV_TEMPLATE = Path(
-    r"D:\dataset\drowsy_driving_raja_processed\S1\S01_20170519_043933"
-    r"\annotation_prediction\ear_eog_predicted_{strategy}.csv"
+PICKLE_DIR = Path(
+    r"D:\dataset\drowsy_driving_raja_processed\S1\S01_20170519_043933\annotation_prediction"
 )
+ANNOTATION_CSV = PICKLE_DIR / "ear_eog_predicted_kleifges.csv"
+MASTERLIST_CSV = PICKLE_DIR / "blink_events_masterlist_kleifges.csv"
+REPORT_PATH = PICKLE_DIR / "blink_epoch_report_kleifges.html"
 BRAIN_REGION_YAML = REPO_ROOT / "brain_region.yaml"
 EPOCH_DURATION_S = 30.0
 FILTER_LOW = 1.0
@@ -79,10 +85,28 @@ def main() -> None:
     predicted_annotations = kleifges_strategy(prepared, valid_epoch_indices)
     gt_annotations = load_ground_truth_annotations(CSV_PATH, EPOCH_DURATION_S)
 
+    # -- Save inputs for blink_evaluation development -------------------------
+    PICKLE_DIR.mkdir(parents=True, exist_ok=True)
+    eval_inputs = {
+        "channel_results": predicted_annotations,
+        "gt_annotations": gt_annotations,
+        "epoch_duration": EPOCH_DURATION_S,
+        "peak_required": True,
+        "peak_tolerance": 0.1,
+        "fif_path": str(FIF_PATH),
+    }
+    pickle_path = PICKLE_DIR / "kleifges_eval_inputs.pkl"
+    with open(pickle_path, "wb") as f:
+        pickle.dump(eval_inputs, f)
+    print(f"Eval inputs pickled: {pickle_path}")
+    # -------------------------------------------------------------------------
+
     scored = evaluate_channels(
         predicted_annotations,
         gt_annotations,
         epoch_duration=EPOCH_DURATION_S,
+        peak_required=True,
+        peak_tolerance=0.1,
     )
 
     em = scored.best_eval_result.event_metrics
@@ -94,43 +118,47 @@ def main() -> None:
     print(f"\n=== Best Channel Predicted Blinks (first 20) ===")
     print(scored.best_predicted.head(20).to_string(index=False))
 
-    # -- Export tp/fp/fn/tn annotation CSV ------------------------------------
-    recording_duration = len(epochs) * EPOCH_DURATION_S
-    csv_out = export_scored_prediction_csv(
-        scored,
-        gt_annotations,
-        strategy="kleifges",
-        csv_path_template=PREDICTION_CSV_TEMPLATE,
-        recording_duration=recording_duration,
+    # -- build output from tp/fp/fn events ------------------------------------
+    result = scored.best_eval_result
+    tp_events = result.true_positives
+    fp_events = result.false_positives
+    fn_events = result.false_negatives
+
+    # masterlist CSV: one row per event with full timing on both sides
+    df_masterlist = build_events_masterlist_df(tp_events, fp_events, fn_events)
+    df_masterlist["onset"] = df_masterlist.apply(
+        lambda row: (
+            (row["onset_gt"] + row["onset_pred"]) / 2.0
+            if pd.notna(row["onset_gt"]) and pd.notna(row["onset_pred"])
+            else float(row["onset_gt"]) if pd.notna(row["onset_gt"])
+            else float(row["onset_pred"]) if pd.notna(row["onset_pred"])
+            else 0.0
+        ),
+        axis=1,
     )
+    df_masterlist = df_masterlist.sort_values("onset").reset_index(drop=True)
+
+    df_masterlist.to_csv(MASTERLIST_CSV, index=False)
+    print(f"\nMasterlist CSV saved: {MASTERLIST_CSV}")
+    print(df_masterlist.to_string(index=False))
+
+    # annotation CSV: tp/fp/fn windows for visual replay on the raw signal
+    scored_ann = build_annotations_from_events(tp_events, fp_events, fn_events)
+    csv_out = save_scored_annotations_csv(scored_ann, ANNOTATION_CSV)
     print(f"\nScored annotation CSV saved: {csv_out}")
 
-    # -- Diagnostic: show how many blinks will be plotted ----------------------
-    mc = scored.best_channel_result["mapped_candidates"].reset_index(drop=True)
-    sig = scored.best_channel_result["signal_by_epoch"]
-    missing_ep = [int(r["epoch_index"]) for _, r in mc.iterrows() if sig.get(int(r["epoch_index"])) is None]
-    tp_set = {m.pred_index for m in scored.best_eval_result.true_positives}
-    fp_set = {e.index for e in scored.best_eval_result.false_positives}
-    unknown = [int(p) for p in range(len(mc)) if p not in tp_set and p not in fp_set]
-    print(f"\n[DIAG] mapped_candidates rows : {len(mc)}")
-    print(f"[DIAG] signal_by_epoch keys   : {len(sig)},  range {min(sig)}-{max(sig)}")
-    print(f"[DIAG] ep_idx missing in sig  : {len(missing_ep)}  {missing_ep[:10]}")
-    print(f"[DIAG] tp_set size={len(tp_set)}  fp_set size={len(fp_set)}  unknown={len(unknown)}")
-    print(f"[DIAG] FN events              : {len(scored.best_eval_result.false_negatives)}")
-    print(f"[DIAG] Expected total figures : {len(mc) - len(missing_ep) + len(scored.best_eval_result.false_negatives)}")
-
     # -- Per-epoch blink HTML report ------------------------------------------
-    report_path = csv_out.parent / "blink_epoch_report_kleifges.html"
     saved_reports = create_blink_epoch_report(
         scored,
-        gt_annotations,
+        df_masterlist,
         epoch_duration=EPOCH_DURATION_S,
-        output_path=report_path,
+        output_path=REPORT_PATH,
         pad_s=0.5,
+        csv_path=CSV_PATH,
+        sync_offset_s=0.0,
     )
     for p in saved_reports:
         print(f"Blink epoch report saved: {p}")
-
 
 
 if __name__ == "__main__":
