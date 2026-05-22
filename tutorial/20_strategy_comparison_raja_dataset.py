@@ -27,7 +27,7 @@ from blink_evaluation import evaluate_channels, load_ground_truth_annotations
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
 from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
-from src.strategy_kleifges.kleifges_blinker_2017 import kleifges_strategy
+from pyblinker.strategies import kleifges_strategy
 from src.strategy_nathanael_mne.runner import blink_position_strategy_nathanael
 from src.strategy_c.runner import blink_position_strategy_c
 from src.strategy_f.runner import channel_results_strategy_f
@@ -123,7 +123,7 @@ STRATEGIES = ["A", "B", "C", "F"]
 # Per-strategy runners
 # ---------------------------------------------------------------------------
 
-def _run_strategy_a(prepared, valid_epoch_indices):
+def _run_strategy_kleifges(prepared, valid_epoch_indices):
     return kleifges_strategy(prepared, valid_epoch_indices)
 
 
@@ -161,7 +161,7 @@ def _run_strategy_f(prepared, valid_epoch_indices):
 
 
 _STRATEGY_RUNNERS = {
-    "A": _run_strategy_a,
+    "kleifges": _run_strategy_kleifges,
     "B": _run_strategy_b,
     "C": _run_strategy_c,
     "F": _run_strategy_f,

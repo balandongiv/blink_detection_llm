@@ -1,24 +1,22 @@
-"""Kleifges approach with epoch health-based dropping for sustained-attention dataset.
+"""Kleifges blink detection with epoch health-based dropping.
 
-This tutorial extends ``10a_kleifges.py`` to support variable epoch durations
-(20 / 30 / 40 / 60 s) with epoch quality filtering driven by a pre-computed
-``epoch_health.csv``.  The health CSV records a per-epoch quality score on a
-1–5 scale (derived from 30-second windows); epochs scoring below
-``MIN_HEALTH`` are excluded from blink detection.
+Runs the full pipeline for each epoch duration in EPOCH_SIZES (20 / 30 / 40 / 60 s).
+For each duration the script:
 
-Workflow
---------
-1. Load the raw FIF and epoch it at ``EPOCH_DURATION_S``.
-2. Load ``epoch_health.csv`` (30-second baseline) and assign a health score
-   to every new epoch (minimum of all overlapping baseline windows).
-3. Attach health flags to ``epochs.metadata`` so
-   ``get_valid_epoch_indices`` returns only healthy epoch indices.
-4. Run Kleifges detection, evaluate, and save masterlist / scored annotations /
-   HTML report.
+1. Loads the raw FIF and creates fixed-length epochs.
+2. Loads ``epoch_health.csv`` (30-second baseline windows) and assigns a health
+   score to every new epoch (minimum of all overlapping baseline windows).
+3. Attaches health flags to ``epochs.metadata`` so ``get_valid_epoch_indices``
+   returns only healthy epoch indices.
+4. Runs Kleifges detection, evaluates against ground truth, and saves:
+   - masterlist CSV  (``blink_events_masterlist_kleifges_<N>s.csv``)
+   - scored-annotations CSV  (``ear_eog_predicted_kleifges_<N>s.csv``)
+   - HTML blink-epoch report  (``blink_epoch_report_kleifges_<N>s.html``)
 """
 
 from __future__ import annotations
 
+import math
 import sys
 from pathlib import Path
 
@@ -37,10 +35,13 @@ from blink_evaluation import (
     save_scored_annotations_csv,
 )
 from blink_evaluation.blink_epoch_report import create_blink_epoch_report
-from src.common.bad_epochs import get_valid_epoch_indices
-from src.common.epoch_health import assign_epoch_health, get_valid_epoch_indices_by_health
-from src.common.epoch_input import prepare_epoch_detection_input
-from src.strategy_kleifges.kleifges_blinker_2017 import kleifges_strategy
+from pyblinker.epoch_detection import (
+    assign_epoch_health,
+    get_valid_epoch_indices,
+    get_valid_epoch_indices_by_health,
+    prepare_epoch_detection_input,
+)
+from pyblinker.strategies import kleifges_strategy
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -51,30 +52,27 @@ BASE_DIR = Path(r"D:\dataset\sustained_attention_driving") / SUBJECT / SESSION
 
 FIF_PATH = BASE_DIR / f"s01_{SESSION}.fif"
 EPOCH_HEALTH_CSV = BASE_DIR / "epoch_health.csv"
-CSV_PATH = BASE_DIR / f"s01_{SESSION}.csv"   # ground-truth annotation
+CSV_PATH = BASE_DIR / f"s01_{SESSION}.csv"
 
 OUT_DIR = BASE_DIR / "annotation_prediction"
-ANNOTATION_CSV = OUT_DIR / "ear_eog_predicted_kleifges.csv"
-MASTERLIST_CSV = OUT_DIR / "blink_events_masterlist_kleifges.csv"
-REPORT_PATH = OUT_DIR / "blink_epoch_report_kleifges.html"
 
 # ---------------------------------------------------------------------------
 # Parameters
 # ---------------------------------------------------------------------------
-# Epoch duration in seconds.  Scenarios:
-#   Scenario 1 → 20 s
-#   Scenario 2 → 30 s
-#   Scenario 3 → 40 s
-#   Scenario 4 → 60 s
-EPOCH_DURATION_S: float = 30.0
+EPOCH_SIZES: list[float] = [
+                            # 20.0,
+                            30.0,
+                            # 40.0,
+                            # 60.0
+                            ]
 
-MIN_HEALTH: int = 4      # include epochs with health >= this value
+MIN_HEALTH: int = 4
 FILTER_LOW: float = 1.0
 FILTER_HIGH: float = 20.0
 RESAMPLE_RATE = None
-N_EPOCHS: int | None = None  # None = use all; set to a small int for quick runs
-CHANNELS: list[str] | None = ["FP1", "FP2"]  # None = all EEG; limit for fast debugging
-MAX_REPORT_BLINKS: int | None = 30  # None = all blinks in HTML report
+N_EPOCHS: int | None = None
+CHANNELS: list[str] | None = ["FP1", "FP2"]
+MAX_REPORT_BLINKS: int | None = 30
 
 
 # ---------------------------------------------------------------------------
@@ -90,11 +88,9 @@ def load_epoch_health(path: Path) -> pd.DataFrame:
 
 
 def attach_health_metadata(epochs: mne.Epochs, health_df: pd.DataFrame, min_health: int) -> None:
-    """Attach is_bad_epoch flags derived from baseline health CSV to epochs.metadata."""
     n = len(epochs)
     health_values = assign_epoch_health(health_df, float(epochs.tmax - epochs.tmin), n)
     valid_set = set(get_valid_epoch_indices_by_health(health_values, min_health))
-
     meta = epochs.metadata.copy() if epochs.metadata is not None else pd.DataFrame(index=range(n))
     meta = meta.reset_index(drop=True).reindex(range(n))
     meta["epoch_health"] = [h if h is not None else 0 for h in health_values]
@@ -102,27 +98,81 @@ def attach_health_metadata(epochs: mne.Epochs, health_df: pd.DataFrame, min_heal
     epochs.metadata = meta
 
 
+def _find_original_epoch(
+    onset: float, health_df: pd.DataFrame
+) -> tuple[int | None, float | None, float | None, int | None]:
+    mask = (health_df["epoch_start_s"] <= onset) & (health_df["epoch_end_s"] > onset)
+    matching = health_df[mask]
+    if matching.empty:
+        return None, None, None, None
+    row = matching.iloc[0]
+    idx = int(matching.index[0])
+    return idx, float(row["epoch_start_s"]), float(row["epoch_end_s"]), int(row["health"])
+
+
+def _find_algo_epoch(
+    onset: float,
+    epoch_duration_s: float,
+    health_values: list[int | None],
+) -> tuple[int, float, float, int | None]:
+    epoch_idx = math.floor(onset / epoch_duration_s)
+    epoch_start = epoch_idx * epoch_duration_s
+    epoch_end = epoch_start + epoch_duration_s
+    health = health_values[epoch_idx] if epoch_idx < len(health_values) else None
+    return epoch_idx, epoch_start, epoch_end, health
+
+
+def enrich_masterlist_with_epoch_health(
+    df: pd.DataFrame,
+    health_df: pd.DataFrame,
+    health_values: list[int | None],
+    epoch_duration_s: float,
+) -> pd.DataFrame:
+    orig_idx, orig_start, orig_end, orig_health = [], [], [], []
+    algo_idx, algo_start, algo_end, algo_health = [], [], [], []
+
+    for onset in df["onset"]:
+        oi, os, oe, oh = _find_original_epoch(float(onset), health_df)
+        orig_idx.append(oi); orig_start.append(os); orig_end.append(oe); orig_health.append(oh)
+        ai, as_, ae, ah = _find_algo_epoch(float(onset), epoch_duration_s, health_values)
+        algo_idx.append(ai); algo_start.append(as_); algo_end.append(ae); algo_health.append(ah)
+
+    df = df.copy()
+    df["epoch_index_original"] = orig_idx
+    df["epoch_start_s_original"] = orig_start
+    df["epoch_end_s_original"] = orig_end
+    df["health_original"] = orig_health
+    df["epoch_index_process_algo"] = algo_idx
+    df["epoch_start_s_process_algo"] = algo_start
+    df["epoch_end_s_process_algo"] = algo_end
+    df["health_process_algo"] = algo_health
+    return df
+
+
 # ---------------------------------------------------------------------------
-# Main
+# Per-duration pipeline
 # ---------------------------------------------------------------------------
 
-def main() -> None:
-    print(f"\n=== Kleifges with Epoch Health Dropping (epoch_duration={EPOCH_DURATION_S}s, min_health={MIN_HEALTH}) ===")
+def run_one_epoch_size(
+    epoch_duration_s: float,
+    raw: mne.io.BaseRaw,
+    health_df: pd.DataFrame,
+) -> None:
+    tag = f"{int(epoch_duration_s)}s"
+    annotation_csv = OUT_DIR / f"ear_eog_predicted_kleifges_{tag}.csv"
+    masterlist_csv = REPO_ROOT / "tests" / f"blink_events_masterlist_kleifges_{tag}.csv"
+    report_path = OUT_DIR / f"blink_epoch_report_kleifges_{tag}.html"
 
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    print(f"\n=== Kleifges  epoch_duration={epoch_duration_s}s  min_health={MIN_HEALTH} ===")
 
-    raw = mne.io.read_raw_fif(str(FIF_PATH), preload=True, verbose="ERROR")
-    # Drop non-EEG channels (e.g. "vehicle position" is mislabelled as EEG in this dataset)
-    eeg_channels = [ch for ch in raw.ch_names if "position" not in ch.lower()]
-    if CHANNELS is not None:
-        eeg_channels = [ch for ch in eeg_channels if ch in CHANNELS]
-    raw.pick(eeg_channels)
-    epochs = mne.make_fixed_length_epochs(raw, duration=EPOCH_DURATION_S, preload=True, verbose="ERROR")
+    # Work on a copy so the original raw is reusable across epoch sizes
+    raw_copy = raw.copy()
+    epochs = mne.make_fixed_length_epochs(raw_copy, duration=epoch_duration_s, preload=True, verbose="ERROR")
 
     if N_EPOCHS is not None:
         epochs = epochs[:N_EPOCHS]
 
-    health_df = load_epoch_health(EPOCH_HEALTH_CSV)
+    health_values = assign_epoch_health(health_df, epoch_duration_s, len(epochs))
     attach_health_metadata(epochs, health_df, MIN_HEALTH)
 
     n_bad = int(epochs.metadata["is_bad_epoch"].sum())
@@ -139,18 +189,18 @@ def main() -> None:
     valid_epoch_indices = get_valid_epoch_indices(epochs)
     predicted_annotations = kleifges_strategy(prepared, valid_epoch_indices)
 
-    gt_annotations = load_ground_truth_annotations(CSV_PATH, EPOCH_DURATION_S)
+    gt_annotations = load_ground_truth_annotations(CSV_PATH, epoch_duration_s)
 
     scored = evaluate_channels(
         predicted_annotations,
         gt_annotations,
-        epoch_duration=EPOCH_DURATION_S,
+        epoch_duration=epoch_duration_s,
         peak_required=True,
         peak_tolerance=0.1,
     )
 
     em = scored.best_eval_result.event_metrics
-    print(f"\nbest_channel={scored.best_channel}")
+    print(f"best_channel={scored.best_channel}")
     print(f"tp={em.tp}  fp={em.fp}  fn={em.fn}")
     print(f"precision={em.precision:.4f}  recall={em.recall:.4f}  f1={em.f1:.4f}")
     print(f"\n=== Lane Summary (top 10) ===")
@@ -172,29 +222,52 @@ def main() -> None:
         axis=1,
     )
     df_masterlist = df_masterlist.sort_values("onset").reset_index(drop=True)
-    df_masterlist.to_csv(MASTERLIST_CSV, index=False)
-    print(f"\nMasterlist CSV saved: {MASTERLIST_CSV}")
+    df_masterlist = enrich_masterlist_with_epoch_health(
+        df_masterlist, health_df, health_values, epoch_duration_s
+    )
+    masterlist_csv.parent.mkdir(parents=True, exist_ok=True)
+    df_masterlist.to_csv(masterlist_csv, index=False)
+    print(f"\nMasterlist CSV saved: {masterlist_csv}")
 
     # -- Scored annotations ---------------------------------------------------
     scored_ann = build_annotations_from_events(
         result.true_positives, result.false_positives, result.false_negatives
     )
-    save_scored_annotations_csv(scored_ann, ANNOTATION_CSV)
-    print(f"Scored annotation CSV saved: {ANNOTATION_CSV}")
+    save_scored_annotations_csv(scored_ann, annotation_csv)
+    print(f"Scored annotation CSV saved: {annotation_csv}")
 
     # -- HTML report ----------------------------------------------------------
     df_report = df_masterlist if MAX_REPORT_BLINKS is None else df_masterlist.head(MAX_REPORT_BLINKS)
     saved_reports = create_blink_epoch_report(
         scored,
         df_report,
-        epoch_duration=EPOCH_DURATION_S,
-        output_path=REPORT_PATH,
+        epoch_duration=epoch_duration_s,
+        output_path=report_path,
         pad_s=0.5,
         csv_path=CSV_PATH,
         sync_offset_s=0.0,
     )
     for p in saved_reports:
         print(f"Blink epoch report saved: {p}")
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+def main() -> None:
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    raw = mne.io.read_raw_fif(str(FIF_PATH), preload=True, verbose="ERROR")
+    eeg_channels = [ch for ch in raw.ch_names if "position" not in ch.lower()]
+    if CHANNELS is not None:
+        eeg_channels = [ch for ch in eeg_channels if ch in CHANNELS]
+    raw.pick(eeg_channels)
+
+    health_df = load_epoch_health(EPOCH_HEALTH_CSV)
+
+    for epoch_duration_s in EPOCH_SIZES:
+        run_one_epoch_size(epoch_duration_s, raw, health_df)
 
 
 if __name__ == "__main__":

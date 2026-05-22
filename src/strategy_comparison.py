@@ -43,7 +43,7 @@ from blink_evaluation import ChannelEvaluationResult
 from src.dataset_config import EPOCH_DURATION_S, FILTER_HIGH, FILTER_LOW
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
-from src.strategy_kleifges.runner import channel_results_strategy_a
+from pyblinker.strategies import kleifges_strategy
 from src.strategy_nathanael_mne.runner import blink_position_strategy_nathanael
 from src.strategy_c.runner import blink_position_strategy_c
 from src.strategy_d.runner import blink_position_strategy_d
@@ -58,7 +58,7 @@ from src.strategy_c import (
 
 # ── Default strategy list ──────────────────────────────────────────────────────
 DEFAULT_STRATEGIES: list[str] = [
-    "strategy_a",
+    "strategy_kleifges",
     "strategy_b",
     "strategy_c",
     "strategy_d",
@@ -85,8 +85,8 @@ def _run_one_strategy(
     )
     valid_epoch_indices = get_valid_epoch_indices(epochs)
 
-    if strategy == "strategy_a":
-        channel_results = channel_results_strategy_a(prepared, valid_epoch_indices)
+    if strategy == "strategy_kleifges":
+        channel_results = kleifges_strategy(prepared, valid_epoch_indices)
 
     elif strategy == "strategy_b":
         channel_results = blink_position_strategy_nathanael(prepared, valid_epoch_indices)

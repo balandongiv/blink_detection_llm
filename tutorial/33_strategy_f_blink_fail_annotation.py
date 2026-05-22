@@ -33,7 +33,7 @@ from blink_evaluation.io import dataframe_to_annotations
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
 from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
-from src.strategy_kleifges.kleifges_blinker_2017 import kleifges_strategy
+from pyblinker.strategies import kleifges_strategy
 from src.strategy_f.runner import channel_results_strategy_f
 
 

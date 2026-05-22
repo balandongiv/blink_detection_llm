@@ -5,7 +5,7 @@ from src.logging import get_logger
 from . import default_setting
 from .legacy_eeglab_filter import legacy_blinker_bandpass
 from ..utils.annotation_utils import create_annotation
-from ..viz.viz_pd import viz_complete_blink_prop
+# from ..viz.viz_pd import viz_complete_blink_prop
 from ..pipeline_steps import (
     process_channel_data as core_process_channel_data,
     process_all_channels as core_process_all_channels,

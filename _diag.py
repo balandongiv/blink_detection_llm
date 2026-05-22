@@ -4,7 +4,7 @@ from pathlib import Path
 import mne
 from blink_evaluation import evaluate_channels, load_ground_truth_annotations
 from src.common.bad_epochs import get_valid_epoch_indices
-from src.strategy_kleifges.kleifges_blinker_2017 import kleifges_strategy
+from pyblinker.strategies import kleifges_strategy
 from src.common.epoch_input import prepare_epoch_detection_input
 from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
 
