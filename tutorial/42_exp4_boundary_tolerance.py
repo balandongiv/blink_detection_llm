@@ -1,14 +1,10 @@
 """Experiment 4: Stability across peak-side boundary tolerances.
 
-Tests whether Proposed-Med's event-level F1 is sensitive to the temporal
-tolerance used when matching detected blink intervals to ground-truth intervals.
-A detector whose F1 varies greatly with tolerance is fragile: its apparent
-performance depends on an arbitrary methodological choice rather than on true
-detection quality.
+Tests whether Proposed-Med's event-level F1 is sensitive to the temporal tolerance used when matching detected blink intervals to ground-truth intervals. A detector whose F1 varies greatly with tolerance is fragile: its apparent performance depends on an arbitrary methodological choice rather than on true detection quality.
 
 Design
 ------
-Proposed-Med (Strategy F, median estimator, 60-second epochs) is evaluated under
+Proposed-Med (Strategy F, median estimator, for example, 60-second epochs) is evaluated under
 five boundary tolerances: {0, 50, 100, 150, 200} milliseconds, applied
 symmetrically to both onset and offset.
 

@@ -1,6 +1,6 @@
-"""Experiments 1 & 2: Five-condition strategy comparison.
+"""Experiments 2 & 3: Five-condition strategy comparison.
 
-Experiment 1 — Naive Epoch Concatenation vs Epoch-Aware Pipeline (Sec. 3.3.1–3.3.3).
+Experiment 2 — Naive Epoch Concatenation vs Epoch-Aware Pipeline (Sec. 3.3.1–3.3.3).
 Tests whether BLINKER-concat, MNE-annot, and DBO are outperformed by the proposed
 three-stage pipeline, primarily through improved recall.
 
@@ -13,11 +13,11 @@ Both experiments share the same result table.  Strategy F runs with ``center_met
 
 Conditions
 ----------
-BLINKER-concat  Strategy A — naive concatenation with BLINKER threshold.
-MNE-annot       Strategy B — MNE annotate_amplitude routine.
-DBO             Strategy C — direct Bayesian optimisation without epoch screening.
-Proposed-Mean   Strategy F with center_method="mean" at Stage B.
-Proposed-Med    Strategy F with center_method="median" at Stage B (primary).
+kleifges / BLINKER-concat       — naive concatenation with BLINKER threshold.
+nathanaelmne    — MNE annotate_amplitude routine.
+DBO             — direct Bayesian optimisation without epoch screening.
+dbo_drop_Mean   - with center_method="mean" at Stage B.
+dbo_drop_Med    - with center_method="median" at Stage B (primary).
 
 Datasets
 --------
@@ -77,7 +77,7 @@ MURAT_DATASET_ROOT   = Path(r"D:\dataset\murat_2018")
 # ---------------------------------------------------------------------------
 # Shared parameters
 # ---------------------------------------------------------------------------
-EPOCH_DURATION_S       = 60.0
+EPOCH_DURATION_S       = 60.0 # This value depends on the best performance from  experiment 1 40_exp1_epoch_duration.py
 FILTER_LOW             = 1.0
 FILTER_HIGH            = 20.0
 RESAMPLE_RATE          = None
