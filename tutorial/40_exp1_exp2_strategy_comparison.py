@@ -33,6 +33,7 @@ Bonferroni correction: n_pairs = C(5, 2) = 10.
 
 from __future__ import annotations
 
+import logging
 import sys
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -40,7 +41,6 @@ from pathlib import Path
 
 import mne
 import numpy as np
-import yaml
 from scipy.stats import rankdata, wilcoxon
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -50,11 +50,15 @@ if str(REPO_ROOT) not in sys.path:
 from blink_evaluation import evaluate_channels, load_ground_truth_annotations
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
-from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
 from pyblinker.strategies import kleifges_strategy
 from src.strategy_nathanael_mne.runner import blink_position_strategy_nathanael
-from src.strategy_c.runner import blink_position_strategy_c
-from src.strategy_f.runner import channel_results_strategy_f
+from src.strategy_dbo.runner import blink_position_strategy_dbo
+from src.strategy_dbo_drop.runner import channel_results_strategy_dbo_drop
+from tutorial.tutorial_utils import (
+    discover_raja_pairs, discover_murat_pairs, make_dataset_loaders, setup_tutorial_logging,
+)
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Toggles
@@ -79,20 +83,20 @@ FILTER_HIGH            = 20.0
 RESAMPLE_RATE          = None
 N_EPOCHS: int | None   = None  # positive int → limit epochs per session for quick runs
 
-# Strategy B (MNE-annot) parameters
+# Strategy nathanael_mne (MNE-annot) parameters
 MNE_HALF_WINDOW_S = 0.10
 MNE_LOW_FREQ      = 1.0
 MNE_HIGH_FREQ     = 20.0
 MNE_THRESH        = None
 
-# Strategy C (DBO) parameters
+# Strategy dbo parameters
 STAGE1_THRESHOLD_SCOPE  = "per_channel"
 AUTOREJECT_METHOD       = "bayesian_optimization"
 STAGE1_SCAN_SCALE       = 0.12
 AUTOREJECT_RANDOM_STATE = 42
 AUTOREJECT_AUGMENT      = False
 
-# Strategy F (Proposed-Mean / Proposed-Med) parameters
+# Strategy dbo_drop (Proposed-Mean / Proposed-Med) parameters
 MIN_FLAGGED_EPOCHS = 1
 STD_THRESHOLD      = 3.5
 
@@ -104,69 +108,6 @@ _PROPOSED = frozenset({"Proposed-Mean", "Proposed-Med"})
 _BASELINES = frozenset({"BLINKER-concat", "MNE-annot", "DBO"})
 
 
-# ---------------------------------------------------------------------------
-# Dataset discovery
-# ---------------------------------------------------------------------------
-
-def _discover_raja_pairs() -> list[dict]:
-    """Return Raja sessions with status == 'complete_eeg' that have .fif and .csv."""
-    pairs: list[dict] = []
-    for yaml_path in sorted(RAJA_ANNOTATION_BASE.rglob("VideoFrameViewers.yaml")):
-        with yaml_path.open("r", encoding="utf-8") as fh:
-            info = yaml.safe_load(fh)
-        if (info or {}).get("status") != "complete_eeg":
-            continue
-        session_dir = yaml_path.parent
-        rel = session_dir.relative_to(RAJA_ANNOTATION_BASE)
-        csv_path = session_dir / "ear_eog.csv"
-        fif_path = RAJA_PROCESSED_BASE / rel / "seg_data_raw" / "eeg_eog_raw.fif"
-        if not csv_path.exists() or not fif_path.exists():
-            continue
-        pairs.append({
-            "dataset": "raja",
-            "name":    str(rel).replace("\\", "/"),
-            "fif":     fif_path,
-            "csv":     csv_path,
-        })
-    return pairs
-
-
-def _discover_murat_pairs() -> list[dict]:
-    """Return murat_2018 subjects that have both <id>.fif and <id>.csv."""
-    pairs: list[dict] = []
-    for subject_dir in sorted(MURAT_DATASET_ROOT.iterdir()):
-        if not subject_dir.is_dir():
-            continue
-        sid = subject_dir.name
-        fif = subject_dir / f"{sid}.fif"
-        csv = subject_dir / f"{sid}.csv"
-        if fif.is_file() and csv.is_file():
-            pairs.append({
-                "dataset": "murat2018",
-                "name":    sid,
-                "fif":     fif,
-                "csv":     csv,
-            })
-    return pairs
-
-
-# ---------------------------------------------------------------------------
-# Raw loading helpers (dataset-specific)
-# ---------------------------------------------------------------------------
-
-def _load_raja_raw(fif_path: Path) -> mne.io.BaseRaw:
-    brain_channels = load_brain_region_channels(BRAIN_REGION_YAML)
-    return load_raw_with_brain_channels(fif_path, brain_channels)
-
-
-def _load_murat_raw(fif_path: Path) -> mne.io.BaseRaw:
-    return mne.io.read_raw_fif(str(fif_path), preload=True, verbose="ERROR")
-
-
-_DATASET_LOADERS: dict[str, object] = {
-    "raja":     _load_raja_raw,
-    "murat2018": _load_murat_raw,
-}
 
 
 # ---------------------------------------------------------------------------
@@ -196,7 +137,7 @@ def _run_dbo(prepared, valid_epoch_indices):
         "autoreject_method":     AUTOREJECT_METHOD,
         "autoreject_augment":    AUTOREJECT_AUGMENT,
     }
-    return blink_position_strategy_c(prepared, valid_epoch_indices, setting=setting)
+    return blink_position_strategy_dbo(prepared, valid_epoch_indices, setting=setting)
 
 
 def _run_proposed_mean(prepared, valid_epoch_indices):
@@ -207,7 +148,7 @@ def _run_proposed_mean(prepared, valid_epoch_indices):
         "min_flagged_epochs": MIN_FLAGGED_EPOCHS,
         "verbose":           VERBOSE,
     }
-    return channel_results_strategy_f(prepared, valid_epoch_indices, setting=setting)
+    return channel_results_strategy_dbo_drop(prepared, valid_epoch_indices, setting=setting)
 
 
 def _run_proposed_med(prepared, valid_epoch_indices):
@@ -218,7 +159,7 @@ def _run_proposed_med(prepared, valid_epoch_indices):
         "min_flagged_epochs": MIN_FLAGGED_EPOCHS,
         "verbose":           VERBOSE,
     }
-    return channel_results_strategy_f(prepared, valid_epoch_indices, setting=setting)
+    return channel_results_strategy_dbo_drop(prepared, valid_epoch_indices, setting=setting)
 
 
 _CONDITION_RUNNERS = {
@@ -249,7 +190,8 @@ def run_one(pair: dict, condition: str) -> dict:
     dict with keys: dataset, session, condition, best_channel, tp, fp, fn,
     precision, recall, f1.
     """
-    load_fn = _DATASET_LOADERS[pair["dataset"]]
+    dataset_loaders = make_dataset_loaders(BRAIN_REGION_YAML)
+    load_fn = dataset_loaders[pair["dataset"]]
     raw = load_fn(pair["fif"])
     epochs = mne.make_fixed_length_epochs(
         raw, duration=EPOCH_DURATION_S, preload=True, verbose="ERROR"
@@ -467,21 +409,22 @@ def _collect_tasks(all_pairs: list[dict]) -> list[tuple[dict, str]]:
 
 
 def main() -> None:
-    raja_pairs  = _discover_raja_pairs()
-    murat_pairs = _discover_murat_pairs()
+    setup_tutorial_logging()
+    raja_pairs  = discover_raja_pairs(RAJA_ANNOTATION_BASE, RAJA_PROCESSED_BASE)
+    murat_pairs = discover_murat_pairs(MURAT_DATASET_ROOT)
     all_pairs   = raja_pairs + murat_pairs
 
-    print(f"Raja sessions  : {len(raja_pairs)}")
-    print(f"Murat subjects : {len(murat_pairs)}")
-    print(f"Total sessions : {len(all_pairs)}")
-    print(f"Conditions     : {CONDITIONS}")
+    logger.info("Raja sessions  : %d", len(raja_pairs))
+    logger.info("Murat subjects : %d", len(murat_pairs))
+    logger.info("Total sessions : %d", len(all_pairs))
+    logger.info("Conditions     : %s", CONDITIONS)
 
     tasks = _collect_tasks(all_pairs)
     results: list[dict] = []
     errors:  list[str]  = []
 
     if USE_MULTITHREAD:
-        print(f"\nRunning {len(tasks)} tasks with ThreadPoolExecutor …")
+        logger.info("Running %d tasks with ThreadPoolExecutor …", len(tasks))
         with ThreadPoolExecutor() as executor:
             future_map = {
                 executor.submit(run_one, pair, cond): (pair["name"], cond)
@@ -492,23 +435,21 @@ def main() -> None:
                 try:
                     result = future.result()
                     results.append(result)
-                    print(f"  done  {name}  {cond}  f1={result['f1']:.4f}")
+                    logger.info("done  %s  %s  f1=%.4f", name, cond, result["f1"])
                 except Exception as exc:
-                    msg = f"  ERROR  {name}  {cond}: {exc}"
-                    print(msg)
-                    errors.append(msg)
+                    logger.error("%s  %s: %s", name, cond, exc)
+                    errors.append(f"ERROR  {name}  {cond}: {exc}")
     else:
-        print(f"\nRunning {len(tasks)} tasks sequentially …")
+        logger.info("Running %d tasks sequentially …", len(tasks))
         for pair, cond in tasks:
-            print(f"  running  {pair['name']}  {cond} …")
+            logger.info("running  %s  %s …", pair["name"], cond)
             try:
                 result = run_one(pair, cond)
                 results.append(result)
-                print(f"  done     {pair['name']}  {cond}  f1={result['f1']:.4f}")
+                logger.info("done     %s  %s  f1=%.4f", pair["name"], cond, result["f1"])
             except Exception as exc:
-                msg = f"  ERROR  {pair['name']}  {cond}: {exc}"
-                print(msg)
-                errors.append(msg)
+                logger.error("%s  %s: %s", pair["name"], cond, exc)
+                errors.append(f"ERROR  {pair['name']}  {cond}: {exc}")
 
     if not results:
         print("No results collected.")

@@ -1,7 +1,8 @@
-"""Strategy C — autoreject Bayesian-optimization blink detection tutorial."""
+"""Strategy dbo — autoreject Bayesian-optimization blink detection tutorial."""
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 import sys
 
@@ -11,11 +12,13 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+logger = logging.getLogger(__name__)
+
 from blink_evaluation import evaluate_channels, load_ground_truth_annotations
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
 from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
-from src.strategy_c.runner import blink_position_strategy_c
+from src.strategy_dbo.runner import blink_position_strategy_dbo
 
 FIF_PATH = Path(
     r"D:\dataset\drowsy_driving_raja_processed\S1\S01_20170519_043933\seg_data_raw\eeg_eog_raw.fif"
@@ -41,6 +44,8 @@ N_EPOCHS: int | None = None
 
 
 def main() -> None:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s — %(message)s", datefmt="%H:%M:%S")
+    logger.info("=== Strategy dbo ===")
     brain_channels = load_brain_region_channels(BRAIN_REGION_YAML)
     raw = load_raw_with_brain_channels(FIF_PATH, brain_channels)
     epochs = mne.make_fixed_length_epochs(
@@ -64,7 +69,7 @@ def main() -> None:
         "autoreject_method": AUTOREJECT_METHOD,
         "autoreject_augment": AUTOREJECT_AUGMENT,
     }
-    channel_results = blink_position_strategy_c(
+    channel_results = blink_position_strategy_dbo(
         prepared,
         valid_epoch_indices,
         setting=setting,

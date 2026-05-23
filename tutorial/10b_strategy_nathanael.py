@@ -1,11 +1,12 @@
-"""Strategy nathanael — MNE EOG-based blink detection tutorial.
+"""Strategy nathanael_mne — MNE EOG-based blink detection tutorial.
 
-Runs Strategy 10b nathanael end-to-end using MNE's ``find_eog_events`` on 60-second
+Runs strategy nathanael_mne end-to-end using MNE's ``find_eog_events`` on 60-second
 epochs, then scores each channel lane against a human-annotated ground truth.
 """
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 import sys
 
@@ -14,6 +15,8 @@ import mne
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+
+logger = logging.getLogger(__name__)
 
 from blink_evaluation import evaluate_channels, load_ground_truth_annotations
 from src.common.bad_epochs import get_valid_epoch_indices
@@ -42,7 +45,8 @@ N_EPOCHS: int | None = None
 
 
 def main() -> None:
-    print("\n=== Blinking Strategy B ===")
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s — %(message)s", datefmt="%H:%M:%S")
+    logger.info("=== Strategy nathanael_mne ===")
     brain_channels = load_brain_region_channels(BRAIN_REGION_YAML)
     raw = load_raw_with_brain_channels(FIF_PATH, brain_channels)
     epochs = mne.make_fixed_length_epochs(

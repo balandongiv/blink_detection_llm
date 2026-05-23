@@ -14,8 +14,8 @@ except Exception:
     pass
 
 
-from .blinker.fit_blink import FitBlinks
-from .blinker.pyblinker import BlinkDetector
+from pyblinker.blinker.fit_blink import FitBlinks
+from pyblinker.blinker.pyblinker import BlinkDetector
 from .segment_blink_properties import compute_segment_blink_properties
 
 __all__ = [

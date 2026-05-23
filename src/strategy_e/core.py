@@ -19,8 +19,8 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from src.blinker.default_setting import SCALING_FACTOR
-from src.fitutils import mad as compute_mad
+from pyblinker.blinker.default_setting import SCALING_FACTOR
+from pyblinker.fitutils import mad as compute_mad
 
 from .shared_helpers import make_candidates_df, scan_threshold_crossings
 

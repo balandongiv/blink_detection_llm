@@ -29,6 +29,7 @@ Drowsy Driving Raja corpus and murat_2018.
 
 from __future__ import annotations
 
+import logging
 import random
 import sys
 from collections import defaultdict
@@ -37,7 +38,6 @@ from pathlib import Path
 
 import mne
 import numpy as np
-import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -45,9 +45,13 @@ if str(REPO_ROOT) not in sys.path:
 
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
-from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
-from src.strategy_f.autoreject_epoch_screener import screen_epochs_with_autoreject
-from src.strategy_f.blink_threshold import compute_flagged_epoch_threshold
+from src.strategy_dbo_drop.autoreject_epoch_screener import screen_epochs_with_autoreject
+from src.strategy_dbo_drop.blink_threshold import compute_flagged_epoch_threshold
+from tutorial.tutorial_utils import (
+    discover_raja_pairs, discover_murat_pairs, make_dataset_loaders, setup_tutorial_logging,
+)
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Toggles
@@ -87,57 +91,6 @@ FALLBACK_EPOCH_DURATIONS_S = [20.0, 30.0, 60.0, 120.0]
 CANDIDATE_NMIN_VALUES      = [3, 5, 10]
 
 
-# ---------------------------------------------------------------------------
-# Dataset discovery
-# ---------------------------------------------------------------------------
-
-def _discover_raja_pairs() -> list[dict]:
-    pairs: list[dict] = []
-    for yaml_path in sorted(RAJA_ANNOTATION_BASE.rglob("VideoFrameViewers.yaml")):
-        with yaml_path.open("r", encoding="utf-8") as fh:
-            info = yaml.safe_load(fh)
-        if (info or {}).get("status") != "complete_eeg":
-            continue
-        session_dir = yaml_path.parent
-        rel = session_dir.relative_to(RAJA_ANNOTATION_BASE)
-        fif_path = RAJA_PROCESSED_BASE / rel / "seg_data_raw" / "eeg_eog_raw.fif"
-        if not fif_path.exists():
-            continue
-        pairs.append({
-            "dataset": "raja",
-            "name":    str(rel).replace("\\", "/"),
-            "fif":     fif_path,
-        })
-    return pairs
-
-
-def _discover_murat_pairs() -> list[dict]:
-    pairs: list[dict] = []
-    for subject_dir in sorted(MURAT_DATASET_ROOT.iterdir()):
-        if not subject_dir.is_dir():
-            continue
-        sid = subject_dir.name
-        fif = subject_dir / f"{sid}.fif"
-        if fif.is_file():
-            pairs.append({"dataset": "murat2018", "name": sid, "fif": fif})
-    return pairs
-
-
-# ---------------------------------------------------------------------------
-# Raw loading helpers
-# ---------------------------------------------------------------------------
-
-def _load_raja_raw(fif_path: Path) -> mne.io.BaseRaw:
-    brain_channels = load_brain_region_channels(BRAIN_REGION_YAML)
-    return load_raw_with_brain_channels(fif_path, brain_channels)
-
-
-def _load_murat_raw(fif_path: Path) -> mne.io.BaseRaw:
-    return mne.io.read_raw_fif(str(fif_path), preload=True, verbose="ERROR")
-
-
-_DATASET_LOADERS = {"raja": _load_raja_raw, "murat2018": _load_murat_raw}
-
 
 # ---------------------------------------------------------------------------
 # Part A helpers
@@ -145,7 +98,8 @@ _DATASET_LOADERS = {"raja": _load_raja_raw, "murat2018": _load_murat_raw}
 
 def _run_stage_a(pair: dict, epoch_duration_s: float = 60.0):
     """Load session and run Stage A only. Return (prepared, valid_epoch_indices, flagged)."""
-    load_fn = _DATASET_LOADERS[pair["dataset"]]
+    dataset_loaders = make_dataset_loaders(BRAIN_REGION_YAML)
+    load_fn = dataset_loaders[pair["dataset"]]
     raw = load_fn(pair["fif"])
     epochs = mne.make_fixed_length_epochs(
         raw, duration=epoch_duration_s, preload=True, verbose="ERROR"
@@ -320,25 +274,24 @@ def _print_fallback_table(records: list[dict], dataset_name: str) -> None:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
-    raja_pairs  = _discover_raja_pairs()
-    murat_pairs = _discover_murat_pairs()
+    setup_tutorial_logging()
+    raja_pairs  = discover_raja_pairs(RAJA_ANNOTATION_BASE, RAJA_PROCESSED_BASE)
+    murat_pairs = discover_murat_pairs(MURAT_DATASET_ROOT)
     all_pairs   = raja_pairs + murat_pairs
 
-    print(f"Raja sessions  : {len(raja_pairs)}")
-    print(f"Murat subjects : {len(murat_pairs)}")
-    print()
+    logger.info("Raja sessions  : %d", len(raja_pairs))
+    logger.info("Murat subjects : %d", len(murat_pairs))
 
     # -----------------------------------------------------------------------
     # Part A — threshold-variance analysis at 60 s epoch duration
     # -----------------------------------------------------------------------
-    print("=" * 60)
-    print("PART A — Threshold-variance analysis (epoch=60s)")
-    print("=" * 60)
+    logger.info("Part A — Threshold-variance analysis (epoch=60s)")
 
     variance_records: list[dict] = []
     errors: list[str] = []
 
     if USE_MULTITHREAD:
+        logger.info("Running %d sessions with ThreadPoolExecutor (Part A) …", len(all_pairs))
         with ThreadPoolExecutor() as executor:
             future_map = {
                 executor.submit(_threshold_variance_one_session, pair): pair["name"]
@@ -350,26 +303,26 @@ def main() -> None:
                     rec = future.result()
                     if rec is not None:
                         variance_records.append(rec)
-                        print(f"  done  {name}  n_flagged={rec['n_flagged']}")
+                        logger.info("done  %s  n_flagged=%d", name, rec["n_flagged"])
                     else:
-                        print(f"  skip  {name}  (< {N_MIN_RICH} flagged epochs)")
+                        logger.info("skip  %s  (< %d flagged epochs)", name, N_MIN_RICH)
                 except Exception as exc:
-                    msg = f"  ERROR  {name}: {exc}"
-                    print(msg)
-                    errors.append(msg)
+                    logger.error("%s: %s", name, exc)
+                    errors.append(f"ERROR  {name}: {exc}")
     else:
+        logger.info("Running %d sessions sequentially (Part A) …", len(all_pairs))
         for pair in all_pairs:
+            logger.info("running  %s …", pair["name"])
             try:
                 rec = _threshold_variance_one_session(pair)
                 if rec is not None:
                     variance_records.append(rec)
-                    print(f"  done  {pair['name']}  n_flagged={rec['n_flagged']}")
+                    logger.info("done  %s  n_flagged=%d", pair["name"], rec["n_flagged"])
                 else:
-                    print(f"  skip  {pair['name']}  (< {N_MIN_RICH} flagged epochs)")
+                    logger.info("skip  %s  (< %d flagged epochs)", pair["name"], N_MIN_RICH)
             except Exception as exc:
-                msg = f"  ERROR  {pair['name']}: {exc}"
-                print(msg)
-                errors.append(msg)
+                logger.error("%s: %s", pair["name"], exc)
+                errors.append(f"ERROR  {pair['name']}: {exc}")
 
     for ds in ("raja", "murat2018"):
         _print_variance_table(variance_records, ds)
@@ -377,9 +330,7 @@ def main() -> None:
     # -----------------------------------------------------------------------
     # Part B — fallback-frequency analysis across epoch durations
     # -----------------------------------------------------------------------
-    print("=" * 60)
-    print("PART B — Fallback-frequency analysis")
-    print("=" * 60)
+    logger.info("Part B — Fallback-frequency analysis")
 
     fallback_records: list[dict] = []
     tasks_b = [
@@ -389,6 +340,7 @@ def main() -> None:
     ]
 
     if USE_MULTITHREAD:
+        logger.info("Running %d tasks with ThreadPoolExecutor (Part B) …", len(tasks_b))
         with ThreadPoolExecutor() as executor:
             future_map_b = {
                 executor.submit(_fallback_frequency_one_session, pair, dur): (pair["name"], dur)
@@ -399,21 +351,21 @@ def main() -> None:
                 try:
                     rec = future.result()
                     fallback_records.append(rec)
-                    print(f"  done  {name}  dur={dur:.0f}s  n_flagged={rec['n_flagged']}")
+                    logger.info("done  %s  dur=%.0fs  n_flagged=%d", name, dur, rec["n_flagged"])
                 except Exception as exc:
-                    msg = f"  ERROR  {name}  dur={dur:.0f}s: {exc}"
-                    print(msg)
-                    errors.append(msg)
+                    logger.error("%s  dur=%.0fs: %s", name, dur, exc)
+                    errors.append(f"ERROR  {name}  dur={dur:.0f}s: {exc}")
     else:
+        logger.info("Running %d tasks sequentially (Part B) …", len(tasks_b))
         for pair, dur in tasks_b:
+            logger.info("running  %s  dur=%.0fs …", pair["name"], dur)
             try:
                 rec = _fallback_frequency_one_session(pair, dur)
                 fallback_records.append(rec)
-                print(f"  done  {pair['name']}  dur={dur:.0f}s  n_flagged={rec['n_flagged']}")
+                logger.info("done  %s  dur=%.0fs  n_flagged=%d", pair["name"], dur, rec["n_flagged"])
             except Exception as exc:
-                msg = f"  ERROR  {pair['name']}  dur={dur:.0f}s: {exc}"
-                print(msg)
-                errors.append(msg)
+                logger.error("%s  dur=%.0fs: %s", pair["name"], dur, exc)
+                errors.append(f"ERROR  {pair['name']}  dur={dur:.0f}s: {exc}")
 
     for ds in ("raja", "murat2018"):
         _print_fallback_table(fallback_records, ds)

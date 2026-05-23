@@ -13,7 +13,7 @@ from typing import Mapping, Sequence
 import numpy as np
 import pandas as pd
 
-from src.utils.peak_overlap_metric import (
+from pyblinker.utils.peak_overlap_metric import (
     calculate_interval_overlap_ratio,
     is_peak_overlap_match,
 )

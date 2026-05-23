@@ -8,7 +8,7 @@ from fractions import Fraction
 import mne
 import numpy as np
 
-from src.blinker.legacy_eeglab_filter import legacy_blinker_bandpass
+from pyblinker.blinker.legacy_eeglab_filter import legacy_blinker_bandpass
 
 
 @dataclass

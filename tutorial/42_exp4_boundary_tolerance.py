@@ -24,6 +24,7 @@ Drowsy Driving Raja corpus and murat_2018.
 
 from __future__ import annotations
 
+import logging
 import sys
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -31,7 +32,6 @@ from pathlib import Path
 
 import mne
 import numpy as np
-import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -40,8 +40,12 @@ if str(REPO_ROOT) not in sys.path:
 from blink_evaluation import evaluate_channels, load_ground_truth_annotations
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
-from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
-from src.strategy_f.runner import channel_results_strategy_f
+from src.strategy_dbo_drop.runner import channel_results_strategy_dbo_drop
+from tutorial.tutorial_utils import (
+    discover_raja_pairs, discover_murat_pairs, make_dataset_loaders, setup_tutorial_logging,
+)
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Toggles
@@ -69,66 +73,13 @@ FILTER_HIGH             = 20.0
 RESAMPLE_RATE           = None
 N_EPOCHS: int | None    = None
 
-# Strategy F (Proposed-Med) parameters
+# Strategy dbo_drop (Proposed-Med) parameters
 AUTOREJECT_RANDOM_STATE = 42
 STD_THRESHOLD           = 3.5
 CENTER_METHOD           = "median"
 MIN_FLAGGED_EPOCHS      = 1
 
 
-# ---------------------------------------------------------------------------
-# Dataset discovery
-# ---------------------------------------------------------------------------
-
-def _discover_raja_pairs() -> list[dict]:
-    pairs: list[dict] = []
-    for yaml_path in sorted(RAJA_ANNOTATION_BASE.rglob("VideoFrameViewers.yaml")):
-        with yaml_path.open("r", encoding="utf-8") as fh:
-            info = yaml.safe_load(fh)
-        if (info or {}).get("status") != "complete_eeg":
-            continue
-        session_dir = yaml_path.parent
-        rel = session_dir.relative_to(RAJA_ANNOTATION_BASE)
-        csv_path = session_dir / "ear_eog.csv"
-        fif_path = RAJA_PROCESSED_BASE / rel / "seg_data_raw" / "eeg_eog_raw.fif"
-        if not csv_path.exists() or not fif_path.exists():
-            continue
-        pairs.append({
-            "dataset": "raja",
-            "name":    str(rel).replace("\\", "/"),
-            "fif":     fif_path,
-            "csv":     csv_path,
-        })
-    return pairs
-
-
-def _discover_murat_pairs() -> list[dict]:
-    pairs: list[dict] = []
-    for subject_dir in sorted(MURAT_DATASET_ROOT.iterdir()):
-        if not subject_dir.is_dir():
-            continue
-        sid = subject_dir.name
-        fif = subject_dir / f"{sid}.fif"
-        csv = subject_dir / f"{sid}.csv"
-        if fif.is_file() and csv.is_file():
-            pairs.append({"dataset": "murat2018", "name": sid, "fif": fif, "csv": csv})
-    return pairs
-
-
-# ---------------------------------------------------------------------------
-# Raw loading helpers
-# ---------------------------------------------------------------------------
-
-def _load_raja_raw(fif_path: Path) -> mne.io.BaseRaw:
-    brain_channels = load_brain_region_channels(BRAIN_REGION_YAML)
-    return load_raw_with_brain_channels(fif_path, brain_channels)
-
-
-def _load_murat_raw(fif_path: Path) -> mne.io.BaseRaw:
-    return mne.io.read_raw_fif(str(fif_path), preload=True, verbose="ERROR")
-
-
-_DATASET_LOADERS = {"raja": _load_raja_raw, "murat2018": _load_murat_raw}
 
 
 # ---------------------------------------------------------------------------
@@ -137,7 +88,8 @@ _DATASET_LOADERS = {"raja": _load_raja_raw, "murat2018": _load_murat_raw}
 
 def _run_session(pair: dict) -> dict:
     """Load session and run Proposed-Med once; cache channel_results for reuse."""
-    load_fn = _DATASET_LOADERS[pair["dataset"]]
+    dataset_loaders = make_dataset_loaders(BRAIN_REGION_YAML)
+    load_fn = dataset_loaders[pair["dataset"]]
     raw = load_fn(pair["fif"])
     epochs = mne.make_fixed_length_epochs(
         raw, duration=EPOCH_DURATION_S, preload=True, verbose="ERROR"
@@ -161,7 +113,7 @@ def _run_session(pair: dict) -> dict:
         "min_flagged_epochs": MIN_FLAGGED_EPOCHS,
         "verbose":            VERBOSE,
     }
-    channel_results = channel_results_strategy_f(prepared, valid_epoch_indices, setting=setting)
+    channel_results = channel_results_strategy_dbo_drop(prepared, valid_epoch_indices, setting=setting)
 
     gt_annotations = load_ground_truth_annotations(pair["csv"], EPOCH_DURATION_S)
     return {
@@ -295,19 +247,20 @@ def _print_tolerance_summary(results: list[dict], dataset_name: str) -> None:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
-    raja_pairs  = _discover_raja_pairs()
-    murat_pairs = _discover_murat_pairs()
+    setup_tutorial_logging()
+    raja_pairs  = discover_raja_pairs(RAJA_ANNOTATION_BASE, RAJA_PROCESSED_BASE)
+    murat_pairs = discover_murat_pairs(MURAT_DATASET_ROOT)
     all_pairs   = raja_pairs + murat_pairs
 
-    print(f"Raja sessions  : {len(raja_pairs)}")
-    print(f"Murat subjects : {len(murat_pairs)}")
-    print(f"IoU thresholds : {IOU_THRESHOLDS}")
+    logger.info("Raja sessions  : %d", len(raja_pairs))
+    logger.info("Murat subjects : %d", len(murat_pairs))
+    logger.info("IoU thresholds : %s", IOU_THRESHOLDS)
 
     results: list[dict] = []
     errors:  list[str]  = []
 
     if USE_MULTITHREAD:
-        print(f"\nRunning {len(all_pairs)} sessions with ThreadPoolExecutor …")
+        logger.info("Running %d sessions with ThreadPoolExecutor …", len(all_pairs))
         with ThreadPoolExecutor() as executor:
             future_map = {
                 executor.submit(run_one_session_all_tolerances, pair): pair["name"]
@@ -318,23 +271,21 @@ def main() -> None:
                 try:
                     records = future.result()
                     results.extend(records)
-                    print(f"  done  {name}  ({len(records)} tolerances)")
+                    logger.info("done  %s  (%d tolerances)", name, len(records))
                 except Exception as exc:
-                    msg = f"  ERROR  {name}: {exc}"
-                    print(msg)
-                    errors.append(msg)
+                    logger.error("%s: %s", name, exc)
+                    errors.append(f"ERROR  {name}: {exc}")
     else:
-        print(f"\nRunning {len(all_pairs)} sessions sequentially …")
+        logger.info("Running %d sessions sequentially …", len(all_pairs))
         for pair in all_pairs:
-            print(f"  running  {pair['name']} …")
+            logger.info("running  %s …", pair["name"])
             try:
                 records = run_one_session_all_tolerances(pair)
                 results.extend(records)
-                print(f"  done     {pair['name']}  ({len(records)} tolerances)")
+                logger.info("done     %s  (%d tolerances)", pair["name"], len(records))
             except Exception as exc:
-                msg = f"  ERROR  {pair['name']}: {exc}"
-                print(msg)
-                errors.append(msg)
+                logger.error("%s: %s", pair["name"], exc)
+                errors.append(f"ERROR  {pair['name']}: {exc}")
 
     if not results:
         print("No results collected.")

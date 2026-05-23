@@ -9,7 +9,7 @@ import mne
 import numpy as np
 import pandas as pd
 
-DEFAULT_STRATEGY_B_CHANNELS = (
+DEFAULT_STRATEGY_NATHANAEL_MNE_CHANNELS = (
     "EEG X1 - Pz",
     "EEG Fp1 - Pz",
     "EEG Fp2 - Pz",
@@ -98,6 +98,6 @@ def find_eog_candidate_regions(
 
 
 __all__ = [
-    "DEFAULT_STRATEGY_B_CHANNELS",
+    "DEFAULT_STRATEGY_NATHANAEL_MNE_CHANNELS",
     "find_eog_candidate_regions",
 ]

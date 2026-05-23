@@ -10,11 +10,11 @@ import pandas as pd
 from tqdm import tqdm
 
 from src.logging import get_logger
-from src.utils.statistics_utils import get_good_blink_mask, get_blink_statistic
-from src.blinker.fit_blink import FitBlinks
+from pyblinker.utils.statistics_utils import get_good_blink_mask, get_blink_statistic
+from pyblinker.blinker.fit_blink import FitBlinks
 
-from src.blinker.get_blink_positions import get_blink_position
-from src.blinker.get_representative_channel import channel_selection
+from pyblinker.blinker.get_blink_positions import get_blink_position
+from pyblinker.blinker.get_representative_channel import channel_selection
 
 
 logger = get_logger(__name__)

@@ -26,7 +26,7 @@ Usage example (batch dataset)
         epochs,
         ground_truth,
         epoch_duration=EPOCH_DURATION_S,
-        strategies=["strategy_a", "strategy_b", "strategy_d", "e_base", "e6_soft_shrink"],
+        strategies=["strategy_kleifges", "strategy_nathanael_mne", "strategy_d", "e_base", "e6_soft_shrink"],
     )
     print(results.to_string(index=False))
 """
@@ -45,22 +45,22 @@ from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
 from pyblinker.strategies import kleifges_strategy
 from src.strategy_nathanael_mne.runner import blink_position_strategy_nathanael
-from src.strategy_c.runner import blink_position_strategy_c
+from src.strategy_dbo.runner import blink_position_strategy_dbo
 from src.strategy_d.runner import blink_position_strategy_d
 from src.strategy_e.runner import channel_results_strategy_e
 from src.evaluation_runner import score_channel_results
 
-from src.strategy_c import (
+from src.strategy_dbo import (
     AUTOREJECT_BAYESIAN_OPTIMIZATION,
-    epoch_detection_strategy_c_autoreject,
+    epoch_detection_strategy_dbo_autoreject,
 )
 
 
 # ── Default strategy list ──────────────────────────────────────────────────────
 DEFAULT_STRATEGIES: list[str] = [
     "strategy_kleifges",
-    "strategy_b",
-    "strategy_c",
+    "strategy_nathanael_mne",
+    "strategy_dbo",
     "strategy_d",
     "e_base",
 ]
@@ -88,11 +88,11 @@ def _run_one_strategy(
     if strategy == "strategy_kleifges":
         channel_results = kleifges_strategy(prepared, valid_epoch_indices)
 
-    elif strategy == "strategy_b":
+    elif strategy == "strategy_nathanael_mne":
         channel_results = blink_position_strategy_nathanael(prepared, valid_epoch_indices)
 
-    elif strategy == "strategy_c":
-        detector = epoch_detection_strategy_c_autoreject(
+    elif strategy == "strategy_dbo":
+        detector = epoch_detection_strategy_dbo_autoreject(
             epochs,
             visualize=False,
             filter_low=filter_low,
@@ -114,7 +114,7 @@ def _run_one_strategy(
             filter_high=filter_high,
             resample_rate=None,
         )
-        channel_results = blink_position_strategy_c(detector, prepared_c, valid_epoch_indices)
+        channel_results = blink_position_strategy_dbo(detector, prepared_c, valid_epoch_indices)
 
     elif strategy == "strategy_d":
         channel_results = blink_position_strategy_d(prepared, valid_epoch_indices)

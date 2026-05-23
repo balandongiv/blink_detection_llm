@@ -28,6 +28,7 @@ Drowsy Driving Raja corpus and murat_2018.
 
 from __future__ import annotations
 
+import logging
 import sys
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -38,7 +39,6 @@ matplotlib.use("Agg")  # non-interactive backend; change to "TkAgg" for interact
 import matplotlib.pyplot as plt
 import mne
 import numpy as np
-import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -48,9 +48,13 @@ from blink_evaluation import evaluate_channels, load_annotation_as_reference, en
 from blink_evaluation.io import dataframe_to_annotations
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
-from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
-from src.strategy_f.runner import channel_results_strategy_f
-from src.utils.peak_overlap_metric import is_peak_overlap_match
+from src.strategy_dbo_drop.runner import channel_results_strategy_dbo_drop
+from tutorial.tutorial_utils import (
+    discover_raja_pairs, discover_murat_pairs, make_dataset_loaders,
+    match_events, extract_window, setup_tutorial_logging,
+)
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Toggles
@@ -86,155 +90,6 @@ CENTER_METHOD           = "median"
 MIN_FLAGGED_EPOCHS      = 1
 
 
-# ---------------------------------------------------------------------------
-# Dataset discovery
-# ---------------------------------------------------------------------------
-
-def _discover_raja_pairs() -> list[dict]:
-    pairs: list[dict] = []
-    for yaml_path in sorted(RAJA_ANNOTATION_BASE.rglob("VideoFrameViewers.yaml")):
-        with yaml_path.open("r", encoding="utf-8") as fh:
-            info = yaml.safe_load(fh)
-        if (info or {}).get("status") != "complete_eeg":
-            continue
-        session_dir = yaml_path.parent
-        rel = session_dir.relative_to(RAJA_ANNOTATION_BASE)
-        csv_path = session_dir / "ear_eog.csv"
-        fif_path = RAJA_PROCESSED_BASE / rel / "seg_data_raw" / "eeg_eog_raw.fif"
-        if not csv_path.exists() or not fif_path.exists():
-            continue
-        pairs.append({
-            "dataset": "raja",
-            "name":    str(rel).replace("\\", "/"),
-            "fif":     fif_path,
-            "csv":     csv_path,
-        })
-    return pairs
-
-
-def _discover_murat_pairs() -> list[dict]:
-    pairs: list[dict] = []
-    for subject_dir in sorted(MURAT_DATASET_ROOT.iterdir()):
-        if not subject_dir.is_dir():
-            continue
-        sid = subject_dir.name
-        fif = subject_dir / f"{sid}.fif"
-        csv = subject_dir / f"{sid}.csv"
-        if fif.is_file() and csv.is_file():
-            pairs.append({"dataset": "murat2018", "name": sid, "fif": fif, "csv": csv})
-    return pairs
-
-
-# ---------------------------------------------------------------------------
-# Raw loading helpers
-# ---------------------------------------------------------------------------
-
-def _load_raja_raw(fif_path: Path) -> mne.io.BaseRaw:
-    brain_channels = load_brain_region_channels(BRAIN_REGION_YAML)
-    return load_raw_with_brain_channels(fif_path, brain_channels)
-
-
-def _load_murat_raw(fif_path: Path) -> mne.io.BaseRaw:
-    return mne.io.read_raw_fif(str(fif_path), preload=True, verbose="ERROR")
-
-
-_DATASET_LOADERS = {"raja": _load_raja_raw, "murat2018": _load_murat_raw}
-
-
-# ---------------------------------------------------------------------------
-# Greedy overlap matching — returns (tp_pred_indices, fp_pred_indices, fn_gt_indices)
-# ---------------------------------------------------------------------------
-
-def _match_events(
-    predicted,
-    ground_truth,
-    signal_by_epoch: dict,
-    sfreq: float,
-) -> tuple[list[int], list[int], list[int]]:
-    """Greedy overlap matching (same algorithm as match_blink_tables).
-
-    Returns indices into *predicted* and *ground_truth* DataFrames.
-    """
-    predicted   = predicted.reset_index(drop=True)
-    ground_truth = ground_truth.reset_index(drop=True)
-
-    matched_pred: set[int] = set()
-    matched_gt:   set[int] = set()
-
-    epoch_indices = sorted(
-        set(predicted["epoch_index"].tolist())
-        | set(ground_truth["epoch_index"].tolist())
-    )
-
-    for ep in epoch_indices:
-        pred_group = predicted[predicted["epoch_index"] == ep]
-        gt_group   = ground_truth[ground_truth["epoch_index"] == ep]
-        unmatched_gt = set(gt_group.index.tolist())
-        epoch_signal = np.asarray(signal_by_epoch.get(int(ep), []), dtype=float)
-
-        for pi, pred_row in pred_group.sort_values("blink_onset").iterrows():
-            best_gi = None
-            for gi in list(unmatched_gt):
-                gt_row = gt_group.loc[gi]
-                if is_peak_overlap_match(
-                    pred_row, gt_row,
-                    epoch_signal=epoch_signal,
-                    sfreq=sfreq,
-                    peak_side_tolerance_s=PEAK_SIDE_TOLERANCE_S,
-                ):
-                    best_gi = gi
-                    break
-            if best_gi is not None:
-                matched_pred.add(pi)
-                matched_gt.add(best_gi)
-                unmatched_gt.remove(best_gi)
-
-    tp_pred = list(matched_pred)
-    fp_pred = [i for i in predicted.index if i not in matched_pred]
-    fn_gt   = [i for i in ground_truth.index if i not in matched_gt]
-    return tp_pred, fp_pred, fn_gt
-
-
-# ---------------------------------------------------------------------------
-# Waveform extraction
-# ---------------------------------------------------------------------------
-
-def _extract_window(
-    signal_by_epoch: dict,
-    epoch_index: int,
-    onset_s: float,
-    duration_s: float,
-    sfreq: float,
-    window_s: float,
-) -> np.ndarray | None:
-    """Extract a symmetric window centred on the peak of the blink event.
-
-    Returns a 1D array of length ``2 * int(window_s * sfreq)``, or None if
-    the epoch signal is unavailable or the window falls out of bounds.
-    """
-    epoch_signal = signal_by_epoch.get(int(epoch_index))
-    if epoch_signal is None or len(epoch_signal) == 0:
-        return None
-
-    start_samp = int(round(onset_s * sfreq))
-    end_samp   = int(round((onset_s + duration_s) * sfreq))
-    start_samp = max(0, min(start_samp, len(epoch_signal) - 1))
-    end_samp   = max(start_samp, min(end_samp, len(epoch_signal)))
-
-    if end_samp <= start_samp:
-        return None
-
-    event_signal = epoch_signal[start_samp:end_samp]
-    peak_local   = int(np.argmax(np.abs(event_signal)))
-    peak_samp    = start_samp + peak_local
-
-    half = int(round(window_s * sfreq))
-    win_start = peak_samp - half
-    win_end   = peak_samp + half
-
-    if win_start < 0 or win_end > len(epoch_signal):
-        return None
-    return epoch_signal[win_start:win_end].copy()
 
 
 # ---------------------------------------------------------------------------
@@ -251,7 +106,8 @@ def run_one_session(pair: dict) -> dict:
     and each list contains 1D numpy arrays (waveform windows).
     Also includes counts: n_tp, n_fp, n_fn, best_channel.
     """
-    load_fn = _DATASET_LOADERS[pair["dataset"]]
+    dataset_loaders = make_dataset_loaders(BRAIN_REGION_YAML)
+    load_fn = dataset_loaders[pair["dataset"]]
     raw = load_fn(pair["fif"])
     epochs = mne.make_fixed_length_epochs(
         raw, duration=EPOCH_DURATION_S, preload=True, verbose="ERROR"
@@ -276,7 +132,7 @@ def run_one_session(pair: dict) -> dict:
         "min_flagged_epochs": MIN_FLAGGED_EPOCHS,
         "verbose":            VERBOSE,
     }
-    channel_results = channel_results_strategy_f(prepared, valid_epoch_indices, setting=setting)
+    channel_results = channel_results_strategy_dbo_drop(prepared, valid_epoch_indices, setting=setting)
 
     ground_truth = enrich_absolute_times(
         load_annotation_as_reference(pair["csv"], EPOCH_DURATION_S),
@@ -288,15 +144,16 @@ def run_one_session(pair: dict) -> dict:
     best_predicted  = scored.best_predicted
     signal_by_epoch = scored.best_channel_result["signal_by_epoch"]
 
-    tp_pred_idx, fp_pred_idx, fn_gt_idx = _match_events(
-        best_predicted, ground_truth, signal_by_epoch, sfreq
+    tp_pred_idx, fp_pred_idx, fn_gt_idx = match_events(
+        best_predicted, ground_truth, signal_by_epoch, sfreq,
+        peak_side_tolerance_s=PEAK_SIDE_TOLERANCE_S,
     )
 
     def _windows_from_df(df, indices: list[int]) -> list[np.ndarray]:
         windows = []
         for idx in indices:
             row = df.loc[idx]
-            w = _extract_window(
+            w = extract_window(
                 signal_by_epoch,
                 int(row["epoch_index"]),
                 float(row["blink_onset"]),
@@ -452,19 +309,20 @@ def _print_event_counts(sessions: list[dict], dataset_name: str) -> None:
 
 
 def main() -> None:
-    raja_pairs  = _discover_raja_pairs()
-    murat_pairs = _discover_murat_pairs()
+    setup_tutorial_logging()
+    raja_pairs  = discover_raja_pairs(RAJA_ANNOTATION_BASE, RAJA_PROCESSED_BASE)
+    murat_pairs = discover_murat_pairs(MURAT_DATASET_ROOT)
     all_pairs   = raja_pairs + murat_pairs
 
-    print(f"Raja sessions  : {len(raja_pairs)}")
-    print(f"Murat subjects : {len(murat_pairs)}")
-    print(f"Window         : ±{int(WINDOW_S * 1000)} ms (= {int(WINDOW_S * 2 * 1000)} ms total)")
+    logger.info("Raja sessions  : %d", len(raja_pairs))
+    logger.info("Murat subjects : %d", len(murat_pairs))
+    logger.info("Window         : ±%d ms (= %d ms total)", int(WINDOW_S * 1000), int(WINDOW_S * 2 * 1000))
 
     sessions: list[dict] = []
     errors:   list[str]  = []
 
     if USE_MULTITHREAD:
-        print(f"\nRunning {len(all_pairs)} sessions with ThreadPoolExecutor …")
+        logger.info("Running %d sessions with ThreadPoolExecutor …", len(all_pairs))
         with ThreadPoolExecutor() as executor:
             future_map = {
                 executor.submit(run_one_session, pair): pair["name"]
@@ -475,29 +333,23 @@ def main() -> None:
                 try:
                     sess = future.result()
                     sessions.append(sess)
-                    print(
-                        f"  done  {name}  "
-                        f"TP={sess['n_tp']}  FP={sess['n_fp']}  FN={sess['n_fn']}"
-                    )
+                    logger.info("done  %s  TP=%d  FP=%d  FN=%d",
+                                name, sess["n_tp"], sess["n_fp"], sess["n_fn"])
                 except Exception as exc:
-                    msg = f"  ERROR  {name}: {exc}"
-                    print(msg)
-                    errors.append(msg)
+                    logger.error("%s: %s", name, exc)
+                    errors.append(f"ERROR  {name}: {exc}")
     else:
-        print(f"\nRunning {len(all_pairs)} sessions sequentially …")
+        logger.info("Running %d sessions sequentially …", len(all_pairs))
         for pair in all_pairs:
-            print(f"  running  {pair['name']} …")
+            logger.info("running  %s …", pair["name"])
             try:
                 sess = run_one_session(pair)
                 sessions.append(sess)
-                print(
-                    f"  done     {pair['name']}  "
-                    f"TP={sess['n_tp']}  FP={sess['n_fp']}  FN={sess['n_fn']}"
-                )
+                logger.info("done     %s  TP=%d  FP=%d  FN=%d",
+                             pair["name"], sess["n_tp"], sess["n_fp"], sess["n_fn"])
             except Exception as exc:
-                msg = f"  ERROR  {pair['name']}: {exc}"
-                print(msg)
-                errors.append(msg)
+                logger.error("%s: %s", pair["name"], exc)
+                errors.append(f"ERROR  {pair['name']}: {exc}")
 
     if not sessions:
         print("No sessions processed.")

@@ -1,4 +1,4 @@
-"""Strategy comparison — A, B, C, F across multiple file pairs.
+"""Strategy comparison — kleifges, nathanael_mne, dbo, dbo_drop across multiple file pairs.
 
 Runs all four strategies on each dataset pair and prints a unified comparison
 table showing best-channel metrics (precision, recall, F1) per strategy/pair.
@@ -7,17 +7,17 @@ Pairs are discovered automatically from VideoFrameViewers.yaml files under
 ANNOTATION_BASE_DIR; only sessions with ``status: complete_eeg`` are included.
 
 Toggle ``USE_MULTITHREAD = False`` for sequential debugging.
-Toggle ``VERBOSE = True/False`` to control diagnostic output from Strategy F.
+Toggle ``VERBOSE = True/False`` to control diagnostic output from strategy dbo_drop.
 """
 
 from __future__ import annotations
 
+import logging
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import mne
-import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -29,14 +29,17 @@ from src.common.epoch_input import prepare_epoch_detection_input
 from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
 from pyblinker.strategies import kleifges_strategy
 from src.strategy_nathanael_mne.runner import blink_position_strategy_nathanael
-from src.strategy_c.runner import blink_position_strategy_c
-from src.strategy_f.runner import channel_results_strategy_f
+from src.strategy_dbo.runner import blink_position_strategy_dbo
+from src.strategy_dbo_drop.runner import channel_results_strategy_dbo_drop
+from tutorial.tutorial_utils import discover_raja_pairs, setup_tutorial_logging
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Toggles
 # ---------------------------------------------------------------------------
 USE_MULTITHREAD: bool = True   # False → sequential (easier to debug)
-VERBOSE: bool = True           # diagnostic output from Strategy F stage A/B
+VERBOSE: bool = True           # diagnostic output from strategy dbo_drop
 
 # ---------------------------------------------------------------------------
 # Dataset root paths
@@ -57,7 +60,7 @@ RESAMPLE_RATE = None
 N_EPOCHS: int | None = None
 
 # ---------------------------------------------------------------------------
-# Strategy B parameters
+# Strategy nathanael_mne parameters
 # ---------------------------------------------------------------------------
 MNE_HALF_WINDOW_S = 0.10
 MNE_LOW_FREQ = 1.0
@@ -65,7 +68,7 @@ MNE_HIGH_FREQ = 20.0
 MNE_THRESH = None
 
 # ---------------------------------------------------------------------------
-# Strategy C parameters
+# Strategy dbo parameters
 # ---------------------------------------------------------------------------
 STAGE1_THRESHOLD_SCOPE = "per_channel"
 AUTOREJECT_METHOD = "bayesian_optimization"
@@ -74,49 +77,13 @@ AUTOREJECT_RANDOM_STATE = 42
 AUTOREJECT_AUGMENT = False
 
 # ---------------------------------------------------------------------------
-# Strategy F parameters
+# Strategy dbo_drop parameters
 # ---------------------------------------------------------------------------
 MIN_FLAGGED_EPOCHS = 1
 STD_THRESHOLD = 3.5
 CENTER_METHOD = "median"
 
-# ---------------------------------------------------------------------------
-# Dataset pairs — discovered from VideoFrameViewers.yaml (status: complete_eeg)
-# ---------------------------------------------------------------------------
-
-def _discover_pairs() -> list[dict]:
-    """Return pairs whose VideoFrameViewers.yaml has status == 'complete_eeg'."""
-    pairs = []
-    for yaml_path in sorted(ANNOTATION_BASE_DIR.rglob("VideoFrameViewers.yaml")):
-        with yaml_path.open("r", encoding="utf-8") as fh:
-            info = yaml.safe_load(fh)
-        if (info or {}).get("status") != "complete_eeg":
-            continue
-
-        session_dir = yaml_path.parent          # e.g. .../S1/S01_20170519_043933
-        rel = session_dir.relative_to(ANNOTATION_BASE_DIR)   # e.g. S1/S01_20170519_043933
-
-        csv_path = session_dir / "ear_eog.csv"
-        fif_path = PROCESSED_BASE_DIR / rel / "seg_data_raw" / "eeg_eog_raw.fif"
-
-        if not csv_path.exists():
-            print(f"  [skip] CSV not found: {csv_path}")
-            continue
-        if not fif_path.exists():
-            print(f"  [skip] FIF not found: {fif_path}")
-            continue
-
-        pairs.append({
-            "name": str(rel).replace("\\", "/"),
-            "fif":  fif_path,
-            "csv":  csv_path,
-        })
-    return pairs
-
-
-PAIRS = _discover_pairs()
-
-STRATEGIES = ["A", "B", "C", "F"]
+STRATEGIES = ["kleifges", "nathanael_mne", "dbo", "dbo_drop"]
 
 
 # ---------------------------------------------------------------------------
@@ -127,7 +94,7 @@ def _run_strategy_kleifges(prepared, valid_epoch_indices):
     return kleifges_strategy(prepared, valid_epoch_indices)
 
 
-def _run_strategy_b(prepared, valid_epoch_indices):
+def _run_strategy_nathanael_mne(prepared, valid_epoch_indices):
     return blink_position_strategy_nathanael(
         prepared,
         valid_epoch_indices,
@@ -138,7 +105,7 @@ def _run_strategy_b(prepared, valid_epoch_indices):
     )
 
 
-def _run_strategy_c(prepared, valid_epoch_indices):
+def _run_strategy_dbo(prepared, valid_epoch_indices):
     setting = {
         "threshold_scope": STAGE1_THRESHOLD_SCOPE,
         "scan_scale": STAGE1_SCAN_SCALE,
@@ -146,10 +113,10 @@ def _run_strategy_c(prepared, valid_epoch_indices):
         "autoreject_method": AUTOREJECT_METHOD,
         "autoreject_augment": AUTOREJECT_AUGMENT,
     }
-    return blink_position_strategy_c(prepared, valid_epoch_indices, setting=setting)
+    return blink_position_strategy_dbo(prepared, valid_epoch_indices, setting=setting)
 
 
-def _run_strategy_f(prepared, valid_epoch_indices):
+def _run_strategy_dbo_drop(prepared, valid_epoch_indices):
     setting = {
         "autoreject_random_state": AUTOREJECT_RANDOM_STATE,
         "std_threshold": STD_THRESHOLD,
@@ -157,14 +124,14 @@ def _run_strategy_f(prepared, valid_epoch_indices):
         "min_flagged_epochs": MIN_FLAGGED_EPOCHS,
         "verbose": VERBOSE,
     }
-    return channel_results_strategy_f(prepared, valid_epoch_indices, setting=setting)
+    return channel_results_strategy_dbo_drop(prepared, valid_epoch_indices, setting=setting)
 
 
 _STRATEGY_RUNNERS = {
     "kleifges": _run_strategy_kleifges,
-    "B": _run_strategy_b,
-    "C": _run_strategy_c,
-    "F": _run_strategy_f,
+    "nathanael_mne": _run_strategy_nathanael_mne,
+    "dbo": _run_strategy_dbo,
+    "dbo_drop": _run_strategy_dbo_drop,
 }
 
 
@@ -220,7 +187,6 @@ def run_one(pair_name: str, fif_path: Path, csv_path: Path, strategy: str) -> di
 # ---------------------------------------------------------------------------
 
 def _print_results(results: list[dict]) -> None:
-    # Sort by pair then strategy for readable output
     results.sort(key=lambda r: (r["pair"], r["strategy"]))
 
     col_w = {"pair": 8, "strategy": 10, "best_channel": 14,
@@ -241,7 +207,7 @@ def _print_results(results: list[dict]) -> None:
     sep = "-" * len(header)
 
     print(f"\n{'=' * len(header)}")
-    print("STRATEGY COMPARISON RESULTS")
+    print("STRATEGY COMPARISON RESULTS  —  drowsy_driving_raja")
     print(f"{'=' * len(header)}")
     print(header)
     print(sep)
@@ -271,7 +237,6 @@ def _print_overall_summary(results: list[dict]) -> None:
     """Print per-strategy aggregate metrics (micro + macro) across all pairs."""
     from collections import defaultdict
 
-    # Collect per-strategy buckets
     buckets: dict[str, list[dict]] = defaultdict(list)
     for r in results:
         buckets[r["strategy"]].append(r)
@@ -297,7 +262,7 @@ def _print_overall_summary(results: list[dict]) -> None:
     sep = "-" * len(header)
 
     print(f"{'=' * len(header)}")
-    print("OVERALL SUMMARY  (aggregated across all pairs)")
+    print("OVERALL SUMMARY  (aggregated across all pairs)  —  drowsy_driving_raja")
     print(f"{'=' * len(header)}")
     print(header)
     print(sep)
@@ -334,9 +299,20 @@ def _print_overall_summary(results: list[dict]) -> None:
 
 
 def main() -> None:
+    setup_tutorial_logging()
+    logger.info("Scanning %s", ANNOTATION_BASE_DIR)
+    pairs = discover_raja_pairs(ANNOTATION_BASE_DIR, PROCESSED_BASE_DIR)
+    if not pairs:
+        logger.warning("No complete pairs found under %s. Exiting.", ANNOTATION_BASE_DIR)
+        return
+
+    logger.info("Discovered %d complete pair(s):", len(pairs))
+    for p in pairs:
+        logger.info("  %s", p["name"])
+
     tasks = [
         (pair["name"], pair["fif"], pair["csv"], strategy)
-        for pair in PAIRS
+        for pair in pairs
         for strategy in STRATEGIES
     ]
 
@@ -344,7 +320,7 @@ def main() -> None:
     errors: list[str] = []
 
     if USE_MULTITHREAD:
-        print(f"Running {len(tasks)} tasks with ThreadPoolExecutor …")
+        logger.info("Running %d tasks with ThreadPoolExecutor …", len(tasks))
         with ThreadPoolExecutor() as executor:
             future_to_task = {
                 executor.submit(run_one, name, fif, csv, strat): (name, strat)
@@ -355,23 +331,21 @@ def main() -> None:
                 try:
                     result = future.result()
                     results.append(result)
-                    print(f"  done  pair={pair_name}  strategy={strategy}  f1={result['f1']:.4f}")
+                    logger.info("done  pair=%s  strategy=%s  f1=%.4f", pair_name, strategy, result["f1"])
                 except Exception as exc:
-                    msg = f"  ERROR pair={pair_name}  strategy={strategy}: {exc}"
-                    print(msg)
-                    errors.append(msg)
+                    logger.error("pair=%s  strategy=%s: %s", pair_name, strategy, exc)
+                    errors.append(f"ERROR pair={pair_name}  strategy={strategy}: {exc}")
     else:
-        print(f"Running {len(tasks)} tasks sequentially …")
+        logger.info("Running %d tasks sequentially …", len(tasks))
         for name, fif, csv, strat in tasks:
-            print(f"  running  pair={name}  strategy={strat} …")
+            logger.info("running  pair=%s  strategy=%s …", name, strat)
             try:
                 result = run_one(name, fif, csv, strat)
                 results.append(result)
-                print(f"  done     pair={name}  strategy={strat}  f1={result['f1']:.4f}")
+                logger.info("done     pair=%s  strategy=%s  f1=%.4f", name, strat, result["f1"])
             except Exception as exc:
-                msg = f"  ERROR pair={name}  strategy={strat}: {exc}"
-                print(msg)
-                errors.append(msg)
+                logger.error("pair=%s  strategy=%s: %s", name, strat, exc)
+                errors.append(f"ERROR pair={name}  strategy={strat}: {exc}")
 
     if results:
         _print_results(results)

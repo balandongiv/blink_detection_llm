@@ -13,8 +13,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from src.blinker.get_blink_positions import get_blink_position
-from src.blinker.pyblinker import BlinkDetector
+from pyblinker.blinker.get_blink_positions import get_blink_position
+from pyblinker.blinker.pyblinker import BlinkDetector
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_channel import map_concatenated_blinks_to_epochs
 from src.common.epoch_input import prepare_epoch_detection_input

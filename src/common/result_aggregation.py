@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from src.blinker.get_representative_channel import channel_selection
+from pyblinker.blinker.get_representative_channel import channel_selection
 
 
 def aggregate_channel_results(results) -> pd.DataFrame:

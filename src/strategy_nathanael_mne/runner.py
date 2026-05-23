@@ -138,7 +138,7 @@ def blink_position_strategy_nathanael(
     return results
 
 
-def run_strategy_b(
+def run_strategy_nathanael_mne(
     epochs: mne.Epochs,
     gt_annotations: mne.Annotations,
     *,
@@ -175,4 +175,4 @@ def run_strategy_b(
     )
 
 
-__all__ = ["blink_position_strategy_nathanael", "run_strategy_b", "summarize_candidate_regions"]
+__all__ = ["blink_position_strategy_nathanael", "run_strategy_nathanael_mne", "summarize_candidate_regions"]

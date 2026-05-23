@@ -28,7 +28,7 @@ if str(_VENDORED_AUTOREJECT) not in sys.path:
 from autoreject import compute_thresholds  # noqa: E402
 from mne.preprocessing import peak_finder  # noqa: E402
 
-from src.strategy_c import STAGE1_BAYESIAN_SCAN_THRESHOLD_SCALE
+from src.strategy_dbo import STAGE1_BAYESIAN_SCAN_THRESHOLD_SCALE
 
 _AUTOREJECT_METHOD = "bayesian_optimization"
 _AUTOREJECT_RANDOM_STATE = 42

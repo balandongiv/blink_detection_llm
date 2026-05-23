@@ -12,8 +12,8 @@ OUTPUT_PATH = REPO_ROOT / "tutorial" / "strategy_subject_segment_preference_anal
 
 FILENAME_TO_STRATEGY = {
     "strategy_a_step1_lane_summary.csv": "strategy_a",
-    "strategy_b_step1_lane_summary.csv": "strategy_b",
-    "step1_lane_summary.csv": "strategy_c",
+    "strategy_b_step1_lane_summary.csv": "strategy_nathanael_mne",
+    "step1_lane_summary.csv": "strategy_dbo",
     "strategy_d_step1_lane_summary.csv": "strategy_d",
     "strategy_e_step1_lane_summary.csv": "strategy_e",
 }
@@ -26,7 +26,7 @@ DURATION_BINS = {
 }
 
 
-def strategy_from_filename(name: str) -> str:
+def strategy_dbo_droprom_filename(name: str) -> str:
     return FILENAME_TO_STRATEGY.get(name, name.replace("_lane_summary.csv", ""))
 
 
@@ -77,7 +77,7 @@ def build_pair_strategy_dataframe() -> pd.DataFrame:
                 {
                     "subject": subject,
                     "segment": segment,
-                    "strategy": strategy_from_filename(summary_path.name),
+                    "strategy": strategy_dbo_droprom_filename(summary_path.name),
                     "best_channel": str(best["channel"]),
                     "tp": int(best["tp"]),
                     "fp": int(best["fp"]),
@@ -489,7 +489,7 @@ def build_report() -> str:
         f"- Pooled micro-F1 leader: `{micro_leader}`. Most frequent per-segment F1 winner: `{top_segment_winner}` (`{top_segment_winner_count}` of `{n_pairs}` segments)."
     )
     lines.append(
-        "- The main pattern is a split between pooled winners and pair-wise winners: `strategy_c` wins many individual segments, but the expand-bridge family wins the pooled leaderboard because it performs better on higher-volume recall-heavy segments."
+        "- The main pattern is a split between pooled winners and pair-wise winners: `strategy_dbo` wins many individual segments, but the expand-bridge family wins the pooled leaderboard because it performs better on higher-volume recall-heavy segments."
     )
     lines.append(
         "- Long-duration events are the clearest shared recall problem. Across the competitive strategies, recall drops much more on long-heavy and closure-heavy segments than on short-heavy segments."
@@ -558,7 +558,7 @@ def build_report() -> str:
         "- If you want the best pooled detector with strong recall: prefer `expand_bridge_adaptive_k`, `expand_bridge_soft_gate`, or `strategy_e_expand_bridge`."
     )
     lines.append(
-        "- If you want the best per-segment precision-weighted winner on cleaner pairs: `strategy_c` remains the main specialist."
+        "- If you want the best per-segment precision-weighted winner on cleaner pairs: `strategy_dbo` remains the main specialist."
     )
     lines.append(
         "- If a subject is dominated by high-quality, repeatable segments (`S12`, `S19`, `S23`, `S24`), subject-tuned E-family variants such as `strategy_e13_self_train`, `strategy_e12_amp_filter`, and `expand_bridge_soft_gate` become strong choices."

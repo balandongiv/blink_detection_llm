@@ -1,4 +1,4 @@
-"""Strategy comparison — A, B, C, F across murat_2018 dataset.
+"""Strategy comparison — kleifges, nathanael_mne, dbo, dbo_drop across murat_2018 dataset.
 
 Auto-discovers subjects that have a complete pair (matching <id>.fif + <id>.csv)
 under DATASET_ROOT. Subjects with only a .fif (annotation not yet ready) are
@@ -7,7 +7,7 @@ silently skipped.
 Toggles
 -------
 USE_MULTITHREAD        False → sequential (easier to debug)
-VERBOSE                diagnostic output from Strategy F stage A/B
+VERBOSE                diagnostic output from strategy dbo_drop
 USE_YAML_STATUS_FILTER When True, also reads Murat2018Viewer.yaml in each
                        subject folder and skips any subject whose status is not
                        "Completed".  When False (default), only the presence of
@@ -16,12 +16,12 @@ USE_YAML_STATUS_FILTER When True, also reads Murat2018Viewer.yaml in each
 
 from __future__ import annotations
 
+import logging
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import mne
-import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
@@ -32,14 +32,17 @@ from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
 from pyblinker.strategies import kleifges_strategy
 from src.strategy_nathanael_mne.runner import blink_position_strategy_nathanael
-from src.strategy_c.runner import blink_position_strategy_c
-from src.strategy_f.runner import channel_results_strategy_f
+from src.strategy_dbo.runner import blink_position_strategy_dbo
+from src.strategy_dbo_drop.runner import channel_results_strategy_dbo_drop
+from tutorial.tutorial_utils import discover_murat_pairs, setup_tutorial_logging
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Toggles
 # ---------------------------------------------------------------------------
 USE_MULTITHREAD: bool = True        # False → sequential (easier to debug)
-VERBOSE: bool = True                # diagnostic output from Strategy F stage A/B
+VERBOSE: bool = True                # diagnostic output from strategy dbo_drop
 USE_YAML_STATUS_FILTER: bool = False  # True → only include subjects where
                                       # Murat2018Viewer.yaml status == "Completed"
 
@@ -60,7 +63,7 @@ RESAMPLE_RATE = None
 N_EPOCHS: int | None = None
 
 # ---------------------------------------------------------------------------
-# Strategy B parameters
+# Strategy nathanael_mne parameters
 # ---------------------------------------------------------------------------
 MNE_HALF_WINDOW_S = 0.10
 MNE_LOW_FREQ = 1.0
@@ -68,7 +71,7 @@ MNE_HIGH_FREQ = 20.0
 MNE_THRESH = None
 
 # ---------------------------------------------------------------------------
-# Strategy C parameters
+# Strategy dbo parameters
 # ---------------------------------------------------------------------------
 STAGE1_THRESHOLD_SCOPE = "per_channel"
 AUTOREJECT_METHOD = "bayesian_optimization"
@@ -77,56 +80,13 @@ AUTOREJECT_RANDOM_STATE = 42
 AUTOREJECT_AUGMENT = False
 
 # ---------------------------------------------------------------------------
-# Strategy F parameters
+# Strategy dbo_drop parameters
 # ---------------------------------------------------------------------------
 MIN_FLAGGED_EPOCHS = 1
 STD_THRESHOLD = 3.5
 CENTER_METHOD = "median"
 
-STRATEGIES = ["A", "B", "C", "F"]
-
-
-# ---------------------------------------------------------------------------
-# Auto-discover complete pairs
-# ---------------------------------------------------------------------------
-
-def _yaml_status_is_completed(subject_dir: Path) -> bool:
-    """Return True if Murat2018Viewer.yaml exists and status == 'Completed'."""
-    yaml_path = subject_dir / "Murat2018Viewer.yaml"
-    if not yaml_path.is_file():
-        return False
-    with yaml_path.open("r", encoding="utf-8") as fh:
-        data = yaml.safe_load(fh) or {}
-    return data.get("status", "") == "Completed"
-
-
-def discover_pairs(root: Path, use_yaml_filter: bool = False) -> list[dict]:
-    """Return pairs where both <id>.fif and <id>.csv exist under root/<id>/.
-
-    When *use_yaml_filter* is True, additionally requires that
-    Murat2018Viewer.yaml reports ``status: Completed``.
-    """
-    pairs = []
-    skipped_yaml: list[str] = []
-    for subject_dir in sorted(root.iterdir()):
-        if not subject_dir.is_dir():
-            continue
-        sid = subject_dir.name
-        fif = subject_dir / f"{sid}.fif"
-        csv = subject_dir / f"{sid}.csv"
-        if not (fif.is_file() and csv.is_file()):
-            continue
-        if use_yaml_filter and not _yaml_status_is_completed(subject_dir):
-            skipped_yaml.append(sid)
-            continue
-        pairs.append({"name": sid, "fif": fif, "csv": csv})
-
-    if skipped_yaml:
-        print(
-            f"  [yaml-filter] skipped {len(skipped_yaml)} subject(s) with"
-            f" status != Completed: {', '.join(skipped_yaml)}"
-        )
-    return pairs
+STRATEGIES = ["kleifges", "nathanael_mne", "dbo", "dbo_drop"]
 
 
 # ---------------------------------------------------------------------------
@@ -137,7 +97,7 @@ def _run_strategy_kleifges(prepared, valid_epoch_indices):
     return kleifges_strategy(prepared, valid_epoch_indices)
 
 
-def _run_strategy_b(prepared, valid_epoch_indices):
+def _run_strategy_nathanael_mne(prepared, valid_epoch_indices):
     return blink_position_strategy_nathanael(
         prepared,
         valid_epoch_indices,
@@ -148,7 +108,7 @@ def _run_strategy_b(prepared, valid_epoch_indices):
     )
 
 
-def _run_strategy_c(prepared, valid_epoch_indices):
+def _run_strategy_dbo(prepared, valid_epoch_indices):
     setting = {
         "threshold_scope": STAGE1_THRESHOLD_SCOPE,
         "scan_scale": STAGE1_SCAN_SCALE,
@@ -156,10 +116,10 @@ def _run_strategy_c(prepared, valid_epoch_indices):
         "autoreject_method": AUTOREJECT_METHOD,
         "autoreject_augment": AUTOREJECT_AUGMENT,
     }
-    return blink_position_strategy_c(prepared, valid_epoch_indices, setting=setting)
+    return blink_position_strategy_dbo(prepared, valid_epoch_indices, setting=setting)
 
 
-def _run_strategy_f(prepared, valid_epoch_indices):
+def _run_strategy_dbo_drop(prepared, valid_epoch_indices):
     setting = {
         "autoreject_random_state": AUTOREJECT_RANDOM_STATE,
         "std_threshold": STD_THRESHOLD,
@@ -167,14 +127,14 @@ def _run_strategy_f(prepared, valid_epoch_indices):
         "min_flagged_epochs": MIN_FLAGGED_EPOCHS,
         "verbose": VERBOSE,
     }
-    return channel_results_strategy_f(prepared, valid_epoch_indices, setting=setting)
+    return channel_results_strategy_dbo_drop(prepared, valid_epoch_indices, setting=setting)
 
 
 _STRATEGY_RUNNERS = {
     "kleifges": _run_strategy_kleifges,
-    "B": _run_strategy_b,
-    "C": _run_strategy_c,
-    "F": _run_strategy_f,
+    "nathanael_mne": _run_strategy_nathanael_mne,
+    "dbo": _run_strategy_dbo,
+    "dbo_drop": _run_strategy_dbo_drop,
 }
 
 
@@ -281,7 +241,6 @@ def _print_overall_summary(results: list[dict]) -> None:
     """Print per-strategy aggregate metrics (micro + macro) across all pairs."""
     from collections import defaultdict
 
-    # Collect per-strategy buckets
     buckets: dict[str, list[dict]] = defaultdict(list)
     for r in results:
         buckets[r["strategy"]].append(r)
@@ -344,16 +303,17 @@ def _print_overall_summary(results: list[dict]) -> None:
 
 
 def main() -> None:
+    setup_tutorial_logging()
     filter_label = "csv-pair + yaml-Completed" if USE_YAML_STATUS_FILTER else "csv-pair only"
-    print(f"Scanning {DATASET_ROOT}  [filter: {filter_label}]")
-    pairs = discover_pairs(DATASET_ROOT, use_yaml_filter=USE_YAML_STATUS_FILTER)
+    logger.info("Scanning %s  [filter: %s]", DATASET_ROOT, filter_label)
+    pairs = discover_murat_pairs(DATASET_ROOT, use_yaml_filter=USE_YAML_STATUS_FILTER)
     if not pairs:
-        print(f"No complete pairs found under {DATASET_ROOT}. Exiting.")
+        logger.warning("No complete pairs found under %s. Exiting.", DATASET_ROOT)
         return
 
-    print(f"Discovered {len(pairs)} complete pair(s):")
+    logger.info("Discovered %d complete pair(s):", len(pairs))
     for p in pairs:
-        print(f"  {p['name']}")
+        logger.info("  %s", p["name"])
 
     tasks = [
         (pair["name"], pair["fif"], pair["csv"], strategy)
@@ -365,7 +325,7 @@ def main() -> None:
     errors: list[str] = []
 
     if USE_MULTITHREAD:
-        print(f"\nRunning {len(tasks)} tasks with ThreadPoolExecutor …")
+        logger.info("Running %d tasks with ThreadPoolExecutor …", len(tasks))
         with ThreadPoolExecutor() as executor:
             future_to_task = {
                 executor.submit(run_one, name, fif, csv, strat): (name, strat)
@@ -376,23 +336,21 @@ def main() -> None:
                 try:
                     result = future.result()
                     results.append(result)
-                    print(f"  done  pair={pair_name}  strategy={strategy}  f1={result['f1']:.4f}")
+                    logger.info("done  pair=%s  strategy=%s  f1=%.4f", pair_name, strategy, result["f1"])
                 except Exception as exc:
-                    msg = f"  ERROR pair={pair_name}  strategy={strategy}: {exc}"
-                    print(msg)
-                    errors.append(msg)
+                    logger.error("pair=%s  strategy=%s: %s", pair_name, strategy, exc)
+                    errors.append(f"ERROR pair={pair_name}  strategy={strategy}: {exc}")
     else:
-        print(f"\nRunning {len(tasks)} tasks sequentially …")
+        logger.info("Running %d tasks sequentially …", len(tasks))
         for name, fif, csv, strat in tasks:
-            print(f"  running  pair={name}  strategy={strat} …")
+            logger.info("running  pair=%s  strategy=%s …", name, strat)
             try:
                 result = run_one(name, fif, csv, strat)
                 results.append(result)
-                print(f"  done     pair={name}  strategy={strat}  f1={result['f1']:.4f}")
+                logger.info("done     pair=%s  strategy=%s  f1=%.4f", name, strat, result["f1"])
             except Exception as exc:
-                msg = f"  ERROR pair={name}  strategy={strat}: {exc}"
-                print(msg)
-                errors.append(msg)
+                logger.error("pair=%s  strategy=%s: %s", name, strat, exc)
+                errors.append(f"ERROR pair={name}  strategy={strat}: {exc}")
 
     if results:
         _print_results(results)

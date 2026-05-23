@@ -2,7 +2,7 @@
 
 These utilities were previously duplicated (with identical bodies) in
 strategy_a/epoch_blink_pipeline.py, strategy_b/epoch_blink_pipeline_b.py,
-and strategy_c/autoreject_utils.py.  Centralising them here removes those
+and strategy_dbo/autoreject_utils.py.  Centralising them here removes those
 copies and makes the shared contract explicit.
 """
 

@@ -23,16 +23,16 @@ import pandas as pd
 import mne
 from tqdm import tqdm
 
-from .utils.metadata_utils import (
+from pyblinker.utils.metadata_utils import (
     attach_blink_metadata,
     sample_windows_from_metadata,
 )
 
-from .blinker.fit_blink import FitBlinks
+from pyblinker.blinker.fit_blink import FitBlinks
 
-from .utils import normalize_picks, require_channels
-from .utils.modality import infer_modality
-from .blinker.zero_crossing import left_right_zero_crossing
+from pyblinker.utils import normalize_picks, require_channels
+from pyblinker.utils.modality import infer_modality
+from pyblinker.blinker.zero_crossing import left_right_zero_crossing
 
 
 
