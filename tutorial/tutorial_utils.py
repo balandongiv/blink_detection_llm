@@ -149,64 +149,8 @@ def make_dataset_loaders(brain_region_yaml: Path) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Event matching and waveform extraction (morphological analysis)
+# Waveform extraction (morphological analysis)
 # ---------------------------------------------------------------------------
-
-def match_events(
-    predicted,
-    ground_truth,
-    signal_by_epoch: dict,
-    sfreq: float,
-    peak_side_tolerance_s: float = 0.01,
-) -> tuple[list[int], list[int], list[int]]:
-    """Greedy overlap matching of predicted blinks against ground truth.
-
-    Returns
-    -------
-    (tp_pred_indices, fp_pred_indices, fn_gt_indices)
-        Indices into the *predicted* and *ground_truth* DataFrames.
-    """
-    from pyblinker.utils.peak_overlap_metric import is_peak_overlap_match
-
-    predicted    = predicted.reset_index(drop=True)
-    ground_truth = ground_truth.reset_index(drop=True)
-
-    matched_pred: set[int] = set()
-    matched_gt:   set[int] = set()
-
-    epoch_indices = sorted(
-        set(predicted["epoch_index"].tolist())
-        | set(ground_truth["epoch_index"].tolist())
-    )
-
-    for ep in epoch_indices:
-        pred_group   = predicted[predicted["epoch_index"] == ep]
-        gt_group     = ground_truth[ground_truth["epoch_index"] == ep]
-        unmatched_gt = set(gt_group.index.tolist())
-        epoch_signal = np.asarray(signal_by_epoch.get(int(ep), []), dtype=float)
-
-        for pi, pred_row in pred_group.sort_values("blink_onset").iterrows():
-            best_gi = None
-            for gi in list(unmatched_gt):
-                gt_row = gt_group.loc[gi]
-                if is_peak_overlap_match(
-                    pred_row, gt_row,
-                    epoch_signal=epoch_signal,
-                    sfreq=sfreq,
-                    peak_side_tolerance_s=peak_side_tolerance_s,
-                ):
-                    best_gi = gi
-                    break
-            if best_gi is not None:
-                matched_pred.add(pi)
-                matched_gt.add(best_gi)
-                unmatched_gt.remove(best_gi)
-
-    tp_pred = list(matched_pred)
-    fp_pred = [i for i in predicted.index if i not in matched_pred]
-    fn_gt   = [i for i in ground_truth.index if i not in matched_gt]
-    return tp_pred, fp_pred, fn_gt
-
 
 def extract_window(
     signal_by_epoch: dict,
