@@ -8,7 +8,7 @@
 
 All experiments are evaluated on the driving corpus described in Section~\ref{sec:datasets}.
 Unless otherwise stated, each continuous session is divided into non-overlapping
-60-second epochs, and the evaluation is conducted at the event level using the
+30-second epochs (selected by Experiment~1), and the evaluation is conducted at the event level using the
 overlap-based matching criterion introduced in Section~\ref{sec:eval}.
 
 \paragraph{Conditions.}
@@ -196,7 +196,7 @@ because the underlying physiology of blinks does not change with the epoch
 grid imposed during analysis.
 
 \paragraph{Design.}
-Proposed-Med is evaluated under epoch durations of 20, 30, 60, and 120 seconds.
+Proposed-Med is evaluated under epoch durations of 20, 30, 40, 60, and 120 seconds.
 For each duration the full pipeline is re-run from scratch, since epoch-level
 peak-to-peak statistics change with epoch length.
 Primary outcomes are per-session macro F1; secondary outcomes are the number of
@@ -225,14 +225,15 @@ fragile in practice, because its apparent performance depends on an arbitrary
 methodological choice rather than on true detection quality.
 
 \paragraph{Design.}
-Proposed-Med is evaluated under five boundary tolerances, $\{0, 50, 100, 150, 200\}$
-milliseconds, applied symmetrically to both onset and offset.
-A tolerance of zero requires at least one sample of exact overlap; larger
-tolerances extend the matching window beyond the annotated boundary.
-Stability is assessed by reporting macro F1, precision, and recall at each level,
-and by computing the range of macro F1 across the five levels.
-A range smaller than one percentage point indicates that the evaluation is
-insensitive to reasonable boundary-tolerance choices.
+Proposed-Med is evaluated under five event-matching strictness settings, expressed
+as intersection-over-union (IoU) thresholds $\{0.0, 0.1, 0.2, 0.3, 0.5\}$ for the
+overlap between each detected interval and a ground-truth interval.
+Lower IoU thresholds treat any overlap as a match; higher thresholds require a
+larger fraction of overlap and therefore penalise boundary mismatch more
+aggressively.
+We report macro-averaged precision, recall, and F1 at each IoU threshold, and the
+range of macro F1 across the five levels to quantify sensitivity to this
+evaluation choice.
 
 \subsection{Experiment 5: Robustness Under User-Initiated Pre-Rejection}
 \label{sec:exp8}

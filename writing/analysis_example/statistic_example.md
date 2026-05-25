@@ -1,3 +1,11 @@
+## Update (2026-05-24)
+
+The numbers below are an older worked example. For the current paper experiments, use the
+latest orchestration outputs under:
+
+- `logs/experiment_orchestration_20260524_001630/`
+- Selected epoch duration for downstream experiments: **30 seconds** (Experiment 1, primary metric = macro-F1 for Proposed-Med on the combined dataset).
+
 Yes — I extended the analysis to **precision** and **F1-score**, and then summarized the **overall performance trade-offs** for the blink detection strategies using your 20 matched datasets.
 
 ## 1) Paired statistical analysis: Strategy A vs Strategy F

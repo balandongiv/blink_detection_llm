@@ -28,6 +28,9 @@ Report structure
 
 from __future__ import annotations
 
+import argparse
+import csv
+import json
 import logging
 import sys
 from collections import defaultdict
@@ -72,12 +75,12 @@ RAJA_PROCESSED_BASE  = Path(r"D:\dataset\drowsy_driving_raja_processed")
 MURAT_DATASET_ROOT   = Path(r"D:\dataset\murat_2018")
 
 OUTPUT_DIR = Path(__file__).resolve().parent
-REPORT_PATH = OUTPUT_DIR / "exp6_morphological_detailed.html"
+REPORT_PATH = OUTPUT_DIR / "exp6_morphological_detailed.html"  # Override via --report-path / --out-dir
 
 # ---------------------------------------------------------------------------
 # Experiment parameters
 # ---------------------------------------------------------------------------
-EPOCH_DURATION_S      = 60.0
+EPOCH_DURATION_S      = 60.0  # Override via --epoch-duration-s (selected by Experiment 1)
 PEAK_SIDE_TOLERANCE_S = 0.01
 WINDOW_S              = 0.25   # ± 250 ms around peak
 FILTER_LOW            = 1.0
@@ -654,7 +657,7 @@ def _print_event_counts(sessions: list[dict], dataset_name: str) -> None:
         f"{'TP_w':>6}  {'FP_w':>6}  {'FN_w':>6}"
     )
     sep = "-" * len(hdr)
-    print(f"\n{'=' * len(hdr)}\nEVENT COUNTS — {dataset_name.upper()}\n{'=' * len(hdr)}")
+    print(f"\n{'=' * len(hdr)}\nEVENT COUNTS - {dataset_name.upper()}\n{'=' * len(hdr)}")
     print(hdr); print(sep)
     for r in rows:
         print(
@@ -676,11 +679,79 @@ def _print_event_counts(sessions: list[dict], dataset_name: str) -> None:
     print(f"{'=' * len(hdr)}\n")
 
 
+def _write_csv(path: Path, rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not rows:
+        return
+    with path.open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        w.writeheader()
+        w.writerows(rows)
+
+
+def _parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(
+        description="Experiment 6 (detailed): morphological analysis report for Proposed-Med.",
+    )
+    p.add_argument(
+        "--epoch-duration-s",
+        type=float,
+        default=EPOCH_DURATION_S,
+        help="Epoch duration in seconds (should be set to the best duration from Experiment 1).",
+    )
+    p.add_argument(
+        "--out-dir",
+        type=Path,
+        default=None,
+        help="If set, write report and summary artifacts into this directory (prevents overwriting tutorial outputs).",
+    )
+    p.add_argument(
+        "--report-path",
+        type=Path,
+        default=None,
+        help="Explicit report output path (overrides --out-dir default).",
+    )
+    p.add_argument(
+        "--no-multithread",
+        action="store_true",
+        help="Disable internal ThreadPoolExecutor.",
+    )
+    p.add_argument(
+        "--n-epochs",
+        type=int,
+        default=None,
+        help="Limit epochs per session for quick runs (None = all).",
+    )
+    p.add_argument(
+        "--quiet",
+        action="store_true",
+        help="Reduce strategy verbosity.",
+    )
+    return p.parse_args()
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
 def main() -> None:
+    args = _parse_args()
+
+    global USE_MULTITHREAD, VERBOSE, EPOCH_DURATION_S, N_EPOCHS, OUTPUT_DIR, REPORT_PATH
+    USE_MULTITHREAD = not args.no_multithread
+    VERBOSE = not args.quiet
+    EPOCH_DURATION_S = float(args.epoch_duration_s)
+    N_EPOCHS = args.n_epochs
+
+    if args.out_dir is not None:
+        OUTPUT_DIR = Path(args.out_dir)
+        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    if args.report_path is not None:
+        REPORT_PATH = Path(args.report_path)
+    elif args.out_dir is not None:
+        REPORT_PATH = OUTPUT_DIR / "exp6_morphological_detailed.html"
+
     setup_tutorial_logging()
     raja_pairs  = discover_raja_pairs(RAJA_ANNOTATION_BASE, RAJA_PROCESSED_BASE)
     murat_pairs = discover_murat_pairs(MURAT_DATASET_ROOT)
@@ -725,7 +796,7 @@ def main() -> None:
                 errors.append(f"ERROR  {pair['name']}: {exc}")
 
     if not sessions:
-        print("No sessions processed — nothing to report.")
+        print("No sessions processed - nothing to report.")
         return
 
     for ds in ("raja", "murat2018"):
@@ -734,7 +805,31 @@ def main() -> None:
     print("\nBuilding MNE HTML report …")
     report = build_report(sessions)
     report.save(str(REPORT_PATH), overwrite=True, open_browser=False)
-    print(f"  Saved → {REPORT_PATH}")
+    print(f"  Saved -> {REPORT_PATH}")
+
+    if args.out_dir is not None:
+        out_dir: Path = OUTPUT_DIR
+        # Keep only light-weight per-session metrics; full morphological windows live in the HTML report.
+        session_rows = [{
+            "dataset": s["dataset"],
+            "session": s["session"],
+            "best_channel": s["best_channel"],
+            "epoch_duration_s": float(EPOCH_DURATION_S),
+            "tp": int(s["n_tp"]),
+            "fp": int(s["n_fp"]),
+            "fn": int(s["n_fn"]),
+            "tp_windows": int(len(s["tp_records"])),
+            "fp_windows": int(len(s["fp_records"])),
+            "fn_windows": int(len(s["fn_records"])),
+        } for s in sessions]
+        _write_csv(out_dir / "exp45_morphological_event_counts.csv", session_rows)
+        payload = {
+            "experiment": "exp45_morphological_detailed",
+            "epoch_duration_s": float(EPOCH_DURATION_S),
+            "report_path": str(REPORT_PATH),
+            "n_sessions": int(len(sessions)),
+        }
+        (out_dir / "summary.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
     if errors:
         print(f"\n{len(errors)} error(s):")

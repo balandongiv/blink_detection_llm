@@ -33,6 +33,9 @@ Bonferroni correction: n_pairs = C(5, 2) = 10.
 
 from __future__ import annotations
 
+import argparse
+import csv
+import json
 import logging
 import sys
 from collections import defaultdict
@@ -77,7 +80,7 @@ MURAT_DATASET_ROOT   = Path(r"D:\dataset\murat_2018")
 # ---------------------------------------------------------------------------
 # Shared parameters
 # ---------------------------------------------------------------------------
-EPOCH_DURATION_S       = 60.0 # This value depends on the best performance from  experiment 1 40_exp1_epoch_duration.py
+EPOCH_DURATION_S       = 60.0  # Override via --epoch-duration-s (selected by Experiment 1)
 FILTER_LOW             = 1.0
 FILTER_HIGH            = 20.0
 RESAMPLE_RATE          = None
@@ -252,7 +255,7 @@ def _print_per_session_table(results: list[dict], dataset_name: str) -> None:
     sep = "-" * len(header)
 
     print(f"\n{'=' * len(header)}")
-    print(f"PER-SESSION RESULTS  —  {dataset_name.upper()}")
+    print(f"PER-SESSION RESULTS - {dataset_name.upper()}")
     print(f"{'=' * len(header)}")
     print(header)
     print(sep)
@@ -290,7 +293,7 @@ def _print_summary_table(results: list[dict], dataset_name: str) -> None:
     )
     sep = "-" * len(header)
 
-    title = f"SUMMARY — {dataset_name.upper()}"
+    title = f"SUMMARY - {dataset_name.upper()}"
     print(f"\n{'=' * len(header)}")
     print(title)
     print(f"{'=' * len(header)}")
@@ -318,6 +321,95 @@ def _print_summary_table(results: list[dict], dataset_name: str) -> None:
             f"{macro_p:>8.4f}  {macro_r:>8.4f}  {macro_f1:>8.4f}"
         )
     print(f"{'=' * len(header)}\n")
+
+
+def _summary_rows(results: list[dict], dataset_name: str) -> list[dict]:
+    """Return micro/macro metrics per condition for *dataset_name* (or 'all')."""
+    rows = results if dataset_name == "all" else [
+        r for r in results if r["dataset"] == dataset_name
+    ]
+    if not rows:
+        return []
+
+    buckets: dict[str, list[dict]] = defaultdict(list)
+    for r in rows:
+        buckets[r["condition"]].append(r)
+
+    out: list[dict] = []
+    for cond in CONDITIONS:
+        if cond not in buckets:
+            continue
+        bucket = buckets[cond]
+        total_tp = sum(r["tp"] for r in bucket)
+        total_fp = sum(r["fp"] for r in bucket)
+        total_fn = sum(r["fn"] for r in bucket)
+        micro_p  = total_tp / (total_tp + total_fp) if (total_tp + total_fp) > 0 else 0.0
+        micro_r  = total_tp / (total_tp + total_fn) if (total_tp + total_fn) > 0 else 0.0
+        micro_f1 = (2 * micro_p * micro_r / (micro_p + micro_r)
+                    if (micro_p + micro_r) > 0 else 0.0)
+        macro_p  = float(np.mean([r["precision"] for r in bucket]))
+        macro_r  = float(np.mean([r["recall"]    for r in bucket]))
+        macro_f1 = float(np.mean([r["f1"]        for r in bucket]))
+        out.append({
+            "dataset": dataset_name,
+            "condition": cond,
+            "n_sessions": int(len(bucket)),
+            "tp": int(total_tp),
+            "fp": int(total_fp),
+            "fn": int(total_fn),
+            "micro_precision": float(micro_p),
+            "micro_recall": float(micro_r),
+            "micro_f1": float(micro_f1),
+            "macro_precision": float(macro_p),
+            "macro_recall": float(macro_r),
+            "macro_f1": float(macro_f1),
+        })
+    return out
+
+
+def _write_csv(path: Path, rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not rows:
+        return
+    with path.open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        w.writeheader()
+        w.writerows(rows)
+
+
+def _parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(
+        description="Experiments 2 & 3: five-condition strategy comparison (includes Proposed-Med).",
+    )
+    p.add_argument(
+        "--epoch-duration-s",
+        type=float,
+        default=EPOCH_DURATION_S,
+        help="Epoch duration in seconds (should be set to the best duration from Experiment 1).",
+    )
+    p.add_argument(
+        "--out-dir",
+        type=Path,
+        default=None,
+        help="If set, write CSV/JSON artifacts into this directory.",
+    )
+    p.add_argument(
+        "--no-multithread",
+        action="store_true",
+        help="Disable internal ThreadPoolExecutor.",
+    )
+    p.add_argument(
+        "--n-epochs",
+        type=int,
+        default=None,
+        help="Limit epochs per session for quick runs (None = all).",
+    )
+    p.add_argument(
+        "--quiet",
+        action="store_true",
+        help="Reduce strategy verbosity.",
+    )
+    return p.parse_args()
 
 
 # ---------------------------------------------------------------------------
@@ -356,10 +448,10 @@ def _run_wilcoxon_tests(results: list[dict], dataset_name: str) -> None:
     n_pairs = len(CONDITIONS) * (len(CONDITIONS) - 1) // 2
     alpha_corrected = 0.05 / n_pairs
 
-    print(f"\nWilcoxon signed-rank tests  —  {dataset_name.upper()}")
+    print(f"\nWilcoxon signed-rank tests - {dataset_name.upper()}")
     print(f"  n_sessions={len(complete)}  "
           f"n_comparisons={n_pairs}  "
-          f"α_Bonferroni={alpha_corrected:.4f}")
+          f"alpha_Bonferroni={alpha_corrected:.4f}")
     print(f"  {'Comparison':<38}  {'tail':<9}  {'W':>8}  {'p':>8}  {'r':>6}  sig")
     print(f"  {'-' * 80}")
 
@@ -382,7 +474,7 @@ def _run_wilcoxon_tests(results: list[dict], dataset_name: str) -> None:
 
             diffs = va - vb
             if np.all(diffs == 0):
-                print(f"  {label:<38}  {'—':<9}  all diffs zero")
+                print(f"  {label:<38}  {'-':<9}  all diffs zero")
                 continue
             try:
                 stat, p = wilcoxon(va, vb, alternative=alt)
@@ -409,6 +501,14 @@ def _collect_tasks(all_pairs: list[dict]) -> list[tuple[dict, str]]:
 
 
 def main() -> None:
+    args = _parse_args()
+
+    global USE_MULTITHREAD, VERBOSE, EPOCH_DURATION_S, N_EPOCHS
+    USE_MULTITHREAD = not args.no_multithread
+    VERBOSE = not args.quiet
+    EPOCH_DURATION_S = float(args.epoch_duration_s)
+    N_EPOCHS = args.n_epochs
+
     setup_tutorial_logging()
     raja_pairs  = discover_raja_pairs(RAJA_ANNOTATION_BASE, RAJA_PROCESSED_BASE)
     murat_pairs = discover_murat_pairs(MURAT_DATASET_ROOT)
@@ -466,6 +566,23 @@ def main() -> None:
     # Wilcoxon tests per dataset (sessions within each dataset are matched pairs)
     for ds in ("raja", "murat2018"):
         _run_wilcoxon_tests(results, ds)
+
+    if args.out_dir is not None:
+        out_dir: Path = args.out_dir
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        _write_csv(out_dir / "exp41_strategy_comparison_results.csv", results)
+        _write_csv(
+            out_dir / "exp41_strategy_comparison_summary.csv",
+            _summary_rows(results, "raja") + _summary_rows(results, "murat2018") + _summary_rows(results, "all"),
+        )
+        payload = {
+            "experiment": "exp41_strategy_comparison",
+            "epoch_duration_s": float(EPOCH_DURATION_S),
+            "metric_primary": "macro_f1 (dataset=all, condition=Proposed-Med)",
+            "n_rows": int(len(results)),
+        }
+        (out_dir / "summary.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
     if errors:
         print(f"\n{len(errors)} error(s):")

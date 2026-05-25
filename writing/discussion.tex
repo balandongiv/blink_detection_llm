@@ -1,1 +1,34 @@
 \section{Discussion}
+
+\paragraph{Epoch duration selection.}
+Experiment~1 selected a 30-second epoch duration for the Proposed-Med configuration using
+macro-F1 on the combined dataset as the primary metric. Importantly, Experiment~3 showed
+that macro-F1 was largely insensitive to the epoch grid over 20--120\,s, with only small
+differences between durations and no evidence of a strong performance cliff. This supports
+the practical view that epoch duration is a secondary design choice for the detector
+itself; we nevertheless fix 30\,s downstream for consistency and to match the empirically
+best setting under the chosen metric.
+
+\paragraph{Strategy comparison.}
+Across the five compared conditions, Proposed-Med substantially improved over the two
+practical baselines (BLINKER-concat and MNE-annot), but did not dominate the DBO ablation in
+macro-F1 under the selected 30-second epoch duration. This suggests that the Stage~A/B
+screening-and-estimation design is effective for avoiding the most brittle thresholding
+behaviour seen in naive concatenation, yet the direct optimisation approach can still be
+competitive or superior in some regimes. A likely explanation is that Stage~A may remove
+epochs that contain atypical but valid blink morphologies, trading recall for robustness.
+Future work should quantify when Stage~A is beneficial (e.g., heavy artefact sessions) and
+when it is overly conservative.
+
+\paragraph{Sensitivity to the evaluation strictness.}
+Experiment~4 demonstrated that reported F1 varies strongly with the IoU threshold used for
+event matching. This is expected: stricter IoU thresholds penalise boundary mismatch
+aggressively and therefore lower F1 even when detections are qualitatively correct.
+The main experiments therefore adopt IoU\,=\,0.1 as a pragmatic default, while reporting
+the full IoU sweep to make this methodological dependence explicit.
+
+\paragraph{Morphological analysis.}
+Experiment~6 (detailed) complements the scalar metrics by visualising typical true
+positives, false positives, and false negatives across duration and amplitude strata. This
+helps distinguish failures due to boundary misalignment from failures due to missed events,
+and provides qualitative evidence about which blink types are systematically challenging.

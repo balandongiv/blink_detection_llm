@@ -7,12 +7,12 @@ underlying physiology of blinks does not change with epoch length.
 
 Design
 ------
-Proposed-Med is re-run from scratch under epoch durations of 20, 30, 60, and
+Proposed-Med is re-run from scratch under epoch durations of 20, 30, 40, 60, and
 120 seconds.  Secondary outcomes include the number of suspicious epochs
 identified by Stage A and the estimated sample-level threshold θ_c from Stage B.
 
 Two-tailed Wilcoxon signed-rank tests compare each duration against the
-60-second reference, with Bonferroni correction for 3 non-reference durations.
+60-second reference, with Bonferroni correction for non-reference durations.
 
 Datasets
 --------
@@ -21,6 +21,9 @@ Drowsy Driving Raja corpus and murat_2018.
 
 from __future__ import annotations
 
+import argparse
+import csv
+import json
 import logging
 import sys
 from collections import defaultdict
@@ -62,7 +65,7 @@ MURAT_DATASET_ROOT   = Path(r"D:\dataset\murat_2018")
 # ---------------------------------------------------------------------------
 # Experiment parameters
 # ---------------------------------------------------------------------------
-EPOCH_DURATIONS_S      = [20.0, 30.0, 60.0, 120.0]
+EPOCH_DURATIONS_S      = [20.0, 30.0, 40.0, 60.0, 120.0]
 REFERENCE_EPOCH_S      = 60.0   # Wilcoxon comparisons are against this duration
 FILTER_LOW             = 1.0
 FILTER_HIGH            = 20.0
@@ -160,12 +163,12 @@ def _print_per_session_table(results: list[dict], dataset_name: str) -> None:
         f"{'session':<{W_sess}}  {'dur_s':>6}  "
         f"{'tp':>5}  {'fp':>5}  {'fn':>5}  "
         f"{'prec':>8}  {'recall':>8}  {'f1':>8}  "
-        f"{'n_flag':>7}  {'n_valid':>7}  {'θ_c':>12}"
+        f"{'n_flag':>7}  {'n_valid':>7}  {'theta_c':>12}"
     )
     sep = "-" * len(header)
 
     print(f"\n{'=' * len(header)}")
-    print(f"EXP 3 — PER-SESSION RESULTS  —  {dataset_name.upper()}")
+    print(f"EXP 3 - PER-SESSION RESULTS - {dataset_name.upper()}")
     print(f"{'=' * len(header)}")
     print(header)
     print(sep)
@@ -200,12 +203,12 @@ def _print_duration_summary(results: list[dict], dataset_name: str) -> None:
     header = (
         f"{'dur_s':>6}  {'N':>5}  "
         f"{'macroP':>8}  {'macroR':>8}  {'macroF1':>8}  "
-        f"{'mean_n_flag':>11}  {'mean_θ_c':>10}"
+        f"{'mean_n_flag':>11}  {'mean_theta':>10}"
     )
     sep = "-" * len(header)
 
     print(f"\n{'=' * len(header)}")
-    print(f"EXP 3 — DURATION SUMMARY  —  {dataset_name.upper()}")
+    print(f"EXP 3 - DURATION SUMMARY - {dataset_name.upper()}")
     print(f"{'=' * len(header)}")
     print(header)
     print(sep)
@@ -217,13 +220,115 @@ def _print_duration_summary(results: list[dict], dataset_name: str) -> None:
         macro_f1  = float(np.mean([r["f1"]        for r in bucket]))
         mean_flag = float(np.mean([r["n_flagged"]  for r in bucket]))
         mean_thr  = float(np.mean([r["blink_region_threshold"] for r in bucket]))
-        ref_marker = " ←ref" if dur == REFERENCE_EPOCH_S else ""
+        ref_marker = " <-ref" if dur == REFERENCE_EPOCH_S else ""
         print(
             f"{dur:>6.0f}  {len(bucket):>5}  "
             f"{macro_p:>8.4f}  {macro_r:>8.4f}  {macro_f1:>8.4f}  "
             f"{mean_flag:>11.2f}  {mean_thr:>10.6f}{ref_marker}"
         )
     print(f"{'=' * len(header)}\n")
+
+
+def _duration_summary_rows(results: list[dict], dataset_name: str) -> list[dict]:
+    """Return macro-averaged metrics per epoch duration as dict rows."""
+    rows = results if dataset_name == "all" else [
+        r for r in results if r["dataset"] == dataset_name
+    ]
+    if not rows:
+        return []
+
+    buckets: dict[float, list[dict]] = defaultdict(list)
+    for r in rows:
+        buckets[r["epoch_duration_s"]].append(r)
+
+    out: list[dict] = []
+    for dur in sorted(buckets):
+        bucket = buckets[dur]
+        out.append({
+            "dataset": dataset_name,
+            "epoch_duration_s": float(dur),
+            "n_sessions": int(len(bucket)),
+            "macro_precision": float(np.mean([r["precision"] for r in bucket])),
+            "macro_recall": float(np.mean([r["recall"] for r in bucket])),
+            "macro_f1": float(np.mean([r["f1"] for r in bucket])),
+            "mean_n_flagged": float(np.mean([r["n_flagged"] for r in bucket])),
+            "mean_blink_region_threshold": float(np.mean([r["blink_region_threshold"] for r in bucket])),
+        })
+    return out
+
+
+def _pick_best_epoch(duration_summary_all: list[dict], reference_epoch_s: float) -> tuple[float, dict]:
+    """Pick best epoch based on macro-F1 (primary), with deterministic tie-breaks.
+
+    Tie-break order:
+    1) higher macro-F1 (primary)
+    2) higher macro-recall
+    3) higher macro-precision
+    4) closer to the reference epoch (interpretability)
+    """
+    if not duration_summary_all:
+        raise ValueError("No duration summary rows available to select best epoch.")
+
+    def key(r: dict) -> tuple[float, float, float, float]:
+        return (
+            float(r["macro_f1"]),
+            float(r["macro_recall"]),
+            float(r["macro_precision"]),
+            -abs(float(r["epoch_duration_s"]) - float(reference_epoch_s)),
+        )
+
+    best = max(duration_summary_all, key=key)
+    return float(best["epoch_duration_s"]), best
+
+
+def _write_csv(path: Path, rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not rows:
+        return
+    with path.open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        w.writeheader()
+        w.writerows(rows)
+
+
+def _parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(
+        description="Experiment 1: epoch duration search for Proposed-Med (Strategy F, median estimator).",
+    )
+    p.add_argument(
+        "--epoch-durations-s",
+        default="20,30,40,60,120",
+        help="Comma-separated epoch durations in seconds (e.g., 20,30,40,60,120).",
+    )
+    p.add_argument(
+        "--reference-epoch-s",
+        type=float,
+        default=REFERENCE_EPOCH_S,
+        help="Reference duration for Wilcoxon comparisons and tie-breaking.",
+    )
+    p.add_argument(
+        "--out-dir",
+        type=Path,
+        default=None,
+        help="If set, write CSV/JSON artifacts into this directory.",
+    )
+    p.add_argument(
+        "--no-multithread",
+        action="store_true",
+        help="Disable internal ThreadPoolExecutor (useful for constrained systems).",
+    )
+    p.add_argument(
+        "--n-epochs",
+        type=int,
+        default=None,
+        help="Limit epochs per session for quick runs (None = all).",
+    )
+    p.add_argument(
+        "--quiet",
+        action="store_true",
+        help="Reduce strategy verbosity.",
+    )
+    return p.parse_args()
 
 
 def _run_wilcoxon_vs_reference(results: list[dict], dataset_name: str) -> None:
@@ -244,9 +349,9 @@ def _run_wilcoxon_vs_reference(results: list[dict], dataset_name: str) -> None:
         if all(d in dmap for d in EPOCH_DURATIONS_S)
     )
 
-    print(f"\nExp 3 — Wilcoxon vs {REFERENCE_EPOCH_S:.0f}s reference  "
-          f"—  {dataset_name.upper()}")
-    print(f"  n_sessions={len(complete)}  α_Bonferroni={alpha_corrected:.4f}")
+    print(f"\nExp 3 - Wilcoxon vs {REFERENCE_EPOCH_S:.0f}s reference  "
+          f"-  {dataset_name.upper()}")
+    print(f"  n_sessions={len(complete)}  alpha_Bonferroni={alpha_corrected:.4f}")
     print(f"  {'Comparison':<20}  {'W':>8}  {'p':>8}  {'r':>6}  sig")
     print(f"  {'-' * 55}")
 
@@ -277,6 +382,21 @@ def _run_wilcoxon_vs_reference(results: list[dict], dataset_name: str) -> None:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
+    args = _parse_args()
+
+    global USE_MULTITHREAD, VERBOSE, EPOCH_DURATIONS_S, REFERENCE_EPOCH_S, N_EPOCHS
+    USE_MULTITHREAD = not args.no_multithread
+    VERBOSE = not args.quiet
+    N_EPOCHS = args.n_epochs
+    REFERENCE_EPOCH_S = float(args.reference_epoch_s)
+
+    try:
+        EPOCH_DURATIONS_S = [float(x.strip()) for x in str(args.epoch_durations_s).split(",") if x.strip()]
+    except Exception as exc:
+        raise SystemExit(f"Invalid --epoch-durations-s: {args.epoch_durations_s!r} ({exc})")
+    if not EPOCH_DURATIONS_S:
+        raise SystemExit("No epoch durations provided.")
+
     setup_tutorial_logging()
     raja_pairs  = discover_raja_pairs(RAJA_ANNOTATION_BASE, RAJA_PROCESSED_BASE)
     murat_pairs = discover_murat_pairs(MURAT_DATASET_ROOT)
@@ -335,6 +455,34 @@ def main() -> None:
 
     for ds in ("raja", "murat2018"):
         _run_wilcoxon_vs_reference(results, ds)
+
+    # Orchestration-friendly selection + artifacts.
+    duration_summary_all = _duration_summary_rows(results, "all")
+    best_epoch_s, best_row = _pick_best_epoch(duration_summary_all, REFERENCE_EPOCH_S)
+    print(f"\n[BEST EPOCH] Proposed-Med macro-F1 best at {best_epoch_s:.0f} seconds (dataset=all, metric=macro_F1).")
+
+    if args.out_dir is not None:
+        out_dir: Path = args.out_dir
+        out_dir.mkdir(parents=True, exist_ok=True)
+
+        _write_csv(out_dir / "exp1_epoch_duration_results.csv", results)
+        _write_csv(
+            out_dir / "exp1_epoch_duration_summary.csv",
+            _duration_summary_rows(results, "raja")
+            + _duration_summary_rows(results, "murat2018")
+            + duration_summary_all,
+        )
+
+        payload = {
+            "experiment": "exp1_epoch_duration",
+            "metric_primary": "macro_f1 (dataset=all)",
+            "epoch_durations_s": [float(x) for x in EPOCH_DURATIONS_S],
+            "reference_epoch_s": float(REFERENCE_EPOCH_S),
+            "best_epoch_duration_s": float(best_epoch_s),
+            "best_row": best_row,
+            "n_rows": int(len(results)),
+        }
+        (out_dir / "summary.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
     if errors:
         print(f"\n{len(errors)} error(s):")

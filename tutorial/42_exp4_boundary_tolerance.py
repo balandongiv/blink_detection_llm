@@ -20,6 +20,9 @@ Drowsy Driving Raja corpus and murat_2018.
 
 from __future__ import annotations
 
+import argparse
+import csv
+import json
 import logging
 import sys
 from collections import defaultdict
@@ -60,7 +63,7 @@ MURAT_DATASET_ROOT   = Path(r"D:\dataset\murat_2018")
 # ---------------------------------------------------------------------------
 # Experiment parameters
 # ---------------------------------------------------------------------------
-EPOCH_DURATION_S        = 60.0
+EPOCH_DURATION_S        = 60.0  # Override via --epoch-duration-s (selected by Experiment 1)
 # IoU thresholds for event matching (0 = any overlap, 0.5 = strict ≥50% overlap)
 IOU_THRESHOLDS          = [0.0, 0.1, 0.2, 0.3, 0.5]
 REFERENCE_IOU           = 0.1   # default IoU threshold used elsewhere
@@ -175,7 +178,7 @@ def _print_per_session_table(results: list[dict], dataset_name: str) -> None:
     sep = "-" * len(header)
 
     print(f"\n{'=' * len(header)}")
-    print(f"EXP 4 — PER-SESSION  —  {dataset_name.upper()}")
+    print(f"EXP 4 - PER-SESSION - {dataset_name.upper()}")
     print(f"{'=' * len(header)}")
     print(header)
     print(sep)
@@ -212,7 +215,7 @@ def _print_tolerance_summary(results: list[dict], dataset_name: str) -> None:
     sep = "-" * len(header)
 
     print(f"\n{'=' * len(header)}")
-    print(f"EXP 4 — IoU THRESHOLD SUMMARY  —  {dataset_name.upper()}")
+    print(f"EXP 4 - IoU THRESHOLD SUMMARY - {dataset_name.upper()}")
     print(f"{'=' * len(header)}")
     print(header)
     print(sep)
@@ -224,7 +227,7 @@ def _print_tolerance_summary(results: list[dict], dataset_name: str) -> None:
         macro_r  = float(np.mean([r["recall"]    for r in bucket]))
         macro_f1 = float(np.mean([r["f1"]        for r in bucket]))
         f1_values.append(macro_f1)
-        ref_marker = " ←ref" if iou_thr == REFERENCE_IOU else ""
+        ref_marker = " <-ref" if iou_thr == REFERENCE_IOU else ""
         print(
             f"{iou_thr:>7.2f}  {len(bucket):>5}  "
             f"{macro_p:>9.4f}  {macro_r:>9.4f}  {macro_f1:>9.4f}{ref_marker}"
@@ -238,11 +241,96 @@ def _print_tolerance_summary(results: list[dict], dataset_name: str) -> None:
     print(f"{'=' * len(header)}\n")
 
 
+def _tolerance_summary_rows(results: list[dict], dataset_name: str) -> list[dict]:
+    """Return macro metrics per IoU threshold for *dataset_name* (or 'all')."""
+    rows = results if dataset_name == "all" else [
+        r for r in results if r["dataset"] == dataset_name
+    ]
+    if not rows:
+        return []
+
+    buckets: dict[float, list[dict]] = defaultdict(list)
+    for r in rows:
+        buckets[r["iou_threshold"]].append(r)
+
+    out: list[dict] = []
+    for iou_thr in sorted(buckets):
+        bucket = buckets[iou_thr]
+        out.append({
+            "dataset": dataset_name,
+            "epoch_duration_s": float(EPOCH_DURATION_S),
+            "iou_threshold": float(iou_thr),
+            "n_sessions": int(len(bucket)),
+            "macro_precision": float(np.mean([r["precision"] for r in bucket])),
+            "macro_recall": float(np.mean([r["recall"] for r in bucket])),
+            "macro_f1": float(np.mean([r["f1"] for r in bucket])),
+        })
+    if out:
+        f1_values = [r["macro_f1"] for r in out]
+        f1_range = float(max(f1_values) - min(f1_values))
+        for r in out:
+            r["macro_f1_range_all_thresholds"] = f1_range
+    return out
+
+
+def _write_csv(path: Path, rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not rows:
+        return
+    with path.open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
+        w.writeheader()
+        w.writerows(rows)
+
+
+def _parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(
+        description="Experiment 4: stability across event-matching tolerances (IoU thresholds).",
+    )
+    p.add_argument(
+        "--epoch-duration-s",
+        type=float,
+        default=EPOCH_DURATION_S,
+        help="Epoch duration in seconds (should be set to the best duration from Experiment 1).",
+    )
+    p.add_argument(
+        "--out-dir",
+        type=Path,
+        default=None,
+        help="If set, write CSV/JSON artifacts into this directory.",
+    )
+    p.add_argument(
+        "--no-multithread",
+        action="store_true",
+        help="Disable internal ThreadPoolExecutor.",
+    )
+    p.add_argument(
+        "--n-epochs",
+        type=int,
+        default=None,
+        help="Limit epochs per session for quick runs (None = all).",
+    )
+    p.add_argument(
+        "--quiet",
+        action="store_true",
+        help="Reduce strategy verbosity.",
+    )
+    return p.parse_args()
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
 def main() -> None:
+    args = _parse_args()
+
+    global USE_MULTITHREAD, VERBOSE, EPOCH_DURATION_S, N_EPOCHS
+    USE_MULTITHREAD = not args.no_multithread
+    VERBOSE = not args.quiet
+    EPOCH_DURATION_S = float(args.epoch_duration_s)
+    N_EPOCHS = args.n_epochs
+
     setup_tutorial_logging()
     raja_pairs  = discover_raja_pairs(RAJA_ANNOTATION_BASE, RAJA_PROCESSED_BASE)
     murat_pairs = discover_murat_pairs(MURAT_DATASET_ROOT)
@@ -292,6 +380,25 @@ def main() -> None:
 
     for ds in ("raja", "murat2018", "all"):
         _print_tolerance_summary(results, ds)
+
+    if args.out_dir is not None:
+        out_dir: Path = args.out_dir
+        out_dir.mkdir(parents=True, exist_ok=True)
+        _write_csv(out_dir / "exp42_boundary_tolerance_results.csv", results)
+        _write_csv(
+            out_dir / "exp42_boundary_tolerance_summary.csv",
+            _tolerance_summary_rows(results, "raja")
+            + _tolerance_summary_rows(results, "murat2018")
+            + _tolerance_summary_rows(results, "all"),
+        )
+        payload = {
+            "experiment": "exp42_boundary_tolerance",
+            "epoch_duration_s": float(EPOCH_DURATION_S),
+            "metric_primary": "macro_f1 (dataset=all) across IOU_THRESHOLDS",
+            "iou_thresholds": [float(x) for x in IOU_THRESHOLDS],
+            "n_rows": int(len(results)),
+        }
+        (out_dir / "summary.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
     if errors:
         print(f"\n{len(errors)} error(s):")
