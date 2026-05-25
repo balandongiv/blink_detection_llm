@@ -1,5 +1,5 @@
 # Core scientific computing
-numpy >2.0.0
+numpy>2.0.0
 pandas
 PyWavelets
 
@@ -14,3 +14,8 @@ edfio>=0.4.0
 
 # Utilities
 gdown
+
+# GitHub dependencies
+pyblinker @ git+https://github.com/balandongiv/pyblinker.git
+blink-evaluation @ git+https://github.com/balandongiv/blink_evaluation.git
+autoreject @ git+https://github.com/autoreject/autoreject.git
