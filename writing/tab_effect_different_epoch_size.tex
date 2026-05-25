@@ -1,21 +1,19 @@
-
 \begin{table}[ht]
     \centering
     \caption{Macro F1 of Proposed-Med across epoch durations.
         $p$-values (Wilcoxon, two-tailed) compare each duration against the 60-second reference.
-        A non-significant result indicates that performance is stable under that duration change.}
+        A non-significant result indicates that performance is stable under that duration change.
+        \textbf{Bold} row = best epoch selected for downstream experiments.}
     \label{tab:epoch_duration}
     \begin{tabular}{lcc}
         \toprule
         Epoch duration & Macro F1 & $p$ vs.\ 60\,s \\
         \midrule
-        
-        20\,s  & 0.8160 & 0.4387 \\
-        30\,s  & 0.8177 & 0.7270 \\
-        40\,s  & 0.8176 & 0.4460 \\
-        60\,s  & 0.8112 & (reference) \\
+        20\,s & 0.8160 & 0.4387 \\
+        \bfseries 30\,s & \bfseries 0.8177 & \bfseries 0.7270 \\
+        40\,s & 0.8176 & 0.4460 \\
+        60\,s & 0.8112 & (reference) \\
         120\,s & 0.8133 & 0.1415 \\
-
         \bottomrule
     \end{tabular}
 \end{table}

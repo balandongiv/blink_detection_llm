@@ -9,9 +9,9 @@ choices (epoch length and event-matching strictness) affect reported performance
 
 Under the primary Proposed-Med configuration, a 30-second epoch duration achieved the best
 macro-F1 among the tested durations (20, 30, 40, 60, 120\,s), with performance remaining
-stable across this range. Strategy comparisons showed that the proposed epoch-aware
-pipeline substantially improves over naive concatenation and a community baseline (MNE
-annotate\_amplitude), while a direct Bayesian-optimisation ablation can remain competitive
-in macro-F1. Finally, the IoU sweep highlights that evaluation strictness must be reported
-explicitly: stricter overlap thresholds lead to markedly lower F1 even when detections are
-near-misses.
+stable across this range (macro-F1\,=\,0.8177 at 30\,s). Strategy comparisons showed
+that the proposed epoch-aware pipeline substantially improves over naive concatenation and
+a community baseline (MNE annotate\_amplitude), while a direct Bayesian-optimisation
+ablation can remain competitive in macro-F1. Finally, the IoU sweep highlights that
+evaluation strictness must be reported explicitly: stricter overlap thresholds lead to
+markedly lower F1 even when detections are near-misses.

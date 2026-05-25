@@ -97,7 +97,7 @@ proposed epoch-aware pipeline, primarily through reduced recall rather than
 reduced precision.
 
 \paragraph{Design.}
-All five conditions are applied to every session under 60-second epochs.
+All five conditions are applied to every session under 30-second epochs.
 Per-session macro F1, precision, and recall are summarised in
 Table~\ref{tab:exp1_main}.
 
@@ -189,14 +189,14 @@ We can run this together with the Experiment 1, but the strategy F should run fi
 \paragraph{Motivation.}
 Epoch duration is routinely chosen on paradigm-specific or theoretical grounds
 and is rarely optimised for the blink detector itself.
-In driving studies, epoch lengths ranging from 20 seconds to several minutes
+In driving studies, epoch lengths ranging from 30 seconds to several minutes
 appear in the literature.
 A robust pipeline should produce stable event-level F1 across this range,
 because the underlying physiology of blinks does not change with the epoch
 grid imposed during analysis.
 
 \paragraph{Design.}
-Proposed-Med is evaluated under epoch durations of 20, 30, 40, 60, and 120 seconds.
+Proposed-Med is evaluated under epoch durations of 20, 30, 40, 60, and 30 seconds.
 For each duration the full pipeline is re-run from scratch, since epoch-level
 peak-to-peak statistics change with epoch length.
 Primary outcomes are per-session macro F1; secondary outcomes are the number of
