@@ -1,78 +1,50 @@
 
 \section{Introduction}
 
-Electroencephalography is routinely affected by ocular activity, and blink contamination
-remains one of the oldest and most persistent obstacles in EEG analysis.
-At the same time, spontaneous and task-related blinks are themselves scientifically
-meaningful: prior work links blink-derived measures to fatigue, drowsiness, attention,
-cognitive load, and operational performance, and more recent blink-linked EEG studies
-show that blink-locked neural activity can index cognitive demand in naturalistic tasks
+Electroencephalography is routinely affected by ocular activity, and blink contamination remains one of the oldest and most persistent obstacles in EEG analysis.
+At the same time, spontaneous and task-related blinks are themselves scientifically  meaningful: prior work links blink-derived measures to fatigue, drowsiness, attention,cognitive load, and operational performance, and more recent blink-linked EEG studies show that blink-locked neural activity can index cognitive demand in naturalistic tasks
 \citep{croft2000removal,kleifges2017blinker,alyan2023blink}.
-These dual roles make blink detection a foundational problem rather than a preprocessing
-detail: researchers need detectors accurate enough for artifact handling, and reliable
-enough to preserve blink events as analyzable signals in their own right.
+%%
+These dual roles make blink detection a foundational problem rather than a preprocessing detail: researchers need detectors accurate enough for artifact handling, and reliable enough to preserve blink events as analyzable signals in their own right.
 
-Thresholding remains central to this problem because even sophisticated pipelines
-frequently begin with amplitude gates.
-Threshold-based designs are attractive in practice because they are interpretable, fast,
-and deployable in few-channel and real-time environments---properties that are especially
-important for frontal wearable EEG and neuroergonomic settings, where channel count,
-latency, and computational budget are constrained.
-However, thresholding is also where many detectors fail: a threshold learned from
-background-dominated samples may drift toward over-detection, while a threshold tuned
-to one subject or experiment can collapse under inter-subject variability or under
-distributions that include eye movements, muscle activity, or epileptiform events
+Thresholding remains central to this problem because even sophisticated pipelines  frequently begin with amplitude gates.
+%%%
+Threshold-based designs are attractive in practice because they are interpretable, fast, and deployable in few-channel and real-time environments---properties that are especially important for frontal wearable EEG and neuroergonomic settings, where channel count,latency, and computational budget are constrained.
+However, thresholding is also where many detectors fail: a threshold learned from background-dominated samples may drift toward over-detection, while a threshold tuned to one subject or experiment can collapse under inter-subject variability or under distributions that include eye movements, muscle activity, or epileptiform events
 \citep{chang2016detection,kleifges2017blinker,agarwal2019blink,tran2021detection,wang2022multidimensional,zhang2023method}.
 
 \paragraph{The epoch-structured setting.}
-A critical and largely overlooked challenge arises in domain-specific EEG paradigms
-where analysis is inherently epoch-based.
-In driving research, for example, a continuous 60--90 minute recording is routinely
-segmented into non-overlapping 20--120 second epochs that correspond to task events,
-environmental changes, or regularly spaced analysis windows
+A critical and largely overlooked challenge arises in domain-specific EEG paradigms where analysis is inherently epoch-based.
+In driving research, for example, a continuous 60--90 minute recording is routinely segmented into non-overlapping 20--120 second epochs that correspond to task events,environmental changes, or regularly spaced analysis windows
 \citep{cao2019multichannel}.
-Blink detection in this context means detecting blinks within the epoch structure, not
-within an undivided recording.
-Furthermore, in practice not all epochs are available for analysis: some are pre-rejected
-by the analyst because of gross artefacts, electrode failures, or brief signal loss,
-leaving a subset of valid epochs that may be non-contiguous and non-representative of
-the full recording.
+%%
+Blink detection in this context means detecting blinks within the epoch structure, not within an undivided recording.
+Furthermore, in practice not all epochs are available for analysis: some are pre-rejected by the analyst because of gross artefacts, electrode failures, or brief signal loss, leaving a subset of valid epochs that may be non-contiguous and non-representative of the full recording.
 
-To our knowledge, no existing blink-detection system explicitly addresses this setting.
-State-of-the-art tools such as BLINKER~\citep{kleifges2017blinker} and MNE-Python's
-amplitude-annotation routines operate on continuous or concatenated signals and derive
-thresholds from the full recording.
-When applied naively to an epoch-structured recording---by concatenating available
-epochs and treating the result as a continuous signal---these tools implicitly pool
-blink-containing and blink-free epochs when estimating the threshold.
-This pooling is directly harmful: clean epochs dilute the amplitude statistics that
-determine where the threshold is placed, systematically biasing the threshold upward
+To our knowledge, no existing blink-detection system explicitly addresses this setting.  State-of-the-art tools such as BLINKER~\citep{kleifges2017blinker} and MNE-Python's amplitude-annotation routines operate on continuous or concatenated signals and derive thresholds from the full recording.
+When applied naively to an epoch-structured recording---by concatenating available epochs and treating the result as a continuous signal---these tools implicitly pool blink-containing and blink-free epochs when estimating the threshold.
+This pooling is directly harmful: clean epochs dilute the amplitude statistics that determine where the threshold is placed, systematically biasing the threshold upward
 and suppressing recall.
-The problem is compounded when some epochs have been pre-rejected, because the
-remaining valid epochs may be skewed toward a particular recording condition.
+The problem is compounded when some epochs have been pre-rejected, because the remaining valid epochs may be skewed toward a particular recording condition.
+
+
+%By contrast, threshold-free or less threshold-dependent routes such as Kong et al.’s ICA-based detector reduce manual tuning but require multichannel decomposition and are less aligned with low-channel wearable or webcam pipelines than Chang’s prefrontal EEG and Dewi’s (https://www.mdpi.com/1424-8220/13/8/10783)
+
 
 \paragraph{Threshold selection as a first-class problem.}
-Beyond the epoch-structured setting, there is a broader gap in the literature: threshold
-selection is rarely studied as an isolated problem.
-The choice between a global mean-plus-standard-deviation rule, a robust median-MAD rule,
-a locally adaptive estimate, and a data-driven optimised threshold can substantially
-alter detected event counts and boundary precision, yet these choices are frequently
-absorbed into larger pipelines and not evaluated independently.
-Without a systematic comparison under a shared evaluation protocol, it is not possible
-to attribute performance differences to threshold design versus other pipeline choices.
+Beyond the epoch-structured setting, there is a broader gap in the literature: threshold selection is rarely studied as an isolated problem.
+The choice between a global mean-plus-standard-deviation rule, a robust median-MAD rule,a locally adaptive estimate, and a data-driven optimised threshold can substantially alter detected event counts and boundary precision, yet these choices are frequently absorbed into larger pipelines and not evaluated independently.
+Without a systematic comparison under a shared evaluation protocol, it is not possible to attribute performance differences to threshold design versus other pipeline choices.
 
 \paragraph{Contributions.}
-This paper makes four contributions. First, we formalise the epoch-structured blink
-detection setting and show that naive concatenation of epochs leads to measurably worse
-performance than epoch-aware threshold estimation. Second, we propose a three-stage
-pipeline---epoch screening, sample-level threshold estimation, and blink-region
-extraction---that explicitly accounts for the epoch structure and handles pre-rejected
-epochs gracefully by design. Third, we introduce and evaluate a robust threshold
-estimator at Stage~B based on the median and MAD, and compare it systematically
-against mean-based and directly optimised alternatives. Fourth, we provide a
-comprehensive benchmark covering five competing methods, four epoch durations,
-sensitivity analyses for the fallback threshold $n_{\min}$ and the boundary tolerance,
-and a morphological analysis of detection failures.
-All experiments are conducted on a large naturalistic driving EEG corpus and evaluated
-under an event-level overlap criterion with macro-averaged F1 and Wilcoxon signed-rank
-tests.
+This paper makes four contributions. First, we formalise the epoch-structured blink detection setting and show that naive concatenation of epochs leads to measurably worse performance than epoch-aware threshold estimation.
+%
+Second, we propose a three-stage pipeline---epoch screening, sample-level threshold estimation, and blink-region
+extraction---that explicitly accounts for the epoch structure and handles pre-rejected epochs gracefully by design.
+%%
+Third, we introduce and evaluate a robust threshold estimator at Stage~B based on the median and MAD, and compare it systematically against mean-based and directly optimised alternatives.
+%%
+Fourth, we provide a comprehensive benchmark covering five competing methods, four epoch durations, sensitivity analyses for the fallback threshold $n_{\min}$ and the boundary tolerance,and a morphological analysis of detection failures.
+%%
+%All experiments are conducted on a large naturalistic driving EEG corpus and evaluated  under an event-level overlap criterion with macro-averaged F1 and Wilcoxon signed-rank
+%tests.
