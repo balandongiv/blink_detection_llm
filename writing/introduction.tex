@@ -1,5 +1,29 @@
-
+% The introduction writing style is follow
+% - https://www.sciencedirect.com/science/article/pii/S1746809421001403
 \section{Introduction}
+
+EEG is a powerful tool for studying brain function in fatigue driving. At the same time,EEG also captures a wide range of non-neural signals, including ocular activity.
+While considered unwanted artifact in various research, however, the ocular artifacts has been shown to be scientifically meaningful in their own right, with links to fatigue, drowsiness, attention, cognitive load, and operational performance
+
+% Idea
+%Some researches \href{https://www.sciencedirect.com/science/article/pii/S0045790616302427#bib0008}{[8]}, \href{https://www.sciencedirect.com/science/article/pii/S0045790616302427#bib0009}{[9]}, \href{https://www.sciencedirect.com/science/article/pii/S0045790616302427#bib0010}{[10]} show that human mental condition can be indicated by some behavior features of the eyes, such as the blinks. The blinks of the eyes are the natural actions. The eye states exchange between open state and close state. The blink duration and frequency will be affected by the fatigue degree and other physical conditions. There is a tight correlation between fatigue states and the features of the driver's eyes. These features can reliably indicate the driver's physical conditions \href{https://www.sciencedirect.com/science/article/pii/S0045790616302427#bib0011}{[11]}. Therefore, the driver's fatigue state could be determined by the eye states recognition.
+
+
+
+Ocular metrics such as blink and saccade rates have also been found to be beneficial for cognitive state monitoring \href{javascript:void()}{[6]}–​\href{javascript:void()}{[8]}.
+
+
+
+Mostly the EEG recorded from the frontal lobe is
+affected by these artifacts because of their neighbourhood
+with the eyes. The electrodes which are placed near to eye
+are affected by the eye blinks and eye movements[8]. As
+these electrogram from eye movements and eye blinks are
+inherent and cannot be differentiated manually or at the time
+of EEG, we need to detect  them by using various noise
+contrasting algorithms at the pre-processing stage[9].
+
+
 
 Electroencephalography is routinely affected by ocular activity, and blink contamination remains one of the oldest and most persistent obstacles in EEG analysis.
 At the same time, spontaneous and task-related blinks are themselves scientifically  meaningful: prior work links blink-derived measures to fatigue, drowsiness, attention,cognitive load, and operational performance, and more recent blink-linked EEG studies show that blink-locked neural activity can index cognitive demand in naturalistic tasks
@@ -48,3 +72,9 @@ Fourth, we provide a comprehensive benchmark covering five competing methods, fo
 %%
 %All experiments are conducted on a large naturalistic driving EEG corpus and evaluated  under an event-level overlap criterion with macro-averaged F1 and Wilcoxon signed-rank
 %tests.
+
+
+This paper is organized as follows. Firstly, the techniques used in the proposed ICA-ANC system are presented. Secondly, the details of the proposed ICA-ANC system are given. Thirdly, two datasets used for performance analysis are introduced. Then, the result is discussed. Finally, a conclusion is made.
+
+
+The idea, there is possible practice, since there is yet no tools that can 100\% predict blink region, in some cases, there is possible to manually check the raw signal, and annotate blink that is not detected by algorithm.

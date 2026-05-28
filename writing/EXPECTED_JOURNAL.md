@@ -1,3 +1,8 @@
+https://www.sciencedirect.com/journal/biomedical-signal-processing-and-control
+
+Biomedical Signal Processing and Control
+
+
 https://www.sciencedirect.com/journal/computer-methods-and-programs-in-biomedicine
 
 Good paper
