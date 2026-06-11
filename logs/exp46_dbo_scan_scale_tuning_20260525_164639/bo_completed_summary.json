@@ -1,0 +1,18 @@
+{
+  "experiment": "exp46_dbo_scan_scale_bo",
+  "epoch_duration_s": 30.0,
+  "conda_environment": "blink-detection-llm",
+  "run_status": "stopped_during_cao2018_validation",
+  "stop_reason": "cao2018 validation remained memory-heavy and slow after BO completed",
+  "raja_n_sessions": 46,
+  "bo_n_calls": 25,
+  "bo_n_initial_points": 5,
+  "best_scale": 0.1388,
+  "best_scale_mean_f1_raja": 0.8702,
+  "previous_default_scale": 0.12,
+  "recommendation": "use STAGE1_SCAN_SCALE = 0.1388 for the evaluated DBO configuration",
+  "cao2018_validation_completed": false,
+  "cao2018_precompute_completed_sessions": 40,
+  "cao2018_total_sessions": 58,
+  "terminal_log": "terminal.log"
+}

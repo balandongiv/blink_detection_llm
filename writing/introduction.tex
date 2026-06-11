@@ -2,6 +2,39 @@
 % - https://www.sciencedirect.com/science/article/pii/S1746809421001403
 \section{Introduction}
 
+
+
+Paragraph 1 theme: Blinking as a behavioural indicator of fatigue driving.
+Blinking is a physiological process that involves the closure and reopening of the eyelids. Its primary functions are to protect the ocular surface, maintain corneal moisture, and support visual comfort. Beyond these physiological functions, blink behaviour has been increasingly recognised as an important indicator in fatigue-driving research. Variations in blink-related features, such as blink frequency, blink duration, eye-closure duration, and blink patterns, can reflect changes in alertness and cognitive state. As fatigue increases, drivers may exhibit slower or prolonged blinks, which can indicate reduced vigilance and a higher risk of impaired driving performance. Therefore, blink behaviour provides a useful and non-invasive marker for monitoring driver fatigue.
+
+Paragraph 2 theme: Capturing blink activity through EEG and EOG signals.
+In the neuroscience study of fatigue driving, blink activity can be captured through external methods, such as camera-based eye monitoring, or through electrophysiological recordings, particularly electroencephalography and electrooculography. Although EEG is mainly used to measure brain activity, blink-related components are often present in EEG signals because eyelid movements and eye movements generate strong electrical potentials. These ocular activities are especially prominent in frontal EEG electrodes due to their close proximity to the eyes. As a result, blink information can be extracted from EEG recordings, either by analysing the ocular components embedded in the EEG signal or by combining EEG with EOG-based measurements. This makes EEG/EOG recordings valuable not only for studying neural activity during fatigue but also for identifying blink-related markers associated with drowsiness.
+
+Paragraph 3 theme: Distinguishing blink artifacts from blink detection in the literature.
+It is important to distinguish between two major perspectives on blink activity in the existing literature. In many EEG studies, blink-related activity is treated as an artifact because it contaminates neural signals and may interfere with the interpretation of brain activity. In such cases, blink components are commonly removed during EEG preprocessing. However, in fatigue-driving studies, blink activity can also be treated as meaningful information rather than noise. From this perspective, blink events are identified, extracted, and analysed as potential indicators of driver fatigue. Blink detection methods can generally be classified into machine-learning-based, morphology-based, and thresholding-based approaches. Machine learning methods rely on trained models to classify blink events, while morphology-based methods identify blinks based on their characteristic waveform shape. Thresholding-based methods, in contrast, detect blinks by comparing signal amplitudes with predefined or adaptive threshold values.
+
+Paragraph 4 theme: Thresholding as a direct method for blink detection.
+Thresholding is one of the most straightforward and widely used approaches for detecting blink activity from EEG or EOG signals. In this method, candidate blink events are identified when the signal amplitude exceeds a certain threshold value, as blink activity typically produces large-amplitude deflections, especially in frontal channels. The simplicity of thresholding makes it computationally efficient and easy to implement, particularly in real-time fatigue-detection systems. In addition, thresholding is often used as an initial detection step in more complex pipelines, where the detected candidates are further refined using morphological rules or machine-learning classifiers. However, selecting an appropriate threshold value is not trivial. Blink amplitude can vary across participants, electrode locations, recording devices, signal quality, and experimental conditions. A threshold that is too low may produce false detections due to noise or other artifacts, whereas a threshold that is too high may miss genuine blink events. Therefore, threshold selection remains a critical consideration in the reliable detection of blink activity for fatigue-driving research.
+
+
+
+
+, and also the most widely used way, as it is fast, interpretable, and can be deployed in real time. However, finding the threshold value.
+
+
+is also where many detectors fail, as the threshold can be easily affected by the distribution of the data, and can be easily biased by the clean epochs.
+
+
+There are several methods for capturing eye blinks in the context of fatigue driving research,but, one of the straight forward way
+
+
+These include video-based eye tracking, electrooculography (EOG), and electroencephalography (EEG).
+, drowsiness, and reduced alertness, particularly in the context of driving. Changes in blink frequency, blink duration, and eyelid closure patterns can reflect a decline in cognitive vigilance and visual attention, both of which are critical for safe vehicle operation. In fatigue driving research, these blink-related features are commonly examined as non-invasive behavioral cues for detecting driver drowsiness and assessing the risk of impaired driving performance.
+
+
+
+
+
 EEG is a powerful tool for studying brain function in fatigue driving. At the same time,EEG also captures a wide range of non-neural signals, including ocular activity.
 While considered unwanted artifact in various research, however, the ocular artifacts has been shown to be scientifically meaningful in their own right, with links to fatigue, drowsiness, attention, cognitive load, and operational performance
 
