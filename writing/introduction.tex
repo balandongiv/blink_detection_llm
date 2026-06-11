@@ -4,26 +4,18 @@
 
 
 
-Paragraph 1 theme: Blinking as a behavioural indicator of fatigue driving.
-Blinking is a physiological process that involves the closure and reopening of the eyelids. Its primary functions are to protect the ocular surface, maintain corneal moisture, and support visual comfort. Beyond these physiological functions, blink behaviour has been increasingly recognised as an important indicator in fatigue-driving research. Variations in blink-related features, such as blink frequency, blink duration, eye-closure duration, and blink patterns, can reflect changes in alertness and cognitive state. As fatigue increases, drivers may exhibit slower or prolonged blinks, which can indicate reduced vigilance and a higher risk of impaired driving performance. Therefore, blink behaviour provides a useful and non-invasive marker for monitoring driver fatigue.
-
-Paragraph 2 theme: Capturing blink activity through EEG and EOG signals.
-In the neuroscience study of fatigue driving, blink activity can be captured through external methods, such as camera-based eye monitoring, or through electrophysiological recordings, particularly electroencephalography and electrooculography. Although EEG is mainly used to measure brain activity, blink-related components are often present in EEG signals because eyelid movements and eye movements generate strong electrical potentials. These ocular activities are especially prominent in frontal EEG electrodes due to their close proximity to the eyes. As a result, blink information can be extracted from EEG recordings, either by analysing the ocular components embedded in the EEG signal or by combining EEG with EOG-based measurements. This makes EEG/EOG recordings valuable not only for studying neural activity during fatigue but also for identifying blink-related markers associated with drowsiness.
-
-Paragraph 3 theme: Distinguishing blink artifacts from blink detection in the literature.
-It is important to distinguish between two major perspectives on blink activity in the existing literature. In many EEG studies, blink-related activity is treated as an artifact because it contaminates neural signals and may interfere with the interpretation of brain activity. In such cases, blink components are commonly removed during EEG preprocessing. However, in fatigue-driving studies, blink activity can also be treated as meaningful information rather than noise. From this perspective, blink events are identified, extracted, and analysed as potential indicators of driver fatigue. Blink detection methods can generally be classified into machine-learning-based, morphology-based, and thresholding-based approaches. Machine learning methods rely on trained models to classify blink events, while morphology-based methods identify blinks based on their characteristic waveform shape. Thresholding-based methods, in contrast, detect blinks by comparing signal amplitudes with predefined or adaptive threshold values.
-
-Paragraph 4 theme: Thresholding as a direct method for blink detection.
-
-Thresholding is one of the most straightforward and widely used approaches for detecting blink activity from EEG or EOG signals. In this method, candidate blink events are identified when the signal amplitude exceeds a certain threshold value, as blink activity typically produces large-amplitude deflections, especially in frontal channels. The simplicity of thresholding makes it computationally efficient and easy to implement, particularly in real-time fatigue-detection systems. In addition, thresholding is often used as an initial detection step in more complex pipelines, where the detected candidates are further refined using morphological rules or machine-learning classifiers. However, selecting an appropriate threshold value is not trivial. Blink amplitude can vary across participants, electrode locations, recording devices, signal quality, and experimental conditions. A threshold that is too low may produce false detections due to noise or other artifacts, whereas a threshold that is too high may miss genuine blink events. Therefore, threshold selection remains a critical consideration in the reliable detection of blink activity for fatigue-driving research.
+\input{intro/p1}
+\input{intro/p2}
+\input{intro/p3}
+\input{intro/p4}
+\input{intro/p5}
+\input{intro/p6}
 
 
-Paragraph 5 theme: Challenges of thresholding in the epoch-structured setting.
-In many fatigue-driving studies, EEG recordings are segmented into epochs that correspond to specific task events or analysis windows. This epoch-structured setting introduces additional challenges for threshold-based blink detection. When thresholds are estimated from the entire recording, they may be biased by the presence of clean epochs that contain few or no blinks, leading to an elevated threshold that suppresses blink detection in epochs where blinks are more prevalent. This issue is particularly problematic when some epochs have been pre-rejected due to artifacts or signal loss, as the remaining valid epochs may not be representative of the overall blink activity. As a result, naive application of thresholding in an epoch-structured context can lead to systematic under-detection of blinks, which undermines the reliability of fatigue assessments based on blink metrics. Addressing this challenge requires developing blink detection methods that explicitly account for the epoch structure and can adapt threshold estimation to the specific characteristics of each epoch or subset of epochs, rather than relying on a global threshold derived from the entire recording.
 
 
-Paragraph 6 theme: Contributions of this paper.
-This paper makes several contributions to the field of blink detection in fatigue-driving research. First, we formalise the problem of blink detection in the epoch-structured setting and demonstrate the limitations of naive thresholding approaches that do not account for the epoch structure. Second, we propose a novel three-stage pipeline for blink detection that includes epoch screening, sample-level threshold estimation, and blink-region extraction, which explicitly handles the challenges of the epoch-structured setting and pre-rejected epochs. Third, we introduce a robust threshold estimator based on the median and median absolute deviation (MAD) and systematically compare it against mean-based and directly optimised alternatives. Finally, we provide a comprehensive benchmark of competing methods across different epoch durations, sensitivity analyses for key parameters, and a morphological analysis of detection failures, all evaluated on a large naturalistic driving EEG corpus under an event-level overlap criterion with macro-averaged F1 and Wilcoxon signed-rank tests.
+
+
 
 
 
