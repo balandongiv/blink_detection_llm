@@ -2,13 +2,12 @@
 \section{Experiments and Results}
 \label{sec:results}
 
-\input{tab_experiment_code_summary}
+\input{result/tab_experiment_code_summary}
 \subsection{Experimental Setup}
 \label{sec:exp_setup}
 
 All experiments are evaluated on the driving corpus described in Section~\ref{sec:datasets}.
-Unless otherwise stated, each continuous session is divided into non-overlapping
-30-second epochs (selected by Experiment~1), and the evaluation is conducted at the event level using the
+Unless otherwise stated, each continuous session is divided into non-overlapping 30-second epochs (selected by Experiment~1), and the evaluation is conducted at the event level using the
 overlap-based matching criterion introduced in Section~\ref{sec:eval}.
 
 \paragraph{Conditions.}
@@ -81,14 +80,11 @@ rank-biserial correlation $r$ as an effect-size estimate.
 \label{sec:exp1}
 
 \paragraph{Motivation.}
-In driving and other epoch-structured paradigms, it is common to run a
-continuous-signal blink detector on the raw or minimally preprocessed recording
+In driving and other epoch-structured paradigms, it is common to run a continuous-signal blink detector on the raw or minimally preprocessed recording
 and subsequently map detections back to the epoch grid.
 BLINKER-concat embodies this practice: its threshold is derived from a signal
 pool that mixes blink-heavy and blink-free epochs.
-The central claim of the proposed pipeline is that this mixing dilutes the
-amplitude statistics used for threshold estimation, pushing the threshold upward
-and reducing recall.
+The central claim of the proposed pipeline is that this mixing dilutes the amplitude statistics used for threshold estimation, pushing the threshold upward and reducing recall.
 Experiment~1 tests this claim directly.
 
 \paragraph{Hypothesis.}
@@ -153,7 +149,7 @@ the more dilution DBO suffers, and the more beneficial the epoch-screening
 stage becomes.
 \subsubsection{Strategy F}
 
-\input{tab_comparison_60s_epoch}
+\input{result/tab_comparison_60s_epoch}
 
 \subsection{Experiment 2: Effect of Threshold Estimator at Stage B}
 \label{sec:exp4}
@@ -208,7 +204,7 @@ relative to the 60-second reference.
 \paragraph{Instruction Agent}
 This is only for the strategy F, but we evaluate using different epoch size
 
-\input{tab_effect_different_epoch_size}
+\input{result/tab_effect_different_epoch_size}
 
 
 
@@ -226,21 +222,17 @@ methodological choice rather than on true detection quality.
 
 \paragraph{Design.}
 Proposed-Med is evaluated under five event-matching strictness settings, expressed
-as intersection-over-union (IoU) thresholds $\{0.0, 0.1, 0.2, 0.3, 0.5\}$ for the
-overlap between each detected interval and a ground-truth interval.
-Lower IoU thresholds treat any overlap as a match; higher thresholds require a
-larger fraction of overlap and therefore penalise boundary mismatch more
+as intersection-over-union (IoU) thresholds $\{0.0, 0.1, 0.2, 0.3, 0.5\}$ for the overlap between each detected interval and a ground-truth interval.
+Lower IoU thresholds treat any overlap as a match; higher thresholds require a larger fraction of overlap and therefore penalise boundary mismatch more
 aggressively.
-We report macro-averaged precision, recall, and F1 at each IoU threshold, and the
-range of macro F1 across the five levels to quantify sensitivity to this
+We report macro-averaged precision, recall, and F1 at each IoU threshold, and the range of macro F1 across the five levels to quantify sensitivity to this
 evaluation choice.
 
 \subsection{Experiment 5: Robustness Under User-Initiated Pre-Rejection}
 \label{sec:exp8}
 
 \paragraph{Motivation.}
-In operational driving-study pipelines, an analyst routinely discards epochs
-on quality grounds---gross movement artefacts, electrode pop-offs, or signal
+In operational driving-study pipelines, an analyst routinely discards epochs on quality grounds---gross movement artefacts, electrode pop-offs, or signal
 saturation---before any automated processing begins.
 To mimic this real-world scenario, we simulate user-initiated pre-rejection by
 withholding a random subset of valid epochs from the pipeline's input.
@@ -299,11 +291,9 @@ that may need revision.
 Stage~B falls back from $\mathcal{S}=\mathcal{B}$ to $\mathcal{S}=\mathcal{E}$
 when the number of suspicious epochs is smaller than $n_{\min}$.
 Setting $n_{\min}$ too low risks deriving a threshold from a handful of epochs
-that may not represent the full range of blink amplitudes in the session;
-setting it too high triggers the fallback unnecessarily and discards the
+that may not represent the full range of blink amplitudes in the session; setting it too high triggers the fallback unnecessarily and discards the
 epoch-filtering benefit of Stage~A.
-The appropriate value of $n_{\min}$ is currently left as a design choice,
-and this experiment provides empirical guidance.
+The appropriate value of $n_{\min}$ is currently left as a design choice, and this experiment provides empirical guidance.
 
 \paragraph{Threshold-variance analysis.}
 For sessions in which Stage~A returns at least 20 suspicious epochs, we randomly
