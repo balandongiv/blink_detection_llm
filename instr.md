@@ -1,26 +1,6 @@
 ## 1. Core principle
 
-The **Agent Manager should only think, plan, route, inspect, and decide**.
-
-It must **not directly write paper text, code, LaTeX, database rows, or analysis outputs**. Instead, it creates task specifications and sends them to one of the allowed execution paths:
-
-1. **ChatGPT UI/API-connected runner**
-   Before using this runner, read:
-
-   ```text
-   C:\Users\balan\IdeaProjects\academic_paper_maker\README_CHATGPT_MCP.md
-   ```
-
-2. **Terminal Codex runner**
-   Use the installed/logged-in Codex CLI runner on this computer.
-
-   Model selection and effort level must follow:
-
-   ```text
-   instruction_agentic/model_selection.md
-   ```
-
-The manager must record which runner and model policy were used for every task.
+Refer to `instruction_agentic/core_principle/principle.md` for the core principle of this project. All agents and tasks must align with this principle. The manager must ensure that all task prompts and instructions reflect this principle and that any deviations are flagged for review.
 
 ---
 
@@ -50,127 +30,31 @@ Rules:
 
 ---
 
-## 3. Dataset rule
+## 3. Algorithm and Dataset 
+This paper develop an algorithm to detect eye blinks in EEG data. The example of the algorithm is as demonstrated in `tutorial/10d_strategy_autoreject_drop_threshold.py`.
 
-This project uses:
+This paper validate the proposed method with the dataset from Raja and Murat2018.
+We also compare the proposed method against several existing technique as demonstrated in `tutorial/41_exp1_exp2_strategy_comparison.py`
 
-```text
-Raja dataset
-Murat2018 dataset
-```
+The code has been developed in a way that allows easy rerunning of the existing code and comparison of results. The manager should ensure that the Experiment Rerun Agent and Result Diff Agent are used to verify that reruns produce consistent results before making any changes to the code or analysis.
 
-Do **not** use Hakim or Hakim2029 as a dataset name.
+Once we confirm that reruns are consistent, we can use the Extra Analysis Idea Miner Agent to propose additional analyses based on the supplied PDFs. The manager should ensure that any proposed analyses are checked for feasibility using the Analysis Feasibility Agent before proceeding with coding and running new analyses.
 
-All previous references to Hakim or Hakim2029 must be replaced with:
 
-```text
-Murat2018
-```
-
-The SQLite table name must be:
-
-```text
-murat2018_dataset
-```
-
----
 
 ## 4. Proposed multi-agent architecture
 
-| Agent                         | Main responsibility                                                      | Writes files? | Can run in parallel? |
-| ----------------------------- | ------------------------------------------------------------------------ | ------------: | -------------------: |
-| **Agent Manager**             | Thinks, plans, assigns tasks, checks status, chooses runner/model        |            No |         Controls all |
-| **Data Ingestion Agent**      | Converts CSV to SQLite DB; ingests Raja and Murat2018 datasets           |           Yes |                  Yes |
-| **PDF/Text Extraction Agent** | Extracts exact abstract/PDF text, page numbers, quotes, and provenance   |           Yes |                  Yes |
-| **Study Retrieval Agent**     | Finds relevant studies for introduction and section claims using SQL/FTS |           Yes |                  Yes |
-| **Paragraph Structure Agent** | Generates paragraph-level writing plans for each section/subsection      |           Yes |               Partly |
-| **Academic Writing Agent**    | Writes LaTeX paragraph files using only cited evidence                   |           Yes |                  Yes |
-| **Results Analysis Agent**    | Analyzes Raja and Murat2018 datasets; adds new analysis                  |           Yes |                  Yes |
-| **Critical Analysis Agent**   | Interprets results, compares datasets, identifies limits/contradictions  |           Yes |                  Yes |
-| **Discussion Agent**          | Writes discussion paragraphs tied to evidence and results                |           Yes |                  Yes |
-| **Conclusion Agent**          | Inspects existing conclusion and rewrites it to match paper findings     |           Yes |           No/limited |
-| **BibTeX/APA Agent**          | Generates dedicated `.bib` file from DB/CSV metadata                     |           Yes |                  Yes |
-| **Validation Agent**          | Checks citations, evidence traceability, LaTeX compile, paragraph rules  |           Yes |                  Yes |
-| **Soundness/Flow Agent**      | Checks argument flow, coherence, academic tone, and overclaiming         |           Yes |                  Yes |
-| **Resume/State Agent**        | Tracks task state, hashes, retries, and internet-offline continuation    |           Yes |               Always |
-
-Additional experiment agents:
-
-| Agent                                 | Purpose                                                                         |
-| ------------------------------------- | ------------------------------------------------------------------------------- |
-| **Preliminary Result Registry Agent** | Records old/preliminary outputs before rerunning anything                       |
-| **Experiment Rerun Agent**            | Reruns existing code for Raja and Murat2018                                     |
-| **Result Diff Agent**                 | Compares rerun results against preliminary results                              |
-| **New Analysis Idea Agent**           | Reads supplied PDFs and proposes possible extra analyses                        |
-| **Analysis Feasibility Agent**        | Checks whether proposed analysis can be done using Raja/Murat2018 variables     |
-| **New Analysis Coding Agent**         | Creates new analysis code only for feasible ideas                               |
-| **Experiment Documentation Agent**    | Creates dedicated LaTeX paragraph explaining how to rerun each experiment       |
-| **Draft Note Visibility Agent**       | Ensures experiment notes appear only in draft mode and are hidden in final mode |
-
+The are several agents that will be responsible for different tasks in the pipeline. The manager will orchestrate these agents, ensuring that they follow the defined rules and that their outputs are properly integrated into the overall workflow. The list of agents includes as explain in `instruction_agentic/core_principle/proposed_agent.md`
 ---
 
-## 5. Rebuilt pipeline
+## 5. Existing Analysis
 
-### Phase 0 — Bootstrap
+There are several python code that has been developed to perform the analysis. These code are located in `tutorial/` and `analysis/scripts/`. The manager should ensure that these existing scripts are used as a starting point for the analysis agents and that any new code is integrated with the existing codebase. The manager should also ensure that the Experiment Rerun Agent is used to verify that rerunning existing scripts produces consistent results before making any changes.
 
-Use the existing project structure. Create missing folders only when required.
+The existing code includes:
 
 ```text
-project/
-  config/
-    pipeline.yaml
-    models.yaml
-    sections.yaml
-
-  data/
-    raw/
-      csv/
-      pdf/
-    extracted/
-      grobid_mcp/
-        tei_xml/
-        json/
-        text/
-        logs/
-    db/
-      paper_sources.sqlite
-    cache/
-      model_calls/
-      pdf_text/
-      sql_exports/
-
-  agents/
-    manager/
-    ingestion/
-    retrieval/
-    writing/
-    validation/
-    analysis/
-
-  writing/
-    main.tex
-    references.bib
-    sections/
-    figures/
-    tables/
-
-  analysis/
-    scripts/
-    notebooks/
-    outputs/
-    new_analysis/
-
-  evidence/
-    quotes/
-    claims/
-    provenance/
-
-  runs/
-    tasks.sqlite
-    logs/
-    manifests/
-
-  tutorial/
+tutorial/    
     40_exp1_epoch_duration.py
     41_exp1_exp2_strategy_comparison.py
     42_exp4_boundary_tolerance.py
@@ -179,111 +63,15 @@ project/
     46_dbo_scan_scale_tuning.py
 ```
 
+
 ---
 
 ## 6. Phase 1 — Convert CSV to SQLite source of truth
 
-The pipeline must **never write from CSV directly** after ingestion.
+The Data Ingestion Agent must convert the csv a SQLite database. The SQLite DB will be the source of truth for all data retrieval and analysis tasks. The agent must create appropriate tables, indexes, and full-text search capabilities to enable efficient querying by the Retrieval Agent. The rules for this agent are in `instruction_agentic/rule/csv_to_sqlite.md`.
 
-CSV files remain the raw source, but the working source of truth is:
+The csv files are in `instruction_agentic/main_library.csv`
 
-```text
-data/db/paper_sources.sqlite
-```
-
-CSV location:
-
-```text
-G:\My Drive\iterate_literature_review\complete_file_available_in_zotero.csv
-```
-
-Minimum tables:
-
-```sql
-studies(
-  study_id TEXT PRIMARY KEY,
-  title TEXT,
-  authors TEXT,
-  year INTEGER,
-  journal TEXT,
-  doi TEXT,
-  abstract TEXT,
-  source_csv TEXT,
-  dataset_name TEXT
-);
-
-pdf_text(
-  text_id TEXT PRIMARY KEY,
-  study_id TEXT,
-  page INTEGER,
-  section_hint TEXT,
-  original_text TEXT,
-  extraction_method TEXT,
-  source_pdf TEXT
-);
-
-references_meta(
-  ref_id TEXT PRIMARY KEY,
-  study_id TEXT,
-  bibtex_key TEXT,
-  apa7_text TEXT,
-  bibtex_entry TEXT
-);
-
-claims(
-  claim_id TEXT PRIMARY KEY,
-  paragraph_id TEXT,
-  claim_text TEXT,
-  evidence_text_id TEXT,
-  study_id TEXT,
-  confidence_score REAL
-);
-
-paragraphs(
-  paragraph_id TEXT PRIMARY KEY,
-  section TEXT,
-  subsection TEXT,
-  paragraph_order INTEGER,
-  tex_path TEXT,
-  status TEXT,
-  word_count INTEGER
-);
-
-tasks(
-  task_id TEXT PRIMARY KEY,
-  agent_name TEXT,
-  input_hash TEXT,
-  output_hash TEXT,
-  status TEXT,
-  requires_internet INTEGER,
-  runner TEXT,
-  model_hint TEXT,
-  created_at TEXT,
-  updated_at TEXT
-);
-```
-
-Add SQLite FTS:
-
-```sql
-CREATE VIRTUAL TABLE study_fts USING fts5(
-  study_id,
-  title,
-  abstract,
-  content='studies',
-  content_rowid='rowid'
-);
-
-CREATE VIRTUAL TABLE pdf_text_fts USING fts5(
-  text_id,
-  study_id,
-  original_text,
-  content='pdf_text',
-  content_rowid='rowid'
-);
-```
-
----
 
 ## 7. PDF/Text Extraction Agent
 
@@ -408,7 +196,7 @@ The rules for validation agents are in `instruction_agentic/rule/validation_agen
 ## 21. Suggested coding structure
 
 ```text
-agents/
+llm_code_agents/
   manager/
     manager.py
     task_graph.py
@@ -468,7 +256,14 @@ python -m agents.manager.manager compile
 
 ---
 
-## 22. Final recommended agent order
+## 22. Special Rule for the Introduction section
+
+The latex write up for the introduction section is well draft but does not have any citations. The manager should use the `Retrieval Agent` to extract relevant studies and quotes from the SQLite database and the extracted PDF text. The `Paragraph Structure Agent` should then create paragraph plans that incorporate these studies, and the `Academic Writing Agent` should write the introduction paragraphs with proper citations and evidence. The manager must ensure that the retrieved studies are relevant and that the introduction effectively sets up the research gap and motivation for the paper.
+The introduction section is as in
+`writing/b_intro`
+
+
+### Final recommended agent order
 
 Use this order:
 
