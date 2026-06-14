@@ -33,7 +33,7 @@ high →
   LaTeX restructuring
   PDF-to-evidence mapping
   rerun pipeline debugging
-  Raja/Hakim2029 comparison scripts
+  Raja/Murat2018 comparison scripts
   new analysis feasibility checks
   result-diff interpretation
   citation and BibTeX repair
@@ -47,7 +47,7 @@ super_high / GPT-5.5-level →
   identifying overclaiming
   checking soundness and flow
   judging whether new analysis is meaningful
-  interpreting contradictions between Raja and Hakim2029
+  interpreting contradictions between Raja and Murat2018
 ```
 
 I would make **low the default**, then escalate only when needed.
@@ -125,7 +125,7 @@ model_tiers:
       - LaTeX restructuring
       - PDF evidence mapping
       - rerun debugging
-      - Raja/Hakim2029 comparison
+      - Raja/Murat2018 comparison
       - citation repair
       - BibTeX repair
     avoid_for:

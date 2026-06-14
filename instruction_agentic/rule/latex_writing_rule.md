@@ -60,13 +60,13 @@ writing/
       paragraph.tex
       experiment_manifest.json
       review.md
-    p003_hakim2029_result/
+    p003_murat2018_result/
       paragraph.tex
       original_quotes.tex
       evidence.json
       claims.json
       review.md
-    p004_hakim2029_rerun_note/
+    p004_murat2018_rerun_note/
       paragraph.tex
       experiment_manifest.json
       review.md
@@ -151,8 +151,8 @@ For results:
 \input{writing/e_results/p001_raja_result/paragraph}
 \input{writing/e_results/p002_raja_rerun_note/paragraph}
 
-\input{writing/e_results/p003_hakim2029_result/paragraph}
-\input{writing/e_results/p004_hakim2029_rerun_note/paragraph}
+\input{writing/e_results/p003_murat2018_result/paragraph}
+\input{writing/e_results/p004_murat2018_rerun_note/paragraph}
 ```
 
 ---
@@ -251,7 +251,7 @@ It should only contain section headings and \input{} commands.
 
 Each paragraph.tex should contain exactly one paragraph or one draft note block.
 
-Raja and Hakim2029 rerun notes must appear under the same results subsection as their result paragraph.
+Raja and Murat2018 rerun notes must appear under the same results subsection as their result paragraph.
 ```
 
 ---
@@ -265,8 +265,8 @@ p001_problem_context/
 p002_research_gap/
 p003_raja_result/
 p004_raja_rerun_note/
-p005_hakim2029_result/
-p006_hakim2029_rerun_note/
+p005_murat2018_result/
+p006_murat2018_rerun_note/
 ```
 
 This keeps ordering while making the purpose obvious.

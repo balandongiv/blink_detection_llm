@@ -171,12 +171,12 @@ project/
     manifests/
 
   tutorial/
-    tutorial/40_exp1_epoch_duration.py
-    tutorial/41_exp1_exp2_strategy_comparison.py
-    tutorial/42_exp4_boundary_tolerance.py
-    tutorial/45_exp6_morphological_detailed.py
-    tutorial/45_exp7_nmin_sensitivity.py
-    tutorial/46_dbo_scan_scale_tuning.py
+    40_exp1_epoch_duration.py
+    41_exp1_exp2_strategy_comparison.py
+    42_exp4_boundary_tolerance.py
+    45_exp6_morphological_detailed.py
+    45_exp7_nmin_sensitivity.py
+    46_dbo_scan_scale_tuning.py
 ```
 
 ---
@@ -228,22 +228,6 @@ references_meta(
   bibtex_key TEXT,
   apa7_text TEXT,
   bibtex_entry TEXT
-);
-
-raja_dataset(
-  row_id TEXT PRIMARY KEY,
-  study_id TEXT,
-  variable_name TEXT,
-  value TEXT,
-  normalized_value TEXT
-);
-
-murat2018_dataset(
-  row_id TEXT PRIMARY KEY,
-  study_id TEXT,
-  variable_name TEXT,
-  value TEXT,
-  normalized_value TEXT
 );
 
 claims(
@@ -325,69 +309,9 @@ The task prompt and manifest example are located at:
 instruction_agentic/prompt/pdf_reader_prompt.md
 ```
 
-### Hard rules
+### Hard rules and Output
 
-```text
-1. Use MCP/GROBID as the primary PDF extraction method.
-2. Do not use ad-hoc PDF parsing unless MCP/GROBID fails.
-3. If fallback extraction is used, log the failure and record the fallback in extraction_method.
-4. Store raw GROBID/MCP output before transforming it into SQLite.
-5. Preserve exact original text.
-6. Preserve provenance:
-   - PDF filename
-   - page number if available
-   - section heading if available
-   - paragraph/order index if available
-   - extraction method
-   - extraction timestamp
-7. Insert extracted text into SQLite, not directly into writing files.
-8. Every writing paragraph must cite extracted evidence from the DB or CSV metadata.
-```
-
-### Required extraction tables
-
-```sql
-CREATE TABLE IF NOT EXISTS pdf_extractions (
-  extraction_id TEXT PRIMARY KEY,
-  study_id TEXT,
-  pdf_path TEXT NOT NULL,
-  extraction_method TEXT NOT NULL,
-  mcp_tool_name TEXT,
-  grobid_output_path TEXT,
-  status TEXT NOT NULL,
-  error_message TEXT,
-  extracted_at TEXT
-);
-```
-
-```sql
-CREATE TABLE IF NOT EXISTS pdf_text_chunks (
-  chunk_id TEXT PRIMARY KEY,
-  extraction_id TEXT NOT NULL,
-  study_id TEXT,
-  pdf_path TEXT NOT NULL,
-  page_start INTEGER,
-  page_end INTEGER,
-  section_heading TEXT,
-  chunk_order INTEGER,
-  chunk_type TEXT,
-  original_text TEXT NOT NULL,
-  FOREIGN KEY (extraction_id) REFERENCES pdf_extractions(extraction_id)
-);
-```
-
-Updated PDF extraction pipeline:
-
-```text
-PDF/Text Extraction Agent:
-  1. Read README_GROBID_MCP.md.
-  2. Read instruction_agentic/prompt/pdf_reader_prompt.md.
-  3. Use MCP/GROBID as primary extraction method.
-  4. Store raw GROBID/MCP output.
-  5. Convert structured extraction to SQLite.
-  6. Preserve exact original text for paragraph-level evidence.
-  7. Allow fallback only after logged MCP/GROBID failure.
-```
+The hard rule and required extraction tables as describe in `instruction_agentic/rule/GROBID.md` must be followed strictly.
 
 ---
 
@@ -397,11 +321,9 @@ Every paragraph must live in its own `.tex` file.
 
 A subsection with multiple paragraphs must contain multiple paragraph subfolders.
 
-The full structure is defined in:
+The full structure is defined in `instruction_agentic/rule/latex_writing_rule.md`
 
-```text
-writing/latex_writing_rule.md
-```
+
 
 This rule enables easy auditing:
 
@@ -416,639 +338,70 @@ one evidence trail
 ## 9. Evidence and exact original text rule
 
 Every idea used in writing must have an evidence record.
+as explain in `instruction_agentic/rule/evidence_original_text.md`
 
-Example `evidence.json`:
-
-```json
-{
-  "paragraph_id": "intro_01_background_p001",
-  "claims": [
-    {
-      "claim": "The reviewed studies indicate a persistent limitation in prior evaluation methods.",
-      "source_type": "abstract",
-      "study_id": "raja_014",
-      "exact_original_text": "Exact sentence copied from abstract or PDF here.",
-      "source_location": {
-        "csv_column": "abstract",
-        "pdf_page": null
-      },
-      "bibtex_key": "Raja2024Evaluation"
-    }
-  ]
-}
-```
-
-Example `original_quotes.tex`:
-
-```latex
-% Exact original text used to support this paragraph.
-% Source: Raja2024Evaluation, abstract
-
-\begin{quote}
-Exact original text from the abstract or PDF goes here.
-\end{quote}
-```
-
-The Validation Agent must fail any paragraph that lacks:
-
-```text
-paragraph.tex
-original_quotes.tex
-evidence.json
-claims.json
-at least one citation
-claim-to-source mapping
-```
 
 ---
 
 ## 10. Writing agents by section
 
-### 10.1 Introduction Study Retrieval Agent
-
-Purpose:
-
-```text
-Extract relevant studies for the introduction.
-Use SQL and FTS over abstracts and PDF text.
-Prioritize studies from Raja dataset and Murat2018 dataset.
-```
-
-Outputs:
-
-```text
-evidence/introduction/relevant_studies.json
-paper/sections/01_introduction/source_map.md
-```
-
-The agent must return:
-
-```text
-study_id
-title
-authors/year
-relevance reason
-exact abstract/PDF quote
-recommended paragraph use
-bibtex key
-```
-
----
-
-### 10.2 Paragraph Structure Agent
-
-This agent does not write final prose. It writes paragraph plans.
-
-Example output:
-
-```json
-{
-  "section": "Introduction",
-  "subsection": "Research gap",
-  "paragraphs": [
-    {
-      "paragraph_id": "intro_gap_p001",
-      "purpose": "Explain limitation in prior studies.",
-      "required_sources": ["raja_014", "murat2018_022"],
-      "must_include": [
-        "problem context",
-        "specific limitation",
-        "why current study is needed"
-      ],
-      "avoid": [
-        "overclaiming",
-        "unsupported novelty claims"
-      ]
-    }
-  ]
-}
-```
-
----
-
-### 10.3 Academic Writing Agent
-
-Writes only one paragraph at a time.
-
-Input:
-
-```text
-paragraph plan
-evidence bundle
-required citation keys
-target section
-style guide
-```
-
-Output:
-
-```text
-paragraph.tex
-```
-
-Constraints:
-
-```text
-No evidence → fail.
-No citation → fail.
-No exact source quote → fail.
-```
+The writing agents must follow the rules in `instruction_agentic/rule/writing_agents_by_section.md`.
 
 ---
 
 ## 11. Results Analysis Agent
 
-The Results Analysis Agent must explicitly use:
-
-```text
-Raja dataset
-Murat2018 dataset
-```
-
-Minimum required analyses:
-
-```text
-1. Descriptive comparison of Raja vs Murat2018
-2. Cross-dataset consistency check
-3. Missingness / data-quality analysis
-4. Robustness or sensitivity analysis
-5. Subgroup or stratified analysis if variables permit
-6. Contradiction analysis: where Raja and Murat2018 disagree
-```
-
-Outputs:
-
-```text
-analysis/scripts/
-  01_load_data.py
-  02_descriptive_analysis.py
-  03_cross_dataset_comparison.py
-  04_robustness_analysis.py
-  05_extra_analysis.py
-
-analysis/outputs/
-  tables/
-  figures/
-  analysis_summary.md
-  result_claims.json
-```
-
-The Results Analysis Agent must not directly write the Results section until scripts have produced reproducible outputs.
-
+The Results Analysis Agent must analyze both Raja and Murat2018 datasets. The rules for this agent are in `instruction_agentic/rule/results_analysis_agent.md`.
 ---
 
 ## 12. Critical Analysis Agent
 
-Purpose:
-
-```text
-Interpret results critically.
-Identify what is supported, what is weak, what contradicts prior studies, and what is uncertain.
-```
-
-Outputs:
-
-```text
-evidence/result_interpretation/critical_points.json
-paper/sections/03_results/paragraph_plan.json
-```
-
+The Critical Analysis Agent must interpret the results, compare the two datasets, and identify limitations and contradictions. It must write a structured interpretation that can be used by the Discussion Agent. The rules for this agent are in `instruction_agentic/rule/critical_analysis_agent.md`.
 ---
 
 ## 13. Discussion Agent
 
-The Discussion Agent must synthesize:
-
-```text
-findings from Raja dataset
-findings from Murat2018 dataset
-prior studies
-limitations
-implications
-possible explanations
-```
-
-It must avoid generic discussion.
-
-Every paragraph should answer:
-
-```text
-What did we find?
-Why does it matter?
-How does it compare to prior studies?
-What is the limitation?
-What is the implication?
-```
+The rule for discussion agent is in `instruction_agentic/rule/discussion_agent.md`.
 
 ---
 
 ## 14. Conclusion Agent
 
-The Conclusion Agent must first inspect:
-
-```text
-existing conclusion
-introduction research gap
-results claims
-discussion claims
-limitations
-```
-
-Then rewrite the conclusion so it is tightly connected to the full paper.
-
-Validation rule:
-
-```text
-Every conclusion sentence must be traceable to either:
-1. a result,
-2. a discussion claim,
-3. a stated limitation,
-4. the original research objective.
-```
-
-No new claims may appear in the conclusion.
-
+The rule for conclusion agent is in `instruction_agentic/rule/conclusion_agent.md`
 ---
 
 ## 15. Extra Analysis Idea Miner Agent
 
-The new analysis must not be created randomly.
-
-The Extra Analysis Idea Miner Agent must:
-
-```text
-Read provided PDFs.
-Extract analysis ideas.
-Map each idea to available variables in Raja and Murat2018.
-Reject ideas that cannot be implemented.
-Rank ideas by novelty, feasibility, and relevance.
-Generate scripts only for feasible analyses.
-```
-
-Output example:
-
-```json
-{
-  "candidate_analysis": [
-    {
-      "idea": "Cross-dataset robustness check",
-      "inspired_by": "study_019",
-      "exact_original_text": "Exact PDF text that motivated this idea.",
-      "required_variables": ["x", "y", "group"],
-      "available_in_raja": true,
-      "available_in_murat2018": true,
-      "feasibility": "high",
-      "recommended": true,
-      "script_path": "analysis/scripts/05_cross_dataset_robustness.py"
-    }
-  ]
-}
-```
-
-Recommended extra analyses:
-
-```text
-1. Cross-dataset replication: test whether the same pattern appears in Raja and Murat2018.
-2. Heterogeneity analysis: check whether findings differ by subgroup.
-3. Sensitivity analysis: test whether findings change under different filtering rules.
-4. Missing-data analysis: report whether missingness could affect interpretation.
-5. Contradiction matrix: identify where literature claims and dataset results disagree.
-6. Evidence-strength scoring: classify claims as strong, moderate, weak, or speculative.
-```
-
-Decision chain:
-
-```text
-PDF reading agent extracts idea
-↓
-exact PDF text is stored
-↓
-idea is mapped to Raja/Murat2018 variables
-↓
-feasibility is checked using SQLite schema
-↓
-manager approves task internally
-↓
-new analysis code is created
-↓
-new analysis is run
-↓
-new result paragraph is written
-↓
-new rerun-note paragraph is written
-```
-
-Each new analysis must have:
-
-```text
-analysis/new_analysis/experiment_id/
-  idea_source.json
-  feasibility_report.md
-  run.sh
-  analysis.py
-  outputs/
-  manifest.json
-```
-
-Example `idea_source.json`:
-
-```json
-{
-  "new_analysis_id": "new_001_cross_dataset_robustness",
-  "idea": "Compare whether the main pattern is stable across Raja and Murat2018.",
-  "inspired_by_pdf": "paper_07.pdf",
-  "exact_original_text": "Exact sentence or paragraph from the PDF that inspired the analysis.",
-  "required_variables": ["outcome", "group", "method"],
-  "available_in_raja": true,
-  "available_in_murat2018": true,
-  "decision": "implement"
-}
-```
-
+The rule for the extra analysis idea miner agent is in `instruction_agentic/rule/extra_analysis_idea_miner.md`.
 ---
 
 ## 16. Parallel execution design
+The manager should refer to `instruction_agentic/rule/parallel_execution.md` for the design of which tasks can run in parallel and which must run sequentially. The manager must enforce these rules when scheduling tasks and assigning runners.
 
-Use a DAG, not a linear script.
-
-```text
-Bootstrap
-   ↓
-CSV → SQLite DB ───────────────┐
-PDF/Text extraction ───────────┤
-BibTeX generation ─────────────┤
-                               ↓
-                     Retrieval + Evidence Index
-                               ↓
-                    Paragraph Structure Agent
-                               ↓
-        ┌───────────────┬───────────────┬───────────────┐
-        ↓               ↓               ↓
- Introduction       Results         Discussion
- Writing Agent      Analysis        Writing Agent
-        ↓               ↓               ↓
-        └───────────────┴───────┬───────┘
-                                ↓
-                         Conclusion Agent
-                                ↓
-                   Validation + Soundness Agent
-                                ↓
-                         LaTeX Build Agent
-```
-
-Parallelizable tasks:
-
-```text
-PDF extraction per PDF
-CSV normalization per file
-study retrieval per section
-paragraph writing per paragraph
-paragraph validation per paragraph
-analysis scripts after DB creation
-BibTeX generation after metadata ingestion
-```
-
-Non-parallel or limited-parallel tasks:
-
-```text
-final conclusion rewrite
-global flow validation
-final LaTeX compilation
-final reference consistency check
-```
 
 ---
 
 ## 17. Resume when internet turns off
 
-Use a local task database:
+The manager must track which tasks require internet and which runner/model they used. If the internet connection is lost, the manager should pause all tasks that require internet and allow tasks that do not require internet to continue running. Once the internet connection is restored, the manager should automatically resume paused tasks. The rules for this behavior are in `instruction_agentic/rule/resume_rule.md`.
 
-```text
-runs/tasks.sqlite
-```
-
-Each task status must be one of:
-
-```text
-pending
-running
-completed
-failed
-blocked_offline
-needs_review
-```
-
-Every task must include:
-
-```text
-input_hash
-output_hash
-runner
-model_hint
-requires_internet
-created files
-log path
-local instruction files consulted
-```
-
-If internet turns off:
-
-```text
-1. Continue deterministic local tasks:
-   - CSV to SQLite
-   - SQL queries
-   - local validation
-   - LaTeX checks
-   - existing cached model output review
-   - analysis scripts
-   - figure/table generation
-
-2. Queue model-dependent tasks:
-   - writing
-   - deep reasoning validation
-   - discussion synthesis
-   - conclusion rewrite
-
-3. Resume automatically when internet returns:
-   - only rerun incomplete or stale tasks
-   - skip tasks with matching input_hash/output_hash
-```
-
-Do not depend on memory of previous agent conversations.
-
-Save every prompt, response, and output:
-
-```text
-data/cache/model_calls/
-  task_intro_gap_p001/
-    prompt.md
-    response.md
-    parsed_output.json
-    model.txt
-    timestamp.txt
-```
 
 ---
 
 ## 18. Runner design
-
-The manager chooses between two runners.
-
-### Runner A — ChatGPT API/UI-connected runner
-
-Use for:
-
-```text
-academic writing
-flow checking
-claim validation
-discussion synthesis
-conclusion rewriting
-```
-
-Before use, read:
-
-```text
-C:\Users\balan\IdeaProjects\academic_paper_maker\README_CHATGPT_MCP.md
-```
-
-### Runner B — Terminal Codex runner
-
-Use for:
-
-```text
-code generation
-script fixes
-deterministic validation
-pipeline orchestration
-analysis scripts
-LaTeX build/debug tasks
-```
-
-Model effort must follow:
-
-```text
-instruction_agentic/model_selection.md
-```
+The manager should choose between two runners based on the task type. The rules for runner selection and task assignment are in `instruction_agentic/rule/runner_design.md`. The manager must ensure that tasks are sent to the appropriate runner and that the model effort level follows the guidelines in `instruction_agentic/model_selection.md`.
 
 ---
 
 ## 19. Dedicated APA 7 bibliography
-
-Create:
-
-```text
-paper/references.bib
-```
-
-Generate it from:
-
-```text
-references_meta.bibtex_entry
-```
-
-The BibTeX/APA Agent must:
-
-```text
-1. Extract title, author, year, journal, DOI from CSV/DB.
-2. Normalize missing fields.
-3. Create stable citation keys.
-4. Remove duplicate references.
-5. Save all entries to paper/references.bib.
-6. Check every \cite{} key exists.
-7. Check every .bib key is used or marked as unused.
-```
-
-Recommended LaTeX setup:
-
-```latex
-\usepackage[style=apa,backend=biber]{biblatex}
-\addbibresource{references.bib}
-```
-
-Then at the end:
-
-```latex
-\printbibliography
-```
+This is an acedemic paper, and the bibliography must be in APA 7 format. The rules for this agent are in `instruction_agentic/rule/bibtex_apa_agent.md`.
 
 ---
 
 ## 20. Validators
 
 Create deterministic validators first. Do not rely only on LLM judgment.
-
-### Paragraph structure validator
-
-Checks:
-
-```text
-Every paragraph has its own folder.
-Every paragraph folder has paragraph.tex.
-No paragraph.tex contains multiple paragraphs.
-Every subsection with multiple paragraphs has p001, p002, etc.
-No direct prose exists inside subsection main.tex.
-```
-
-### Evidence validator
-
-Checks:
-
-```text
-Every paragraph has evidence.json.
-Every claim has source study_id.
-Every claim has exact_original_text.
-Every paragraph has original_quotes.tex.
-Every citation key exists in references.bib.
-Every experiment has run.sh or equivalent entrypoint.
-Every experiment stores outputs in a dedicated output folder.
-Every experiment documents whether it is rerun-only or new analysis.
-Every experiment has a LaTeX rerun-note paragraph.
-Rerun-note paragraph is under the same subsection as the result.
-Rerun-note paragraph uses \experimentnote{...}.
-Preliminary result is not overwritten.
-Rerun result is separately stored.
-Diff report exists when preliminary result exists.
-```
-
-### Writing soundness validator
-
-Checks:
-
-```text
-logical flow
-overclaiming
-unsupported causal claims
-citation placement
-paragraph purpose
-transition quality
-academic tone
-result-discussion-conclusion alignment
-```
-
-### Analysis validator
-
-Checks:
-
-```text
-Raja dataset was loaded.
-Murat2018 dataset was loaded.
-Every result table/figure is generated from a script.
-No manual result table is accepted.
-Every reported number appears in analysis outputs.
-```
-
-### Conclusion validator
-
-Checks:
-
-```text
-No new claims.
-Matches research objective.
-Matches results.
-Matches discussion.
-Mentions limitations only if discussed earlier.
-```
+The rules for validation agents are in `instruction_agentic/rule/validation_agents.md`. The manager must ensure that validation tasks are scheduled and that their results are used to inform any necessary reruns or revisions.
 
 ---
 
