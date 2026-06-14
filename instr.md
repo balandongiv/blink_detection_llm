@@ -96,6 +96,9 @@ The task prompt and manifest example are located at:
 ```text
 instruction_agentic/prompt/pdf_reader_prompt.md
 ```
+The path to the `.pdf` file also available in the `instruction_agentic/main_library.csv` under the column `File Attachments`.
+However, if the pdf file is not available, just read the paper abstract which is available in the column `Abstract Note`
+
 
 ### Hard rules and Output
 
@@ -261,6 +264,8 @@ python -m agents.manager.manager compile
 The latex write up for the introduction section is well draft but does not have any citations. The manager should use the `Retrieval Agent` to extract relevant studies and quotes from the SQLite database and the extracted PDF text. The `Paragraph Structure Agent` should then create paragraph plans that incorporate these studies, and the `Academic Writing Agent` should write the introduction paragraphs with proper citations and evidence. The manager must ensure that the retrieved studies are relevant and that the introduction effectively sets up the research gap and motivation for the paper.
 The introduction section is as in
 `writing/b_intro`
+The path to the `.pdf` file also available in the `instruction_agentic/main_library.csv` under the column `File Attachments`.
+However, if the pdf file is not available, just read the paper abstract which is available in the column `Abstract Note`
 
 
 ### Final recommended agent order
