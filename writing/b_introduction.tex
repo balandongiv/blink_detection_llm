@@ -1,113 +1,17 @@
-% The introduction writing style is follow
-% - https://www.sciencedirect.com/science/article/pii/S1746809421001403
+% The introduction follows a paragraph-per-file structure (one paragraph, one
+% file) as required by instruction_agentic/rule/latex_writing_rule.md.
 \section{Introduction}
 
+\input{b_intro/p001/paragraph}
 
+\input{b_intro/p002/paragraph}
 
-\input{intro/p1}
-\input{intro/p2}
-\input{intro/p3}
-\input{intro/p4}
-\input{intro/p5}
-\input{intro/p6}
+\input{b_intro/p003/paragraph}
 
+\input{b_intro/p004/paragraph}
 
+\input{b_intro/p005/paragraph}
 
+\input{b_intro/p006/paragraph}
 
-
-
-
-
-
-, and also the most widely used way, as it is fast, interpretable, and can be deployed in real time. However, finding the threshold value.
-
-
-is also where many detectors fail, as the threshold can be easily affected by the distribution of the data, and can be easily biased by the clean epochs.
-
-
-There are several methods for capturing eye blinks in the context of fatigue driving research,but, one of the straight forward way
-
-
-These include video-based eye tracking, electrooculography (EOG), and electroencephalography (EEG).
-, drowsiness, and reduced alertness, particularly in the context of driving. Changes in blink frequency, blink duration, and eyelid closure patterns can reflect a decline in cognitive vigilance and visual attention, both of which are critical for safe vehicle operation. In fatigue driving research, these blink-related features are commonly examined as non-invasive behavioral cues for detecting driver drowsiness and assessing the risk of impaired driving performance.
-
-
-
-
-
-EEG is a powerful tool for studying brain function in fatigue driving. At the same time,EEG also captures a wide range of non-neural signals, including ocular activity.
-While considered unwanted artifact in various research, however, the ocular artifacts has been shown to be scientifically meaningful in their own right, with links to fatigue, drowsiness, attention, cognitive load, and operational performance
-
-% Idea
-%Some researches \href{https://www.sciencedirect.com/science/article/pii/S0045790616302427#bib0008}{[8]}, \href{https://www.sciencedirect.com/science/article/pii/S0045790616302427#bib0009}{[9]}, \href{https://www.sciencedirect.com/science/article/pii/S0045790616302427#bib0010}{[10]} show that human mental condition can be indicated by some behavior features of the eyes, such as the blinks. The blinks of the eyes are the natural actions. The eye states exchange between open state and close state. The blink duration and frequency will be affected by the fatigue degree and other physical conditions. There is a tight correlation between fatigue states and the features of the driver's eyes. These features can reliably indicate the driver's physical conditions \href{https://www.sciencedirect.com/science/article/pii/S0045790616302427#bib0011}{[11]}. Therefore, the driver's fatigue state could be determined by the eye states recognition.
-
-
-
-Ocular metrics such as blink and saccade rates have also been found to be beneficial for cognitive state monitoring \href{javascript:void()}{[6]}–​\href{javascript:void()}{[8]}.
-
-
-
-Mostly the EEG recorded from the frontal lobe is
-affected by these artifacts because of their neighbourhood
-with the eyes. The electrodes which are placed near to eye
-are affected by the eye blinks and eye movements[8]. As
-these electrogram from eye movements and eye blinks are
-inherent and cannot be differentiated manually or at the time
-of EEG, we need to detect  them by using various noise
-contrasting algorithms at the pre-processing stage[9].
-
-
-
-Electroencephalography is routinely affected by ocular activity, and blink contamination remains one of the oldest and most persistent obstacles in EEG analysis.
-At the same time, spontaneous and task-related blinks are themselves scientifically  meaningful: prior work links blink-derived measures to fatigue, drowsiness, attention,cognitive load, and operational performance, and more recent blink-linked EEG studies show that blink-locked neural activity can index cognitive demand in naturalistic tasks
-\citep{croft2000removal,kleifges2017blinker,alyan2023blink}.
-%%
-These dual roles make blink detection a foundational problem rather than a preprocessing detail: researchers need detectors accurate enough for artifact handling, and reliable enough to preserve blink events as analyzable signals in their own right.
-
-Thresholding remains central to this problem because even sophisticated pipelines  frequently begin with amplitude gates.
-%%%
-Threshold-based designs are attractive in practice because they are interpretable, fast, and deployable in few-channel and real-time environments---properties that are especially important for frontal wearable EEG and neuroergonomic settings, where channel count,latency, and computational budget are constrained.
-However, thresholding is also where many detectors fail: a threshold learned from background-dominated samples may drift toward over-detection, while a threshold tuned to one subject or experiment can collapse under inter-subject variability or under distributions that include eye movements, muscle activity, or epileptiform events
-\citep{chang2016detection,kleifges2017blinker,agarwal2019blink,tran2021detection,wang2022multidimensional,zhang2023method}.
-
-\paragraph{The epoch-structured setting.}
-A critical and largely overlooked challenge arises in domain-specific EEG paradigms where analysis is inherently epoch-based.
-In driving research, for example, a continuous 60--90 minute recording is routinely segmented into non-overlapping 20--120 second epochs that correspond to task events,environmental changes, or regularly spaced analysis windows
-\citep{cao2019multichannel}.
-%%
-Blink detection in this context means detecting blinks within the epoch structure, not within an undivided recording.
-Furthermore, in practice not all epochs are available for analysis: some are pre-rejected by the analyst because of gross artefacts, electrode failures, or brief signal loss, leaving a subset of valid epochs that may be non-contiguous and non-representative of the full recording.
-
-To our knowledge, no existing blink-detection system explicitly addresses this setting.  State-of-the-art tools such as BLINKER~\citep{kleifges2017blinker} and MNE-Python's amplitude-annotation routines operate on continuous or concatenated signals and derive thresholds from the full recording.
-When applied naively to an epoch-structured recording---by concatenating available epochs and treating the result as a continuous signal---these tools implicitly pool blink-containing and blink-free epochs when estimating the threshold.
-This pooling is directly harmful: clean epochs dilute the amplitude statistics that determine where the threshold is placed, systematically biasing the threshold upward
-and suppressing recall.
-The problem is compounded when some epochs have been pre-rejected, because the remaining valid epochs may be skewed toward a particular recording condition.
-
-
-%By contrast, threshold-free or less threshold-dependent routes such as Kong et al.’s ICA-based detector reduce manual tuning but require multichannel decomposition and are less aligned with low-channel wearable or webcam pipelines than Chang’s prefrontal EEG and Dewi’s (https://www.mdpi.com/1424-8220/13/8/10783)
-
-
-\paragraph{Threshold selection as a first-class problem.}
-Beyond the epoch-structured setting, there is a broader gap in the literature: threshold selection is rarely studied as an isolated problem.
-The choice between a global mean-plus-standard-deviation rule, a robust median-MAD rule,a locally adaptive estimate, and a data-driven optimised threshold can substantially alter detected event counts and boundary precision, yet these choices are frequently absorbed into larger pipelines and not evaluated independently.
-Without a systematic comparison under a shared evaluation protocol, it is not possible to attribute performance differences to threshold design versus other pipeline choices.
-
-\paragraph{Contributions.}
-This paper makes four contributions. First, we formalise the epoch-structured blink detection setting and show that naive concatenation of epochs leads to measurably worse performance than epoch-aware threshold estimation.
-%
-Second, we propose a three-stage pipeline---epoch screening, sample-level threshold estimation, and blink-region
-extraction---that explicitly accounts for the epoch structure and handles pre-rejected epochs gracefully by design.
-%%
-Third, we introduce and evaluate a robust threshold estimator at Stage~B based on the median and MAD, and compare it systematically against mean-based and directly optimised alternatives.
-%%
-Fourth, we provide a comprehensive benchmark covering five competing methods, four epoch durations, sensitivity analyses for the fallback threshold $n_{\min}$ and the boundary tolerance,and a morphological analysis of detection failures.
-%%
-%All experiments are conducted on a large naturalistic driving EEG corpus and evaluated  under an event-level overlap criterion with macro-averaged F1 and Wilcoxon signed-rank
-%tests.
-
-
-This paper is organized as follows. Firstly, the techniques used in the proposed ICA-ANC system are presented. Secondly, the details of the proposed ICA-ANC system are given. Thirdly, two datasets used for performance analysis are introduced. Then, the result is discussed. Finally, a conclusion is made.
-
-
-The idea, there is possible practice, since there is yet no tools that can 100\% predict blink region, in some cases, there is possible to manually check the raw signal, and annotate blink that is not detected by algorithm.
+\input{b_intro/p007/paragraph}
