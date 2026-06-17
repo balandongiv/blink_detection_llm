@@ -5,10 +5,12 @@ Import this module from tutorial scripts after REPO_ROOT has been added to sys.p
 from __future__ import annotations
 
 import logging
+from functools import partial
 from pathlib import Path
 
 import mne
 import numpy as np
+import pandas as pd
 import yaml
 
 logger = logging.getLogger(__name__)
@@ -40,6 +42,16 @@ def _murat_yaml_status_is_completed(subject_dir: Path) -> bool:
     with yaml_path.open("r", encoding="utf-8") as fh:
         data = yaml.safe_load(fh) or {}
     return data.get("status", "") == "Completed"
+
+
+def _cao_yaml_status_is_complete(session_dir: Path) -> bool:
+    """Return True if Cao2018Viewer.yaml exists and status == 'Complete'."""
+    yaml_path = session_dir / "Cao2018Viewer.yaml"
+    if not yaml_path.is_file():
+        return False
+    with yaml_path.open("r", encoding="utf-8") as fh:
+        data = yaml.safe_load(fh) or {}
+    return data.get("status", "") == "Complete"
 
 
 # ---------------------------------------------------------------------------
@@ -118,6 +130,100 @@ def discover_murat_pairs(
     return pairs
 
 
+def discover_cao_pairs(
+    dataset_root: Path,
+    use_yaml_filter: bool = True,
+) -> list[dict]:
+    """Return Cao2018 Complete sessions with matching fif/csv files.
+
+    Directory layout is ``dataset_root/<subject_id>/<session_id>/`` and data
+    files are named ``<subject_id_lower>_<session_id>.fif/.csv``.  Returned
+    dicts include ``epoch_health`` when ``epoch_health.csv`` is present.
+    """
+    pairs: list[dict] = []
+    skipped_status: list[str] = []
+    skipped_missing: list[str] = []
+
+    for subject_dir in sorted(dataset_root.iterdir()):
+        if not subject_dir.is_dir():
+            continue
+        sid = subject_dir.name
+        sid_lower = sid.lower()
+        for session_dir in sorted(subject_dir.iterdir()):
+            if not session_dir.is_dir():
+                continue
+            session_id = session_dir.name
+            label = f"{sid}/{session_id}"
+
+            if use_yaml_filter and not _cao_yaml_status_is_complete(session_dir):
+                skipped_status.append(label)
+                continue
+
+            fif = session_dir / f"{sid_lower}_{session_id}.fif"
+            csv = session_dir / f"{sid_lower}_{session_id}.csv"
+            if not (fif.is_file() and csv.is_file()):
+                skipped_missing.append(label)
+                continue
+
+            epoch_health = session_dir / "epoch_health.csv"
+            pairs.append({
+                "dataset":      "cao2018",
+                "name":         label,
+                "fif":          fif,
+                "csv":          csv,
+                "epoch_health": epoch_health if epoch_health.is_file() else None,
+            })
+
+    if skipped_status:
+        logger.info(
+            "[yaml-filter] skipped %d Cao2018 session(s) with status != Complete: %s",
+            len(skipped_status),
+            ", ".join(skipped_status),
+        )
+    if skipped_missing:
+        logger.info(
+            "[files] skipped %d Cao2018 session(s) missing fif or csv: %s",
+            len(skipped_missing),
+            ", ".join(skipped_missing),
+        )
+    return pairs
+
+
+def get_valid_cao_epoch_indices(
+    epoch_health_path: Path | None,
+    epoch_duration_s: float,
+    n_epochs: int,
+    *,
+    health_drop_threshold: int = 3,
+) -> list[int]:
+    """Return Cao2018 valid analysis epochs from 30s epoch_health.csv.
+
+    An analysis epoch is dropped if any overlapping 30s health sub-epoch has
+    health <= ``health_drop_threshold``. Missing health files fall back to all
+    epochs, matching tutorial 22.
+    """
+    if epoch_health_path is None or not epoch_health_path.is_file():
+        return list(range(n_epochs))
+
+    df = pd.read_csv(epoch_health_path)
+    required = {"epoch_start_s", "epoch_end_s", "health"}
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(f"epoch_health.csv missing columns: {missing}")
+
+    df["health"] = pd.to_numeric(df["health"], errors="coerce")
+    valid: list[int] = []
+    for i in range(n_epochs):
+        epoch_start = i * float(epoch_duration_s)
+        epoch_end = (i + 1) * float(epoch_duration_s)
+        overlapping = df[
+            (df["epoch_start_s"] < epoch_end) & (df["epoch_end_s"] > epoch_start)
+        ]
+        if overlapping.empty or (overlapping["health"] > health_drop_threshold).all():
+            valid.append(i)
+    return valid
+
+
 # ---------------------------------------------------------------------------
 # Raw data loaders
 # ---------------------------------------------------------------------------
@@ -134,17 +240,25 @@ def load_murat_raw(fif_path: Path) -> mne.io.BaseRaw:
     return mne.io.read_raw_fif(str(fif_path), preload=True, verbose="ERROR")
 
 
+def load_cao_raw(fif_path: Path) -> mne.io.BaseRaw:
+    """Load a Cao2018 .fif file with all channels.
+
+    Tutorial 22 feeds the raw file directly into ``prepare_epoch_detection_input``
+    with ``pick_types_options={"eeg": True}``, so this loader intentionally does
+    not apply the Raja brain-region channel subset.
+    """
+    return mne.io.read_raw_fif(str(fif_path), preload=True, verbose="ERROR")
+
+
 def make_dataset_loaders(brain_region_yaml: Path) -> dict:
     """Return ``{dataset_name: load_fn}`` for supported datasets.
 
     Each loader accepts a single *fif_path* and returns an ``mne.io.BaseRaw``.
     """
-    def _load_raja(fif_path: Path) -> mne.io.BaseRaw:
-        return load_raja_raw(fif_path, brain_region_yaml)
-
     return {
-        "raja":      _load_raja,
+        "raja":      partial(load_raja_raw, brain_region_yaml=brain_region_yaml),
         "murat2018": load_murat_raw,
+        "cao2018":   load_cao_raw,
     }
 
 
