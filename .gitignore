@@ -243,3 +243,9 @@ blinker_pyblinker_validation/experiment_results/
 /tutorial/exp6_butterfly_murat2018.png
 /tutorial/exp6_butterfly_raja.png
 /tutorial/exp6_morphological_detailed.html
+
+# Telegram heartbeat secrets/state (do not commit)
+bot_telegram.md
+.telegram_chat_id
+.telegram_agent_state.json
+telegram_heartbeat.log
