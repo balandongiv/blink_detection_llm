@@ -1,18 +1,16 @@
+% Source: runs/exp42_cao_30s/exp42_boundary_tolerance_summary.csv
+% Provenance: values verified against runs/reports/TCAO4_derived_stats.md, Boundary tolerance source snapshot.
 \begin{table}[ht]
-    \centering
-    \caption{Proposed-Med macro-averaged precision, recall, and F1 under five IoU thresholds
-        (30-second epochs). Macro-F1 range across thresholds = 0.5168
-        (stable $<$1\,pp: NO). Default IoU = 0.1 ($\leftarrow$ref).}
-    \label{tab:boundary_tolerance}
-    \begin{tabular}{lccc}
-        \toprule
-        IoU threshold & Macro-P & Macro-R & Macro-F1 \\
-        \midrule
-        0.00 & 0.9656 & 0.8622 & 0.8858 \\
-        0.10 & 0.8875 & 0.8009 & 0.8177 $\leftarrow$ref \\
-        0.20 & 0.8358 & 0.7599 & 0.7743 \\
-        0.30 & 0.7092 & 0.6621 & 0.6687 \\
-        0.50 & 0.3817 & 0.3710 & 0.3690 \\
-        \bottomrule
-    \end{tabular}
+  \centering
+  \caption{Boundary-tolerance analysis for Proposed-Med on Raja, Cao2018, and the pooled 104-session set at 30\,s epochs. Macro-$F_1$ is shown for increasing event-matching IoU thresholds; macro-$F_1$ falls as the overlap criterion tightens.}
+  \label{tab:boundary_tolerance}
+  \begin{tabular}{lcccccc}
+    \toprule
+    Dataset & $n$ & IoU 0.0 & IoU 0.1 & IoU 0.2 & IoU 0.3 & IoU 0.5 \\
+    \midrule
+    Raja & 46 & 0.892100 & 0.830510 & 0.780355 & 0.679374 & 0.329248 \\
+    Cao2018 & 58 & 0.963797 & 0.895359 & 0.859942 & 0.712317 & 0.210391 \\
+    Pooled & 104 & 0.932085 & 0.866676 & 0.824740 & 0.697746 & 0.262962 \\
+    \bottomrule
+  \end{tabular}
 \end{table}

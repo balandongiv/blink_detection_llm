@@ -1,0 +1,36 @@
+% Source: runs/exp41_cao_30s/exp41_strategy_comparison_summary.csv; runs/reports/TCAO4_stats.json; script tutorial/41_exp1_exp2_strategy_comparison.py
+\begin{table}[ht]
+    \centering
+    \caption{Main comparison on 30-second epochs. Values are macro-averaged across sessions.
+        Best macro-F1 within each dataset block is shown in \textbf{bold}. Pairwise Wilcoxon
+        tests use the visible four-condition family, $C(4,2)=6$ comparisons; exact
+        Bonferroni-corrected $p$-values are listed below.}
+    \label{tab:exp1_main}
+    \begin{tabular}{llcccc}
+        \toprule
+        Dataset & Condition & $n$ & Macro precision & Macro recall & Macro F1 \\
+        \midrule
+        Raja & BLINKER-concat & 46 & 0.668643 & 0.959200 & 0.758780 \\
+        Raja & MNE-annot & 46 & 0.695237 & 0.642037 & 0.609699 \\
+        Raja & Proposed-Mean & 46 & 0.911370 & 0.793596 & 0.817118 \\
+        Raja & Proposed-Med & 46 & 0.907756 & 0.813874 & \textbf{0.830510} \\
+        \midrule
+        Cao2018 & BLINKER-concat & 58 & 0.734429 & 0.986020 & 0.824156 \\
+        Cao2018 & MNE-annot & 58 & 0.821379 & 0.887149 & 0.838279 \\
+        Cao2018 & Proposed-Mean & 58 & 0.899163 & 0.883237 & 0.882237 \\
+        Cao2018 & Proposed-Med & 58 & 0.891602 & 0.911316 & \textbf{0.895359} \\
+        \midrule
+        Pooled & BLINKER-concat & 104 & 0.705331 & 0.974157 & 0.795239 \\
+        Pooled & MNE-annot & 104 & 0.765586 & 0.778734 & 0.737176 \\
+        Pooled & Proposed-Mean & 104 & 0.904562 & 0.843588 & 0.853434 \\
+        Pooled & Proposed-Med & 104 & 0.898747 & 0.868216 & \textbf{0.866676} \\
+        \bottomrule
+    \end{tabular}
+    \begin{minipage}{0.98\linewidth}
+    \footnotesize
+    Bonferroni-adjusted $p$-values:
+    Raja: BLINKER-concat vs MNE-annot 0.808546603; Proposed-Mean vs BLINKER-concat 0.134535249; Proposed-Med vs BLINKER-concat 0.040217714; Proposed-Mean vs MNE-annot 0.011472361; Proposed-Med vs MNE-annot 0.002441489; Proposed-Mean vs Proposed-Med 0.000504607.
+    Cao2018: BLINKER-concat vs MNE-annot 0.063012150; Proposed-Mean vs BLINKER-concat 0.000445011; Proposed-Med vs BLINKER-concat 0.000026958; Proposed-Mean vs MNE-annot 0.299755449; Proposed-Med vs MNE-annot 0.031506075; Proposed-Mean vs Proposed-Med 0.004596023.
+    Pooled: BLINKER-concat vs MNE-annot 1.000000000; Proposed-Mean vs BLINKER-concat 0.000230102; Proposed-Med vs BLINKER-concat 0.000006588; Proposed-Mean vs MNE-annot 0.004704930; Proposed-Med vs MNE-annot 0.000126287; Proposed-Mean vs Proposed-Med 0.000001385.
+    \end{minipage}
+\end{table}

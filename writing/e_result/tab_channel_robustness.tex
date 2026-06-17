@@ -1,0 +1,17 @@
+% Source: runs/exp41_cao_30s/exp41_strategy_comparison_results.csv; runs/reports/TCAO4_stats.json; script runs/reports/TCAO4_derived_stats.md
+\begin{table}[ht]
+  \centering
+  \scriptsize
+  \setlength{\tabcolsep}{3pt}
+  \caption{Channel-robustness ranking stability across sessions for the four visible methods. Full agreement is the fraction of sessions where all four methods select the same best channel; per-method agreement is the mean fraction of the other three methods selecting the same best channel.}
+  \label{tab:channel-robustness}
+  \begin{tabular}{lccccccc}
+    \toprule
+    Dataset & Sessions & Full agreement & Mean pairwise & BLINKER-concat & MNE-annot & Proposed-Mean & Proposed-Med \\
+    \midrule
+    Raja & 46 & 14/46 (0.304348) & 0.572464 & 0.492754 & 0.507246 & 0.637681 & 0.652174 \\
+    Cao2018 & 58 & 19/58 (0.327586) & 0.591954 & 0.563218 & 0.511494 & 0.637931 & 0.655172 \\
+    Pooled & 104 & 33/104 (0.317308) & 0.583333 & 0.532051 & 0.509615 & 0.637821 & 0.653846 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

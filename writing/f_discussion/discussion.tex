@@ -1,24 +1,23 @@
 \section{Discussion}
 
-\paragraph{Epoch duration selection.}
-Experiment~1 selected a 30-second epoch duration for the Proposed-Med configuration using
-macro-F1 on the combined dataset as the primary metric. Importantly, Experiment~3 showed
-that macro-F1 was largely insensitive to the epoch grid over 20--120\,s, with only small differences between durations and no evidence of a strong performance cliff. This supports
-the practical view that epoch duration is a secondary design choice for the detector
-itself; we nevertheless fix 30\,s downstream for consistency and to match the empirically
-best setting under the chosen metric.
+% Re-enabled for TCAO6 after rewrite to Raja+Cao2018 30 s results.
+\input{f_discussion/p001/paragraph}
 
-\paragraph{Strategy comparison.}
-Across the five compared conditions, Proposed-Med (macro-F1\,=\,0.8177) did not dominate DBO (macro-F1\,=\,0.8540) under the selected 30-second epoch. Stage~A may remove epochs with atypical but valid blink morphologies, trading recall for robustness. Future work should quantify when Stage~A is beneficial and when it is overly conservative.
-Proposed-Med substantially improved over the two practical baselines
-(BLINKER-concat, macro-F1\,=\,0.7453; MNE-annot, macro-F1\,=\,0.5610).
+% Re-enabled for TCAO6 after rewrite to Raja+Cao2018 30 s results.
+\input{f_discussion/p002/paragraph}
 
-\paragraph{Sensitivity to the evaluation strictness.}
-Experiment~4 demonstrated that macro-F1 varies by 0.5168 across IoU thresholds $\{0.0,0.1,0.2,0.3,0.5\}$ (stable $<$1\,pp: NO). The main experiments therefore adopt IoU\,=\,0.1 as a pragmatic default,
-while reporting the full IoU sweep to make this methodological dependence explicit.
+\input{f_discussion/p003/paragraph}
 
-\paragraph{Morphological analysis.}
-Experiment~6 (detailed) complements the scalar metrics by visualising typical true
-positives, false positives, and false negatives across duration and amplitude strata. This
-helps distinguish failures due to boundary misalignment from failures due to missed events,
-and provides qualitative evidence about which blink types are systematically challenging.
+% Re-enabled for TCAO6 after rewrite to Raja+Cao2018 30 s results.
+\input{f_discussion/p004/paragraph}
+
+\input{f_discussion/p005/paragraph}
+
+% Re-enabled for TCAO6 after rewrite to Raja+Cao2018 30 s results.
+\input{f_discussion/p006/paragraph}
+
+% Re-enabled for TCAO6 after rewrite to Raja+Cao2018 30 s results.
+\input{f_discussion/p007/paragraph}
+
+% Re-enabled for TCAO6 after rewrite to Raja+Cao2018 30 s results.
+\input{f_discussion/p008/paragraph}

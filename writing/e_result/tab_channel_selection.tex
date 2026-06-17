@@ -1,0 +1,18 @@
+% Source: runs/exp41_cao_30s/exp41_strategy_comparison_results.csv; script tutorial/47_exp_channel_selection_frequency.py
+\begin{table}[ht]
+  \centering
+  \scriptsize
+  \setlength{\tabcolsep}{3pt}
+  \caption{Best-channel selection frequencies pooled over the four visible methods. Region rows use only labels present in \texttt{brain\_region.yaml}; unmapped labels are not forced into a cross-dataset region.}
+  \label{tab:channel_selection}
+  \begin{tabular}{llp{0.68\linewidth}}
+    \toprule
+    Dataset & Summary & Frequencies \\
+    \midrule
+    Raja & Channels & E9 90/184 (0.489); E22 73/184 (0.397); E3 21/184 (0.114) \\
+    Raja & Regions & frontal\_minimal 184/184 (1.000); mapped 184/184 (1.000) \\
+    Cao2018 & Channels & FP1 144/232 (0.621); FP2 71/232 (0.306); F7 5/232 (0.022); F8 3/232 (0.013); FC3 2/232 (0.009) \\
+    Cao2018 & Regions & No mapped selections; mapped 0/232 (0.000) \\
+    \bottomrule
+  \end{tabular}
+\end{table}

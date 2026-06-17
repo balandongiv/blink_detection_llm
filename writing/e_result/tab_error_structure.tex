@@ -1,0 +1,18 @@
+% Source: runs/exp41_cao_30s/exp41_strategy_comparison_results.csv; script tutorial/48_exp_error_structure_session.py
+\begin{table}[ht]
+  \centering
+  \caption{Error-structure decomposition by condition. Mean false positives (FP) and false negatives (FN) are reported per session.}
+  \label{tab:error-structure}
+  \begin{tabular}{lcccl}
+    \toprule
+    Condition & Mean FP/session & Mean FN/session & FP:FN & Regime \\
+    \midrule
+    BLINKER-concat & 244.0 & 14.2 & 17.119 & FP-heavy \\
+    MNE-annot & 95.6 & 190.9 & 0.501 & FN-heavy \\
+% DBO-related results are intentionally commented out because DBO is reserved for a future paper.
+%    DBO & -- & -- & -- & reserved \\
+    Proposed-Mean & 49.0 & 157.2 & 0.312 & FN-heavy \\
+    Proposed-Med & 55.6 & 126.8 & 0.438 & FN-heavy \\
+    \bottomrule
+  \end{tabular}
+\end{table}
