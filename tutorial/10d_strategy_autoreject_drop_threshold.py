@@ -10,8 +10,6 @@ Two-stage thresholding:
            using the Stage B threshold.
 """
 
-from __future__ import annotations
-
 import logging
 from pathlib import Path
 import sys
@@ -37,10 +35,10 @@ CSV_PATH = Path(
     r"D:\dataset\drowsy_driving_raja\human_label_annotation_eeg\S1\S01_20170519_043933\ear_eog.csv"
     )
 BRAIN_REGION_YAML = REPO_ROOT / "brain_region.yaml"
-EPOCH_DURATION_S = 60.0
+EPOCH_DURATION_S = 30.0
 FILTER_LOW = 1.0
 FILTER_HIGH = 20.0
-RESAMPLE_RATE = None
+RESAMPLE_RATE = 100
 
 # Stage A: autoreject settings
 AUTOREJECT_RANDOM_STATE = 42
@@ -65,9 +63,6 @@ def main() -> None:
     epochs = mne.make_fixed_length_epochs(
         raw, duration=EPOCH_DURATION_S, preload=True, verbose="ERROR"
     )
-    if N_EPOCHS is not None:
-        epochs = epochs[:N_EPOCHS]
-
     prepared = prepare_epoch_detection_input(
         epochs,
         pick_types_options={"eeg": True},
@@ -75,6 +70,7 @@ def main() -> None:
         filter_high=FILTER_HIGH,
         resample_rate=RESAMPLE_RATE,
     )
+    # It is possible to drop epochs before we proceed with any of the pipeline
     valid_epoch_indices = get_valid_epoch_indices(epochs)
 
     setting = {

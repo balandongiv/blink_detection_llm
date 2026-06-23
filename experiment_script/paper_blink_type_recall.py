@@ -7,7 +7,7 @@ Inputs
 - Cao2018 FIF/CSV pairs discovered under
   ``D:\\dataset\\sustained_attention_driving`` with optional ``epoch_health.csv``.
 - The four visible R2 strategy runners from
-  ``tutorial/41_exp1_exp2_strategy_comparison.py``.
+  ``experiment_script/exp2_strategy_comparison.py``.
 
 Outputs on a full run
 ---------------------
@@ -83,7 +83,7 @@ TABLE_TEX = REPO_ROOT / "writing" / "e_result" / "tab_blink_type_recall.tex"
 EPOCH_DURATION_S = 30.0
 FILTER_LOW = 1.0
 FILTER_HIGH = 20.0
-RESAMPLE_RATE = None
+RESAMPLE_RATE = 100  # downsample to 100 Hz, matching the documented methodology
 LONG_THRESHOLD_S = 0.5
 VISIBLE_CONDITIONS = ["BLINKER-concat", "MNE-annot", "Proposed-Mean", "Proposed-Med"]
 BLINK_TYPES = ["Normal", "Long"]
@@ -107,7 +107,10 @@ def _load_module(name: str, path: Path):
     return module
 
 
-EXP41 = _load_module("exp41_strategy_comparison_r2", REPO_ROOT / "tutorial" / "41_exp1_exp2_strategy_comparison.py")
+EXP41 = _load_module(
+    "exp2_strategy_comparison_r2",
+    REPO_ROOT / "experiment_script" / "exp2_strategy_comparison.py",
+)
 
 
 def _configure_exp41() -> None:
@@ -357,7 +360,7 @@ def write_latex_table(summary_rows: list[dict]) -> None:
     best_normal = max(float(by_condition_type[(c, "Normal")]["recall"]) for c in VISIBLE_CONDITIONS)
     best_long = max(float(by_condition_type[(c, "Long")]["recall"]) for c in VISIBLE_CONDITIONS)
     lines = [
-        "% Source: tutorial/50_exp_blink_type_recall.py; runs/extra_blink_type/recall_by_blink_type.csv",
+        "% Source: experiment_script/paper_blink_type_recall.py; runs/extra_blink_type/recall_by_blink_type.csv",
         "\\begin{table}[ht]",
         "  \\centering",
         "  \\caption{Extra analysis: event-level recall split by blink duration",

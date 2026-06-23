@@ -28,9 +28,9 @@ Current design, from the existing reports:
 
 Relevant context:
 
-- [report_first_iteration.md](./report_first_iteration.md)
-- [strategy_e_derivative.md](./strategy_e_derivative.md)
-- [strategy_e_derivative_2nd.md](./strategy_e_derivative_2nd.md)
+- [report_first_iteration.md](report_first_iteration.md)
+- [strategy_e_derivative.md](strategy_e_derivative.md)
+- [strategy_e_derivative_2nd.md](strategy_e_derivative_2nd.md)
 
 ## Working Hypothesis
 

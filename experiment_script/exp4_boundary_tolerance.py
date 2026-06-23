@@ -15,7 +15,7 @@ choices.
 
 Datasets
 --------
-Drowsy Driving Raja corpus and murat_2018.
+Drowsy Driving Raja corpus and Cao2018 sustained-attention driving corpus.
 """
 
 from __future__ import annotations
@@ -36,12 +36,15 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from blink_evaluation import evaluate_channels, load_ground_truth_annotations
-from src.common.bad_epochs import get_valid_epoch_indices
+from blink_evaluation import evaluate_channels
 from src.common.epoch_input import prepare_epoch_detection_input
+from experiment_script.channel_group_config import apply_stage_a_channel_group
 from src.strategy_dbo_drop.runner import channel_results_strategy_dbo_drop
 from tutorial.tutorial_utils import (
-    discover_raja_pairs, discover_murat_pairs, make_dataset_loaders, setup_tutorial_logging,
+    DEFAULT_CAO_REGION_YAML, DEFAULT_RAJA_REGION_YAML,
+    discover_cao_pairs, discover_raja_pairs,
+    load_gt_annotations_for_pair, make_dataset_loaders, setup_tutorial_logging,
+    valid_epoch_indices_for_pair,
 )
 
 logger = logging.getLogger(__name__)
@@ -55,10 +58,11 @@ VERBOSE: bool = True
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-BRAIN_REGION_YAML    = REPO_ROOT / "brain_region.yaml"
+RAJA_REGION_YAML     = DEFAULT_RAJA_REGION_YAML
+CAO_REGION_YAML      = DEFAULT_CAO_REGION_YAML
 RAJA_ANNOTATION_BASE = Path(r"D:\dataset\drowsy_driving_raja\human_label_annotation_eeg")
 RAJA_PROCESSED_BASE  = Path(r"D:\dataset\drowsy_driving_raja_processed")
-MURAT_DATASET_ROOT   = Path(r"D:\dataset\murat_2018")
+CAO_DATASET_ROOT     = Path(r"D:\dataset\sustained_attention_driving")
 
 # ---------------------------------------------------------------------------
 # Experiment parameters
@@ -69,7 +73,7 @@ IOU_THRESHOLDS          = [0.0, 0.1, 0.2, 0.3, 0.5]
 REFERENCE_IOU           = 0.1   # default IoU threshold used elsewhere
 FILTER_LOW              = 1.0
 FILTER_HIGH             = 20.0
-RESAMPLE_RATE           = None
+RESAMPLE_RATE           = 100
 N_EPOCHS: int | None    = None
 
 # Strategy dbo_drop (Proposed-Med) parameters
@@ -87,7 +91,9 @@ MIN_FLAGGED_EPOCHS      = 1
 
 def _run_session(pair: dict) -> dict:
     """Load session and run Proposed-Med once; cache channel_results for reuse."""
-    dataset_loaders = make_dataset_loaders(BRAIN_REGION_YAML)
+    dataset_loaders = make_dataset_loaders(
+        raja_region_yaml=RAJA_REGION_YAML, cao_region_yaml=CAO_REGION_YAML
+    )
     load_fn = dataset_loaders[pair["dataset"]]
     raw = load_fn(pair["fif"])
     epochs = mne.make_fixed_length_epochs(
@@ -103,7 +109,8 @@ def _run_session(pair: dict) -> dict:
         filter_high=FILTER_HIGH,
         resample_rate=RESAMPLE_RATE,
     )
-    valid_epoch_indices = get_valid_epoch_indices(epochs)
+    prepared = apply_stage_a_channel_group(prepared, pair["dataset"])
+    valid_epoch_indices = valid_epoch_indices_for_pair(pair, epochs, EPOCH_DURATION_S)
 
     setting = {
         "autoreject_random_state": AUTOREJECT_RANDOM_STATE,
@@ -114,7 +121,7 @@ def _run_session(pair: dict) -> dict:
     }
     channel_results = channel_results_strategy_dbo_drop(prepared, valid_epoch_indices, setting=setting)
 
-    gt_annotations = load_ground_truth_annotations(pair["csv"], EPOCH_DURATION_S)
+    gt_annotations = load_gt_annotations_for_pair(pair, EPOCH_DURATION_S, valid_epoch_indices)
     return {
         "pair":            pair,
         "channel_results": channel_results,
@@ -332,13 +339,13 @@ def main() -> None:
     N_EPOCHS = args.n_epochs
 
     setup_tutorial_logging()
-    raja_pairs  = discover_raja_pairs(RAJA_ANNOTATION_BASE, RAJA_PROCESSED_BASE)
-    murat_pairs = discover_murat_pairs(MURAT_DATASET_ROOT)
-    all_pairs   = raja_pairs + murat_pairs
+    raja_pairs = discover_raja_pairs(RAJA_ANNOTATION_BASE, RAJA_PROCESSED_BASE)
+    cao_pairs  = discover_cao_pairs(CAO_DATASET_ROOT)
+    all_pairs  = raja_pairs + cao_pairs
 
-    logger.info("Raja sessions  : %d", len(raja_pairs))
-    logger.info("Murat subjects : %d", len(murat_pairs))
-    logger.info("IoU thresholds : %s", IOU_THRESHOLDS)
+    logger.info("Raja sessions   : %d", len(raja_pairs))
+    logger.info("Cao2018 sessions: %d", len(cao_pairs))
+    logger.info("IoU thresholds  : %s", IOU_THRESHOLDS)
 
     results: list[dict] = []
     errors:  list[str]  = []
@@ -375,10 +382,10 @@ def main() -> None:
         print("No results collected.")
         return
 
-    for ds in ("raja", "murat2018"):
+    for ds in ("raja", "cao2018"):
         _print_per_session_table(results, ds)
 
-    for ds in ("raja", "murat2018", "all"):
+    for ds in ("raja", "cao2018", "all"):
         _print_tolerance_summary(results, ds)
 
     if args.out_dir is not None:
@@ -388,7 +395,7 @@ def main() -> None:
         _write_csv(
             out_dir / "exp42_boundary_tolerance_summary.csv",
             _tolerance_summary_rows(results, "raja")
-            + _tolerance_summary_rows(results, "murat2018")
+            + _tolerance_summary_rows(results, "cao2018")
             + _tolerance_summary_rows(results, "all"),
         )
         payload = {

@@ -258,7 +258,7 @@ def _region_summary(df: pd.DataFrame, dataset: str, top_n: int = 3) -> tuple[str
 
 def _write_latex_table(freq: pd.DataFrame, df: pd.DataFrame, path: Path) -> None:
     lines = [
-        "% Source: runs/exp41_cao_30s/exp41_strategy_comparison_results.csv; script tutorial/47_exp_channel_selection_frequency.py",
+        "% Source: runs/exp41_cao_30s/exp41_strategy_comparison_results.csv; script experiment_script/paper_channel_selection_frequency.py",
         r"\begin{table}[ht]",
         r"  \centering",
         r"  \scriptsize",
@@ -463,7 +463,7 @@ def _write_report(
             "- `runs/exp_channel_selection/method_overlap.csv`",
             "- `writing/e_result/tab_channel_selection.tex`",
             "- `writing/e_result/figures/fig_channel_selection.pdf`",
-            "- `tutorial/47_exp_channel_selection_frequency.py`",
+            "- `experiment_script/paper_channel_selection_frequency.py`",
             "- `runs/reports/R4_channel_selection.md`",
             "",
             "## Data Caveats",

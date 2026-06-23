@@ -92,7 +92,7 @@ def blink_position_strategy_nathanael(
     h_freq: float = 20.0,
     thresh: float | None = None,
 ) -> list[dict]:
-    """Run Strategy B blink detection on each channel.
+    """Run Strategy nathanael blink detection on each channel.
 
     Uses MNE ``find_eog_events`` on the concatenated valid-epoch signal, then
     maps peak events back to epoch-local timing.

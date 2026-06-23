@@ -15,6 +15,14 @@ import yaml
 
 logger = logging.getLogger(__name__)
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+# Per-dataset brain-region configs (replace the single legacy brain_region.yaml).
+#   Raja  -> EGI HydroCel integer indices  (resolved to E1…E128)
+#   Cao2018 -> 10-20 channel names         (resolved case-insensitively)
+DEFAULT_RAJA_REGION_YAML = REPO_ROOT / "brain_region_raja.yaml"
+DEFAULT_CAO_REGION_YAML = REPO_ROOT / "brain_region_cao2018.yaml"
+
 
 # ---------------------------------------------------------------------------
 # Logging setup
@@ -240,26 +248,100 @@ def load_murat_raw(fif_path: Path) -> mne.io.BaseRaw:
     return mne.io.read_raw_fif(str(fif_path), preload=True, verbose="ERROR")
 
 
-def load_cao_raw(fif_path: Path) -> mne.io.BaseRaw:
-    """Load a Cao2018 .fif file with all channels.
+def load_cao_raw(fif_path: Path, brain_region_yaml: Path | None = None) -> mne.io.BaseRaw:
+    """Load a Cao2018 .fif file.
 
-    Tutorial 22 feeds the raw file directly into ``prepare_epoch_detection_input``
-    with ``pick_types_options={"eeg": True}``, so this loader intentionally does
-    not apply the Raja brain-region channel subset.
+    When *brain_region_yaml* is given, only the resolved brain-region channels
+    are retained (the channel-selection refactor); when ``None`` the full
+    recording is returned (legacy behaviour used by tutorial 22).
     """
-    return mne.io.read_raw_fif(str(fif_path), preload=True, verbose="ERROR")
+    if brain_region_yaml is None:
+        return mne.io.read_raw_fif(str(fif_path), preload=True, verbose="ERROR")
+    from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
+    brain_channels = load_brain_region_channels(brain_region_yaml)
+    return load_raw_with_brain_channels(fif_path, brain_channels)
 
 
-def make_dataset_loaders(brain_region_yaml: Path) -> dict:
+def make_dataset_loaders(
+    raja_region_yaml: Path | None = None,
+    cao_region_yaml: Path | None = None,
+) -> dict:
     """Return ``{dataset_name: load_fn}`` for supported datasets.
 
     Each loader accepts a single *fif_path* and returns an ``mne.io.BaseRaw``.
+
+    Parameters
+    ----------
+    raja_region_yaml:
+        Brain-region config for the Raja loader.  Defaults to
+        :data:`DEFAULT_RAJA_REGION_YAML`.  (Legacy single-positional callers that
+        pass the old ``brain_region.yaml`` still work via channel-name
+        resolution.)
+    cao_region_yaml:
+        Brain-region config for the Cao2018 loader.  ``None`` keeps the legacy
+        all-channel behaviour; pass :data:`DEFAULT_CAO_REGION_YAML` to restrict
+        Cao2018 detection to its blink-region channels.
     """
+    raja_region_yaml = raja_region_yaml or DEFAULT_RAJA_REGION_YAML
     return {
-        "raja":      partial(load_raja_raw, brain_region_yaml=brain_region_yaml),
-        "murat2018": load_murat_raw,
-        "cao2018":   load_cao_raw,
+        "raja":      partial(load_raja_raw, brain_region_yaml=raja_region_yaml),
+        # "murat2018": load_murat_raw,
+        "cao2018":   partial(load_cao_raw, brain_region_yaml=cao_region_yaml),
     }
+
+
+# ---------------------------------------------------------------------------
+# Per-pair valid-epoch indices and ground-truth annotations
+# ---------------------------------------------------------------------------
+
+def valid_epoch_indices_for_pair(
+    pair: dict,
+    epochs: mne.Epochs,
+    epoch_duration_s: float,
+) -> list[int]:
+    """Return valid (non-dropped) epoch indices for *pair*.
+
+    Cao2018 uses the 30-second ``epoch_health.csv`` filter; all other datasets
+    use the generic flat-epoch validity check.
+    """
+    from src.common.bad_epochs import get_valid_epoch_indices
+    if pair["dataset"] == "cao2018":
+        return get_valid_cao_epoch_indices(
+            pair.get("epoch_health"),
+            epoch_duration_s,
+            len(epochs),
+        )
+    return get_valid_epoch_indices(epochs)
+
+
+def load_gt_annotations_for_pair(
+    pair: dict,
+    epoch_duration_s: float,
+    valid_epoch_indices: list[int] | None = None,
+):
+    """Load per-dataset ground-truth blink annotations for the event evaluator.
+
+    Cao2018 annotations are restricted to *valid_epoch_indices* (when supplied)
+    so that blinks inside health-dropped epochs do not inflate false negatives;
+    Raja/Murat annotations use the standard loader.
+    """
+    from blink_evaluation import (
+        enrich_absolute_times,
+        load_annotation_as_reference,
+        load_ground_truth_annotations,
+    )
+    from blink_evaluation.io import dataframe_to_annotations
+
+    if pair["dataset"] != "cao2018":
+        return load_ground_truth_annotations(pair["csv"], epoch_duration_s)
+
+    ground_truth_raw = load_annotation_as_reference(pair["csv"], epoch_duration_s)
+    if valid_epoch_indices is not None:
+        ground_truth_raw = ground_truth_raw[
+            ground_truth_raw["epoch_index"].isin(valid_epoch_indices)
+        ].reset_index(drop=True)
+    ground_truth_df = enrich_absolute_times(ground_truth_raw, epoch_duration_s)
+    return dataframe_to_annotations(ground_truth_df)
 
 
 # ---------------------------------------------------------------------------

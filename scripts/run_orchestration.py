@@ -14,10 +14,12 @@ from datetime import datetime
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-SCRIPT_40 = REPO_ROOT / "tutorial" / "40_exp1_epoch_duration.py"
-SCRIPT_41 = REPO_ROOT / "tutorial" / "41_exp1_exp2_strategy_comparison.py"
-SCRIPT_42 = REPO_ROOT / "tutorial" / "42_exp4_boundary_tolerance.py"
-SCRIPT_45 = REPO_ROOT / "tutorial" / "45_exp6_morphological_detailed.py"
+# Experiment scripts moved to experiment_script/ and renamed to the result-section
+# academic outline (exp1..exp6); see tutorial/channel_region_refactor_plan.md.
+SCRIPT_40 = REPO_ROOT / "experiment_script" / "exp3_epoch_duration.py"
+SCRIPT_41 = REPO_ROOT / "experiment_script" / "exp2_strategy_comparison.py"
+SCRIPT_42 = REPO_ROOT / "experiment_script" / "exp4_boundary_tolerance.py"
+SCRIPT_45 = REPO_ROOT / "experiment_script" / "exp6_morphological.py"
 ANALYZE_SCRIPT = REPO_ROOT / "scripts" / "analyze_and_update.py"
 LOG_BASE = REPO_ROOT / "logs"
 

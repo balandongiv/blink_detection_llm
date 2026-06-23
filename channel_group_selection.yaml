@@ -1,0 +1,27 @@
+# Stage-A channel-selection group for the downstream experiments (exp2..exp8).
+#
+# Experiment 1 (channel selection) — experiment_script/exp1_channel_selection_*.py,
+# designed per experiment_script/extende_experiment.md — compares Stage-A channel
+# groups and identifies the best one. The chosen winner is recorded HERE so that
+# exp2..exp8 run Stage A (and the proposed pipeline) on the SAME channel set.
+#
+# HARD-APPROVAL GATE
+# ------------------
+#   * Default is "all" (the full per-dataset brain-region montage). With "all",
+#     exp2..exp8 behave exactly as before — no winner has been chosen yet.
+#   * To activate a specific group you MUST set the group AND fill `approved_by`
+#     (a human name or agent id) and `approved_date`. Selecting any non-"all"
+#     group while `approved_by` is empty is REJECTED at runtime (the experiments
+#     raise an error). This forces an explicit, reviewable human/agent decision.
+#
+# Allowed group values (see exp1 output / channel_ablation_utils.build_selection_groups):
+#   all, frontal, frontal_left, frontal_right, central, parietal, occipital,
+#   posterior, single:<CHANNEL_NAME>
+
+stage_a_channel_group:
+  raja: all
+  cao2018: all
+
+approved_by: null      # e.g. "rpb" or an agent id — REQUIRED for any non-"all" group
+approved_date: null    # e.g. 2026-06-23
+notes: ""              # rationale: which criteria drove the choice (F1, #channels, FPR, ...)

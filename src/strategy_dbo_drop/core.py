@@ -8,6 +8,8 @@ Stage C — Blink regions are found via scan_threshold_crossings_kleifges using 
 
 from __future__ import annotations
 
+from types import SimpleNamespace
+
 import numpy as np
 import pandas as pd
 
@@ -84,21 +86,39 @@ def blink_position_strategy_dbo_drop(
     k_flagged    = options.get("k_flagged",    None)  # k for autoreject-flagged epochs
     k_nonflagged = options.get("k_nonflagged", None)  # k for non-flagged epochs
     use_epoch_split = k_flagged is not None and k_nonflagged is not None
+    # Stage A override: when provided, skip autoreject screening and use this
+    # explicit flagged-epoch set (channel-selection / aggregation-rule ablation).
+    flagged_override = options.get("flagged_valid_epoch_indices_override", None)
 
     params = BlinkDetector._build_detector_params(None, {})
     params["sfreq"] = float(prepared.sfreq)
     sfreq = params["sfreq"]
+
+    # For now, we just include the min blink frames  although in the paper, this does not mean anything. Because, the original algorithm contain this
     min_blink_frames = float(params["min_event_len"] * sfreq)
     max_blink_frames = float(max_event_len * sfreq) if max_event_len is not None else None
 
     # ------------------------------------------------------------------ Stage A
-    screen_result = screen_epochs_with_autoreject(
-        prepared,
-        valid_epoch_indices,
-        random_state=autoreject_random_state,
-        min_flagged_epochs=min_flagged_epochs,
-        verbose=verbose,
-    )
+    if flagged_override is not None:
+        # Externally supplied suspicious-epoch set (e.g. a custom channel subset
+        # or aggregation rule).  Fall back to all valid epochs when too few.
+        flagged_list = [int(i) for i in flagged_override]
+        if len(flagged_list) < min_flagged_epochs:
+            flagged_list = []
+        screen_result = SimpleNamespace(
+            flagged_epoch_mask=None,
+            flagged_valid_epoch_indices=flagged_list,
+            channel_thresholds={},
+            n_flagged=len(flagged_list),
+        )
+    else:
+        screen_result = screen_epochs_with_autoreject(
+            prepared,
+            valid_epoch_indices,
+            random_state=autoreject_random_state,
+            min_flagged_epochs=min_flagged_epochs,
+            verbose=verbose,
+        )
 
     # ------------------------------------------------------------------ Stage B
     threshold_result = compute_flagged_epoch_threshold(

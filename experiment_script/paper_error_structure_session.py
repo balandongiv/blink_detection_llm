@@ -31,7 +31,7 @@ CONDITIONS = ["BLINKER-concat", "MNE-annot", "Proposed-Mean", "Proposed-Med"]
 DATASETS = ["raja", "cao2018"]
 SOURCE_COMMENT = (
     "% Source: runs/exp41_cao_30s/exp41_strategy_comparison_results.csv; "
-    "script tutorial/48_exp_error_structure_session.py"
+    "script experiment_script/paper_error_structure_session.py"
 )
 
 
@@ -320,7 +320,7 @@ def render_report(
             "",
             "- writing/e_result/tab_error_structure.tex",
             "- writing/e_result/tab_best_session.tex",
-            "- tutorial/48_exp_error_structure_session.py",
+            "- experiment_script/paper_error_structure_session.py",
             "- runs/exp_error_session/error_regime.csv",
             "- runs/exp_error_session/error_regime_by_dataset.csv",
             "- runs/exp_error_session/session_ranking_proposed_med.csv",
@@ -331,7 +331,7 @@ def render_report(
             "",
             "Confirmed: recomputed tables and audit CSVs contain only raja and cao2018; Murat is gone.",
             "",
-            "DISABLED_ES_DONE error_table=writing/e_result/tab_error_structure.tex session_table=writing/e_result/tab_best_session.tex script=tutorial/48_exp_error_structure_session.py",
+            "DISABLED_ES_DONE error_table=writing/e_result/tab_error_structure.tex session_table=writing/e_result/tab_best_session.tex script=experiment_script/paper_error_structure_session.py",
         ]
     )
     return "\n".join(lines)

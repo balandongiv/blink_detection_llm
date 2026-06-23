@@ -60,7 +60,7 @@ DATASET_ROOT = Path(r"D:\dataset\sustained_attention_driving")
 # ---------------------------------------------------------------------------
 # Shared parameters
 # ---------------------------------------------------------------------------
-EPOCH_DURATION_S = 60.0
+EPOCH_DURATION_S = 30.0
 HEALTH_DROP_THRESHOLD = 3      # drop epoch if health <= this value (30s granularity)
 FILTER_LOW = 1.0
 FILTER_HIGH = 20.0

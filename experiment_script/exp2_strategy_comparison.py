@@ -1,14 +1,14 @@
-"""Experiments 2 & 3: Five-condition strategy comparison.
+"""Experiment 2: Five-condition strategy comparison (the main comparison).
 
-Experiment 2 — Naive Epoch Concatenation vs Epoch-Aware Pipeline (Sec. 3.3.1–3.3.3).
+Naive Epoch Concatenation vs Epoch-Aware Pipeline (Sec. 3.3.1–3.3.3).
 Tests whether BLINKER-concat, MNE-annot, and DBO are outperformed by the proposed
 three-stage pipeline, primarily through improved recall.
 
-Experiment 2 — Threshold Estimator at Stage B (Sec. 3.3.4).
+Threshold Estimator at Stage B (Sec. 3.3.4).
 Tests whether the robust MAD-based (median) estimator outperforms the mean-based
 estimator, especially for sessions with extreme outlier amplitudes.
 
-Both experiments share the same result table.  Strategy F runs with ``center_method``
+Both contrasts share the same result table.  Strategy F runs with ``center_method``
 ``"mean"`` first and ``"median"`` second, as required by the experimental design.
 
 Conditions
@@ -51,26 +51,23 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from blink_evaluation import (
-    enrich_absolute_times,
-    evaluate_channels,
-    load_annotation_as_reference,
-    load_ground_truth_annotations,
-)
-from blink_evaluation.io import dataframe_to_annotations
-from src.common.bad_epochs import get_valid_epoch_indices
+from blink_evaluation import evaluate_channels
 from src.common.epoch_input import prepare_epoch_detection_input
+from experiment_script.channel_group_config import apply_stage_a_channel_group
 from pyblinker.strategies import kleifges_strategy
 from src.strategy_nathanael_mne.runner import blink_position_strategy_nathanael
 from src.strategy_dbo.runner import blink_position_strategy_dbo
 from src.strategy_dbo_drop.runner import channel_results_strategy_dbo_drop
 from tutorial.tutorial_utils import (
+    DEFAULT_CAO_REGION_YAML,
+    DEFAULT_RAJA_REGION_YAML,
     discover_cao_pairs,
     discover_murat_pairs,
     discover_raja_pairs,
-    get_valid_cao_epoch_indices,
+    load_gt_annotations_for_pair,
     make_dataset_loaders,
     setup_tutorial_logging,
+    valid_epoch_indices_for_pair,
 )
 
 logger = logging.getLogger(__name__)
@@ -84,19 +81,20 @@ VERBOSE: bool = True
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-BRAIN_REGION_YAML    = REPO_ROOT / "brain_region.yaml"
+RAJA_REGION_YAML     = DEFAULT_RAJA_REGION_YAML
+CAO_REGION_YAML      = DEFAULT_CAO_REGION_YAML
 RAJA_ANNOTATION_BASE = Path(r"D:\dataset\drowsy_driving_raja\human_label_annotation_eeg")
 RAJA_PROCESSED_BASE  = Path(r"D:\dataset\drowsy_driving_raja_processed")
-MURAT_DATASET_ROOT   = Path(r"D:\dataset\murat_2018")
+# MURAT_DATASET_ROOT   = Path(r"D:\dataset\murat_2018")
 CAO_DATASET_ROOT     = Path(r"D:\dataset\sustained_attention_driving")
 
 # ---------------------------------------------------------------------------
 # Shared parameters
 # ---------------------------------------------------------------------------
-EPOCH_DURATION_S       = 60.0  # Override via --epoch-duration-s (selected by Experiment 1)
+EPOCH_DURATION_S       = 30.0  # Override via --epoch-duration-s (selected by Experiment 1)
 FILTER_LOW             = 1.0
 FILTER_HIGH            = 20.0
-RESAMPLE_RATE          = None
+RESAMPLE_RATE          = 100
 N_EPOCHS: int | None   = None  # positive int → limit epochs per session for quick runs
 
 # Strategy nathanael_mne (MNE-annot) parameters
@@ -117,7 +115,11 @@ MIN_FLAGGED_EPOCHS = 1
 STD_THRESHOLD      = 3.5
 
 # Ordered list of conditions — Proposed-Mean (mean) runs before Proposed-Med (median)
-CONDITIONS = ["BLINKER-concat", "MNE-annot", "DBO", "Proposed-Mean", "Proposed-Med"]
+CONDITIONS = ["BLINKER-concat",
+              "MNE-annot",
+              "DBO",
+              "Proposed-Mean",
+              "Proposed-Med"]
 VISIBLE_CONDITIONS = ["BLINKER-concat", "MNE-annot", "Proposed-Mean", "Proposed-Med"]
 RUN_CONDITIONS = CONDITIONS
 
@@ -189,30 +191,6 @@ _CONDITION_RUNNERS = {
 }
 
 
-def _valid_epoch_indices_for_pair(pair: dict, epochs) -> list[int]:
-    if pair["dataset"] == "cao2018":
-        return get_valid_cao_epoch_indices(
-            pair.get("epoch_health"),
-            EPOCH_DURATION_S,
-            len(epochs),
-        )
-    return get_valid_epoch_indices(epochs)
-
-
-def _load_gt_annotations_for_pair(pair: dict, valid_epoch_indices: list[int] | None = None):
-    """Load per-dataset ground truth annotations for the exp41 evaluator."""
-    if pair["dataset"] != "cao2018":
-        return load_ground_truth_annotations(pair["csv"], EPOCH_DURATION_S)
-
-    ground_truth_raw = load_annotation_as_reference(pair["csv"], EPOCH_DURATION_S)
-    if valid_epoch_indices is not None:
-        ground_truth_raw = ground_truth_raw[
-            ground_truth_raw["epoch_index"].isin(valid_epoch_indices)
-        ].reset_index(drop=True)
-    ground_truth_df = enrich_absolute_times(ground_truth_raw, EPOCH_DURATION_S)
-    return dataframe_to_annotations(ground_truth_df)
-
-
 # ---------------------------------------------------------------------------
 # Single evaluation unit: one session × one condition
 # ---------------------------------------------------------------------------
@@ -233,7 +211,9 @@ def run_one(pair: dict, condition: str) -> dict:
     precision, recall, f1.
     """
     start_s = time.perf_counter()
-    dataset_loaders = make_dataset_loaders(BRAIN_REGION_YAML)
+    dataset_loaders = make_dataset_loaders(
+        raja_region_yaml=RAJA_REGION_YAML, cao_region_yaml=CAO_REGION_YAML
+    )
     load_fn = dataset_loaders[pair["dataset"]]
     raw = load_fn(pair["fif"])
     epochs = mne.make_fixed_length_epochs(
@@ -249,10 +229,11 @@ def run_one(pair: dict, condition: str) -> dict:
         filter_high=FILTER_HIGH,
         resample_rate=RESAMPLE_RATE,
     )
-    valid_epoch_indices = _valid_epoch_indices_for_pair(pair, epochs)
+    prepared = apply_stage_a_channel_group(prepared, pair["dataset"])
+    valid_epoch_indices = valid_epoch_indices_for_pair(pair, epochs, EPOCH_DURATION_S)
     channel_results = _CONDITION_RUNNERS[condition](prepared, valid_epoch_indices)
 
-    gt_annotations = _load_gt_annotations_for_pair(pair, valid_epoch_indices)
+    gt_annotations = load_gt_annotations_for_pair(pair, EPOCH_DURATION_S, valid_epoch_indices)
     scored = evaluate_channels(
         channel_results,
         gt_annotations,
@@ -451,20 +432,20 @@ def _parse_args() -> argparse.Namespace:
         help="Reduce strategy verbosity.",
     )
     p.add_argument(
-        "--use-cao2018",
+        "--use-murat2018",
         action="store_true",
-        help="Use Raja + Cao2018 instead of the default Raja + Murat2018.",
+        help="Use Raja + Murat2018 instead of the default Raja + Cao2018.",
     )
     p.add_argument(
         "--cao-only",
         action="store_true",
-        help="With --use-cao2018, run only Cao2018 sessions.",
+        help="Run only Cao2018 sessions (ignored with --use-murat2018).",
     )
     p.add_argument(
         "--max-cao-sessions",
         type=int,
         default=None,
-        help="With --use-cao2018, limit Cao2018 sessions after discovery.",
+        help="Limit Cao2018 sessions after discovery.",
     )
     p.add_argument(
         "--visible-conditions-only",
@@ -574,16 +555,16 @@ def main() -> None:
 
     setup_tutorial_logging()
     raja_pairs  = discover_raja_pairs(RAJA_ANNOTATION_BASE, RAJA_PROCESSED_BASE)
-    if args.use_cao2018:
+    if args.use_murat2018:
+        cao_pairs = []
+        murat_pairs = discover_murat_pairs(MURAT_DATASET_ROOT)
+        all_pairs = raja_pairs + murat_pairs
+    else:
         cao_pairs = discover_cao_pairs(CAO_DATASET_ROOT)
         if args.max_cao_sessions is not None:
             cao_pairs = cao_pairs[:args.max_cao_sessions]
         murat_pairs = []
         all_pairs = cao_pairs if args.cao_only else raja_pairs + cao_pairs
-    else:
-        cao_pairs = []
-        murat_pairs = discover_murat_pairs(MURAT_DATASET_ROOT)
-        all_pairs = raja_pairs + murat_pairs
 
     logger.info("Raja sessions  : %d", len(raja_pairs))
     logger.info("Murat subjects : %d", len(murat_pairs))
@@ -628,7 +609,7 @@ def main() -> None:
         return
 
     # Per-dataset per-session tables
-    report_datasets = ("raja", "cao2018") if args.use_cao2018 else ("raja", "murat2018")
+    report_datasets = ("raja", "murat2018") if args.use_murat2018 else ("raja", "cao2018")
     for ds in report_datasets:
         _print_per_session_table(results, ds)
 
@@ -644,6 +625,9 @@ def main() -> None:
         out_dir: Path = args.out_dir
         out_dir.mkdir(parents=True, exist_ok=True)
 
+        # NOTE: legacy ``exp41_*`` output basenames are retained intentionally
+        # (read by paper_* helpers, result.tex, and scripts/run_orchestration.py);
+        # do not rename to exp2_* or the downstream consumers break.
         _write_csv(out_dir / "exp41_strategy_comparison_results.csv", results)
         _write_csv(
             out_dir / "exp41_strategy_comparison_summary.csv",

@@ -7,16 +7,17 @@ underlying physiology of blinks does not change with epoch length.
 
 Design
 ------
-Proposed-Med is re-run from scratch under epoch durations of 20, 30, 40, 60, and
-120 seconds.  Secondary outcomes include the number of suspicious epochs
+Proposed-Med is re-run from scratch under epoch durations of 10,20, 30, 40, 50,60, and 120 seconds.
+
+Secondary outcomes include the number of suspicious epochs
 identified by Stage A and the estimated sample-level threshold θ_c from Stage B.
 
 Two-tailed Wilcoxon signed-rank tests compare each duration against the
-60-second reference, with Bonferroni correction for non-reference durations.
+30-second reference, with Bonferroni correction for non-reference durations.
 
 Datasets
 --------
-Drowsy Driving Raja corpus and murat_2018.
+Drowsy Driving Raja corpus and Cao2018 sustained-attention driving corpus.
 """
 
 from __future__ import annotations
@@ -38,12 +39,15 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from blink_evaluation import evaluate_channels, load_ground_truth_annotations
-from src.common.bad_epochs import get_valid_epoch_indices
+from blink_evaluation import evaluate_channels
 from src.common.epoch_input import prepare_epoch_detection_input
+from experiment_script.channel_group_config import apply_stage_a_channel_group
 from src.strategy_dbo_drop.runner import channel_results_strategy_dbo_drop
 from tutorial.tutorial_utils import (
-    discover_raja_pairs, discover_murat_pairs, make_dataset_loaders, setup_tutorial_logging,
+    DEFAULT_CAO_REGION_YAML, DEFAULT_RAJA_REGION_YAML,
+    discover_cao_pairs, discover_raja_pairs,
+    load_gt_annotations_for_pair, make_dataset_loaders, setup_tutorial_logging,
+    valid_epoch_indices_for_pair,
 )
 
 logger = logging.getLogger(__name__)
@@ -57,19 +61,20 @@ VERBOSE: bool = True
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-BRAIN_REGION_YAML    = REPO_ROOT / "brain_region.yaml"
+RAJA_REGION_YAML     = DEFAULT_RAJA_REGION_YAML
+CAO_REGION_YAML      = DEFAULT_CAO_REGION_YAML
 RAJA_ANNOTATION_BASE = Path(r"D:\dataset\drowsy_driving_raja\human_label_annotation_eeg")
 RAJA_PROCESSED_BASE  = Path(r"D:\dataset\drowsy_driving_raja_processed")
-MURAT_DATASET_ROOT   = Path(r"D:\dataset\murat_2018")
+CAO_DATASET_ROOT     = Path(r"D:\dataset\sustained_attention_driving")
 
 # ---------------------------------------------------------------------------
 # Experiment parameters
 # ---------------------------------------------------------------------------
-EPOCH_DURATIONS_S      = [20.0, 30.0, 40.0, 60.0, 120.0]
-REFERENCE_EPOCH_S      = 60.0   # Wilcoxon comparisons are against this duration
+EPOCH_DURATIONS_S      = [10,20.0, 30.0, 40.0, 50, 60.0, 120.0]
+REFERENCE_EPOCH_S      = 30.0   # Wilcoxon comparisons are against this duration
 FILTER_LOW             = 1.0
 FILTER_HIGH            = 20.0
-RESAMPLE_RATE          = None
+RESAMPLE_RATE          = 100
 N_EPOCHS: int | None   = None
 
 # Strategy dbo_drop (Proposed-Med) parameters
@@ -93,7 +98,9 @@ def run_one(pair: dict, epoch_duration_s: float) -> dict:
     dict with keys: dataset, session, epoch_duration_s, tp, fp, fn,
     precision, recall, f1, n_flagged, threshold_center, blink_region_threshold.
     """
-    dataset_loaders = make_dataset_loaders(BRAIN_REGION_YAML)
+    dataset_loaders = make_dataset_loaders(
+        raja_region_yaml=RAJA_REGION_YAML, cao_region_yaml=CAO_REGION_YAML
+    )
     load_fn = dataset_loaders[pair["dataset"]]
     raw = load_fn(pair["fif"])
     epochs = mne.make_fixed_length_epochs(
@@ -109,7 +116,8 @@ def run_one(pair: dict, epoch_duration_s: float) -> dict:
         filter_high=FILTER_HIGH,
         resample_rate=RESAMPLE_RATE,
     )
-    valid_epoch_indices = get_valid_epoch_indices(epochs)
+    prepared = apply_stage_a_channel_group(prepared, pair["dataset"])
+    valid_epoch_indices = valid_epoch_indices_for_pair(pair, epochs, epoch_duration_s)
 
     setting = {
         "autoreject_random_state": AUTOREJECT_RANDOM_STATE,
@@ -120,7 +128,7 @@ def run_one(pair: dict, epoch_duration_s: float) -> dict:
     }
     channel_results = channel_results_strategy_dbo_drop(prepared, valid_epoch_indices, setting=setting)
 
-    gt_annotations = load_ground_truth_annotations(pair["csv"], float(epoch_duration_s))
+    gt_annotations = load_gt_annotations_for_pair(pair, float(epoch_duration_s), valid_epoch_indices)
     scored = evaluate_channels(channel_results, gt_annotations, epoch_duration=epoch_duration_s)
     em = scored.best_eval_result.event_metrics
     br = scored.best_channel_result or {}
@@ -398,13 +406,13 @@ def main() -> None:
         raise SystemExit("No epoch durations provided.")
 
     setup_tutorial_logging()
-    raja_pairs  = discover_raja_pairs(RAJA_ANNOTATION_BASE, RAJA_PROCESSED_BASE)
-    murat_pairs = discover_murat_pairs(MURAT_DATASET_ROOT)
-    all_pairs   = raja_pairs + murat_pairs
+    raja_pairs = discover_raja_pairs(RAJA_ANNOTATION_BASE, RAJA_PROCESSED_BASE)
+    cao_pairs  = discover_cao_pairs(CAO_DATASET_ROOT)
+    all_pairs  = raja_pairs + cao_pairs
 
-    logger.info("Raja sessions  : %d", len(raja_pairs))
-    logger.info("Murat subjects : %d", len(murat_pairs))
-    logger.info("Epoch durations: %s", EPOCH_DURATIONS_S)
+    logger.info("Raja sessions   : %d", len(raja_pairs))
+    logger.info("Cao2018 sessions: %d", len(cao_pairs))
+    logger.info("Epoch durations : %s", EPOCH_DURATIONS_S)
 
     tasks = [
         (pair, dur)
@@ -447,13 +455,13 @@ def main() -> None:
         print("No results collected.")
         return
 
-    for ds in ("raja", "murat2018"):
+    for ds in ("raja", "cao2018"):
         _print_per_session_table(results, ds)
 
-    for ds in ("raja", "murat2018", "all"):
+    for ds in ("raja", "cao2018", "all"):
         _print_duration_summary(results, ds)
 
-    for ds in ("raja", "murat2018"):
+    for ds in ("raja", "cao2018"):
         _run_wilcoxon_vs_reference(results, ds)
 
     # Orchestration-friendly selection + artifacts.
@@ -469,7 +477,7 @@ def main() -> None:
         _write_csv(
             out_dir / "exp1_epoch_duration_summary.csv",
             _duration_summary_rows(results, "raja")
-            + _duration_summary_rows(results, "murat2018")
+            + _duration_summary_rows(results, "cao2018")
             + duration_summary_all,
         )
 

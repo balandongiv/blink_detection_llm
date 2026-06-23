@@ -1,0 +1,125 @@
+\subsection{Experiment Overview}
+\label{sec:experiment_overview}
+
+The experiments follow a deliberate logical progression. Experiment~1 first selects the
+best Stage-A channel-selection configuration; Experiment~2 then benchmarks that chosen
+configuration against competing detectors; and Experiments~3--8 stress-test and
+characterise the resulting pipeline along orthogonal axes (epoch duration, boundary
+tolerance, fallback sensitivity, blink morphology, epoch-health exclusion, and long-blink
+recall). Fixing the channel configuration first, before any baseline comparison, ensures
+that the headline comparison in Experiment~2 uses a principled spatial selection rather
+than an arbitrary default, and that every subsequent robustness check operates on the same
+ideal configuration. Each experiment is summarised below in terms of its purpose,
+motivation, and objective.
+
+\paragraph{Experiment~1 --- Channel-selection strategies.}
+\textit{Purpose:} determine which Stage-A channel-selection group yields the best detector,
+evaluated on both datasets (Raja and Cao2018) and under both estimators (median and mean),
+before any other experiment is run.
+\textit{Motivation:} the current default rule flags an epoch whenever \emph{any} channel
+over \emph{all} channels exceeds its peak-to-peak threshold, which can be triggered by a
+single noisy non-ocular channel and inflate the number of flagged epochs; a more selective
+spatial group may screen blinks more cleanly.
+\textit{Objective:} run the complete Stage~A$\to$B$\to$C pipeline on each candidate
+channel group and select the best group by weighing multiple criteria rather than a single
+metric. The decision criteria are:
+\begin{description}
+  \item[(i) Downstream event $F_1$.] The end-to-end event-level $F_1$ of the full pipeline
+    when restricted to the group; this is the ultimate quantity the detector is optimised
+    for and is therefore the primary criterion.
+  \item[(ii) Stage-A epoch-selection $F_1$.] The precision and recall of the
+    suspicious-epoch selection itself, scored against epoch-level ground truth (an epoch is
+    positive if it contains at least one annotated blink); this isolates the quality of the
+    screening stage from the downstream localisation.
+  \item[(iii) Number of channels for Stage~A.] The count of channels the group requires,
+    as a measure of montage cost, simplicity, and portability; a group that performs
+    comparably with fewer channels is preferred because it is cheaper to acquire and easier
+    to deploy.
+  \item[(iv) False-positive epoch rate / \% epochs flagged.] The fraction of non-blink
+    epochs erroneously flagged and the overall proportion of epochs flagged; a low value
+    indicates robustness to artefacts and avoids over-flagging that would dilute the
+    Stage-B threshold estimate.
+  \item[(v) Recall on safety-critical blinks.] The recall specifically on long
+    drowsiness-related closures, reflecting a ``do-not-miss'' requirement: a configuration
+    that maximises overall $F_1$ but systematically misses safety-critical blinks is
+    undesirable.
+  \item[(vi) Cross-dataset consistency.] The agreement of the chosen group's behaviour
+    between Raja and Cao2018; a group that is best on one dataset but poor on the other does
+    not generalise.
+  \item[(vii) Best-channel stability.] The stability of which channel (or channels) drives
+    detection across sessions and subjects; an unstable best channel signals an
+    overfitted, fragile selection.
+  \item[(viii) Estimator robustness.] The consistency of the group's ranking under the
+    median versus mean centre at Stage~B; a group whose advantage survives both estimators
+    is more trustworthy than one that depends on a particular centre.
+\end{description}
+The configuration that best balances these criteria is designated the ideal configuration
+and is carried forward unchanged into Experiments~2--8.
+
+\paragraph{Experiment~2 --- Strategy comparison.}
+\textit{Purpose:} benchmark the proposed pipeline, configured with the ideal channel group
+from Experiment~1, against competing detection algorithms.
+\textit{Motivation:} a method is only convincing if it outperforms the established
+alternatives under identical preprocessing, epoching, and scoring.
+\textit{Objective:} compare BLINKER-concat, MNE-annot, DBO, Proposed-Mean, and Proposed-Med
+at the event level on both datasets, reporting precision, recall, and $F_1$ with paired
+significance tests, and isolating both the estimator contrast (median versus mean) and the
+cross-dataset generalisation gap.
+
+\paragraph{Experiment~3 --- Epoch-duration stability.}
+\textit{Purpose:} characterise how sensitive the proposed pipeline is to the choice of
+epoch length.
+\textit{Motivation:} the \(30\)~s primary epoch is a design choice, and a robust method
+should not depend critically on it.
+\textit{Objective:} sweep the epoch duration (e.g.\ \(10/20/40/60\)~s around the \(30\)~s
+reference) and quantify the resulting variation in event-level $F_1$, testing each duration
+against the reference with Wilcoxon signed-rank tests.
+
+\paragraph{Experiment~4 --- Boundary-tolerance (IoU) stability.}
+\textit{Purpose:} assess how the results depend on how strictly a detection must overlap a
+ground-truth interval to count as a match.
+\textit{Motivation:} blink boundaries are inherently uncertain, so the matching tolerance
+is a scoring choice that could materially change the reported numbers.
+\textit{Objective:} recompute event-level $F_1$ across a range of intersection-over-union
+matching thresholds (e.g.\ \(\{0.0, 0.1, 0.2, 0.3, 0.5\}\)) and report the range of
+$F_1$ as a measure of boundary-tolerance sensitivity.
+
+\paragraph{Experiment~5 --- $n_{\min}$ / Stage-B fallback sensitivity.}
+\textit{Purpose:} examine the behaviour of the Stage-B fallback that switches from the
+flagged epochs to the full valid-epoch set when too few epochs are flagged.
+\textit{Motivation:} the fallback count \(n_{\min}\) guards against estimating a threshold
+from an insufficient sub-sample, but the choice of \(n_{\min}\) should not unduly drive the
+results.
+\textit{Objective:} quantify how threshold variance depends on the sub-sample size and how
+often the fallback is triggered as a function of epoch duration, characterising the
+estimator's stability under small flagged sets.
+
+\paragraph{Experiment~6 --- Blink-region morphology (butterfly).}
+\textit{Purpose:} visually and quantitatively characterise the morphology of the detected
+blink regions.
+\textit{Motivation:} aggregate $F_1$ does not reveal \emph{why} a detection succeeds or
+fails; inspecting the waveforms distinguishes genuine, time-locked blink shapes from ragged
+artefactual ones.
+\textit{Objective:} produce butterfly overlays of true-positive, false-negative, and
+false-positive blink regions, stratified by duration and amplitude, per subject and pooled,
+to characterise the kinds of events the detector recovers and misses.
+
+\paragraph{Experiment~7 --- Effect of excluding low-health epochs.}
+\textit{Purpose:} measure how much the reported performance depends on the preprocessing
+decision to exclude low-health epochs, for every detector.
+\textit{Motivation:} dropping low-health epochs is a preprocessing step applied to all
+methods, not part of any detector, so a reviewer will rightly ask whether the headline
+numbers are partly an artefact of that exclusion.
+\textit{Objective:} run every condition with and without the exclusion (health-on versus
+health-off) on both datasets, reporting the per-condition change in $F_1$ to separate
+preprocessing effects from detector effects and to test whether the proposed method depends
+on the exclusion less than the baselines.
+
+\paragraph{Experiment~8 --- Long-blink (drowsiness closure) recall.}
+\textit{Purpose:} quantify recall specifically on long eye closures for every detector.
+\textit{Motivation:} in a drowsy-driving context the long closures (microsleep,
+\(\geq 0.5\)~s) are the safety-critical events, yet shape-based detectors tuned to short
+blinks tend to reject wide-plateau closures.
+\textit{Objective:} split blinks into normal (\(<0.5\)~s) and long (\(\geq 0.5\)~s)
+categories and report the per-detector recall gap on both datasets, turning ``the method
+also handles long closures'' from a claim into a measured result.

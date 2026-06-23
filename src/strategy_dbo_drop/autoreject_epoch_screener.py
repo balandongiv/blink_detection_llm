@@ -79,15 +79,15 @@ def screen_epochs_with_autoreject(
     if verbose:
         print(f"[Stage A] screening {len(valid_indices)} valid epoch(s) with autoreject ({autoreject_method})")
 
-    if len(valid_indices) == 0:
-        if verbose:
-            print("[Stage A] no valid epochs — skipping screening")
-        return SimpleNamespace(
-            flagged_epoch_mask=np.array([], dtype=bool),
-            flagged_valid_epoch_indices=[],
-            channel_thresholds={ch: 0.0 for ch in channel_names},
-            n_flagged=0,
-        )
+    # if len(valid_indices) == 0:
+    #     if verbose:
+    #         print("[Stage A] no valid epochs — skipping screening")
+    #     return SimpleNamespace(
+    #         flagged_epoch_mask=np.array([], dtype=bool),
+    #         flagged_valid_epoch_indices=[],
+    #         channel_thresholds={ch: 0.0 for ch in channel_names},
+    #         n_flagged=0,
+    #     )
 
     data = prepared.data[valid_indices, :, :]
 
@@ -98,6 +98,7 @@ def screen_epochs_with_autoreject(
     )
 
     # Learn per-channel PTP thresholds (augment=False avoids the location check)
+    # We use the autoreject implementation
     raw_thresholds = compute_thresholds(
         stage1_epochs,
         method=autoreject_method,
@@ -112,6 +113,8 @@ def screen_epochs_with_autoreject(
     threshold_array = np.array([channel_thresholds[ch] for ch in channel_names])  # (n_channels,)
     # data shape: (n_valid_epochs, n_channels, n_times)
     ptp = data.max(axis=-1) - data.min(axis=-1)  # (n_valid_epochs, n_channels)
+
+    # We consider the contribution of all channels
     flagged_epoch_mask = np.any(ptp > threshold_array[np.newaxis, :], axis=1)  # (n_valid_epochs,)
 
     flagged_local_indices = np.where(flagged_epoch_mask)[0]

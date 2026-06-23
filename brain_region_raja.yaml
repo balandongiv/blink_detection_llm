@@ -1,0 +1,35 @@
+eeg_regions:
+  central_left:
+    - 13
+    - 28
+    - 36
+    - 112
+  central_right:
+    - 104
+    - 117
+    - 122
+  frontal_left:
+    - 22
+    - 23
+    - 24
+    - 33
+  frontal_right:
+    - 3
+    - 9
+    - 124
+  occipital_left:
+    - 67
+    - 70
+  occipital_right:
+    - 77
+    - 83
+  parietal_left:
+    - 37
+    - 47
+    - 52
+    - 58
+  parietal_right:
+    - 87
+    - 92
+    - 96
+    - 98

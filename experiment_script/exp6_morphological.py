@@ -50,12 +50,14 @@ if str(REPO_ROOT) not in sys.path:
 
 from blink_evaluation import evaluate_channels, load_annotation_as_reference, enrich_absolute_times
 from blink_evaluation.io import dataframe_to_annotations
-from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
+from experiment_script.channel_group_config import apply_stage_a_channel_group
 from src.strategy_dbo_drop.runner import channel_results_strategy_dbo_drop
 from tutorial.tutorial_utils import (
-    discover_raja_pairs, discover_murat_pairs, make_dataset_loaders,
+    DEFAULT_CAO_REGION_YAML, DEFAULT_RAJA_REGION_YAML,
+    discover_cao_pairs, discover_raja_pairs, make_dataset_loaders,
     match_events, extract_window, setup_tutorial_logging,
+    valid_epoch_indices_for_pair,
 )
 
 logger = logging.getLogger(__name__)
@@ -69,10 +71,11 @@ VERBOSE: bool = True
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-BRAIN_REGION_YAML    = REPO_ROOT / "brain_region.yaml"
+RAJA_REGION_YAML     = DEFAULT_RAJA_REGION_YAML
+CAO_REGION_YAML      = DEFAULT_CAO_REGION_YAML
 RAJA_ANNOTATION_BASE = Path(r"D:\dataset\drowsy_driving_raja\human_label_annotation_eeg")
 RAJA_PROCESSED_BASE  = Path(r"D:\dataset\drowsy_driving_raja_processed")
-MURAT_DATASET_ROOT   = Path(r"D:\dataset\murat_2018")
+CAO_DATASET_ROOT     = Path(r"D:\dataset\sustained_attention_driving")
 
 OUTPUT_DIR = Path(__file__).resolve().parent
 REPORT_PATH = OUTPUT_DIR / "exp6_morphological_detailed.html"  # Override via --report-path / --out-dir
@@ -80,12 +83,12 @@ REPORT_PATH = OUTPUT_DIR / "exp6_morphological_detailed.html"  # Override via --
 # ---------------------------------------------------------------------------
 # Experiment parameters
 # ---------------------------------------------------------------------------
-EPOCH_DURATION_S      = 60.0  # Override via --epoch-duration-s (selected by Experiment 1)
+EPOCH_DURATION_S      = 30.0  # Override via --epoch-duration-s (selected by Experiment 1)
 PEAK_SIDE_TOLERANCE_S = 0.01
 WINDOW_S              = 0.25   # ± 250 ms around peak
 FILTER_LOW            = 1.0
 FILTER_HIGH           = 20.0
-RESAMPLE_RATE         = None
+RESAMPLE_RATE         = 100
 N_EPOCHS: int | None  = None
 
 # Strategy F (Proposed-Med) parameters
@@ -136,7 +139,9 @@ def _build_records(df, indices: list[int], signal_by_epoch: dict, sfreq: float) 
 
 
 def run_one_session(pair: dict) -> dict:
-    dataset_loaders = make_dataset_loaders(BRAIN_REGION_YAML)
+    dataset_loaders = make_dataset_loaders(
+        raja_region_yaml=RAJA_REGION_YAML, cao_region_yaml=CAO_REGION_YAML
+    )
     load_fn = dataset_loaders[pair["dataset"]]
     raw = load_fn(pair["fif"])
     epochs = mne.make_fixed_length_epochs(
@@ -152,7 +157,8 @@ def run_one_session(pair: dict) -> dict:
         filter_high=FILTER_HIGH,
         resample_rate=RESAMPLE_RATE,
     )
-    valid_epoch_indices = get_valid_epoch_indices(epochs)
+    prepared = apply_stage_a_channel_group(prepared, pair["dataset"])
+    valid_epoch_indices = valid_epoch_indices_for_pair(pair, epochs, EPOCH_DURATION_S)
     sfreq = float(prepared.sfreq)
 
     setting = {
@@ -164,10 +170,13 @@ def run_one_session(pair: dict) -> dict:
     }
     channel_results = channel_results_strategy_dbo_drop(prepared, valid_epoch_indices, setting=setting)
 
-    ground_truth = enrich_absolute_times(
-        load_annotation_as_reference(pair["csv"], EPOCH_DURATION_S),
-        EPOCH_DURATION_S,
-    )
+    ground_truth_raw = load_annotation_as_reference(pair["csv"], EPOCH_DURATION_S)
+    if pair["dataset"] == "cao2018":
+        # Exclude blinks inside health-dropped epochs from the morphology pools.
+        ground_truth_raw = ground_truth_raw[
+            ground_truth_raw["epoch_index"].isin(valid_epoch_indices)
+        ].reset_index(drop=True)
+    ground_truth = enrich_absolute_times(ground_truth_raw, EPOCH_DURATION_S)
     gt_annotations  = dataframe_to_annotations(ground_truth)
     scored          = evaluate_channels(channel_results, gt_annotations, epoch_duration=EPOCH_DURATION_S)
     best_channel    = scored.best_channel
@@ -484,7 +493,7 @@ def build_report(all_sessions: list[dict]) -> mne.Report:
     )
 
     # ---- Per-dataset sections -------------------------------------------
-    for dataset_name in ("raja", "murat2018"):
+    for dataset_name in ("raja", "cao2018"):
         sessions = [s for s in all_sessions if s["dataset"] == dataset_name]
         if not sessions:
             continue
@@ -753,13 +762,13 @@ def main() -> None:
         REPORT_PATH = OUTPUT_DIR / "exp6_morphological_detailed.html"
 
     setup_tutorial_logging()
-    raja_pairs  = discover_raja_pairs(RAJA_ANNOTATION_BASE, RAJA_PROCESSED_BASE)
-    murat_pairs = discover_murat_pairs(MURAT_DATASET_ROOT)
-    all_pairs   = raja_pairs + murat_pairs
+    raja_pairs = discover_raja_pairs(RAJA_ANNOTATION_BASE, RAJA_PROCESSED_BASE)
+    cao_pairs  = discover_cao_pairs(CAO_DATASET_ROOT)
+    all_pairs  = raja_pairs + cao_pairs
 
-    logger.info("Raja sessions  : %d", len(raja_pairs))
-    logger.info("Murat subjects : %d", len(murat_pairs))
-    logger.info("Window         : ±%d ms", int(WINDOW_S * 1000))
+    logger.info("Raja sessions   : %d", len(raja_pairs))
+    logger.info("Cao2018 sessions: %d", len(cao_pairs))
+    logger.info("Window          : ±%d ms", int(WINDOW_S * 1000))
     logger.info("Report output  : %s", REPORT_PATH)
 
     sessions: list[dict] = []
@@ -799,7 +808,7 @@ def main() -> None:
         print("No sessions processed - nothing to report.")
         return
 
-    for ds in ("raja", "murat2018"):
+    for ds in ("raja", "cao2018"):
         _print_event_counts(sessions, ds)
 
     print("\nBuilding MNE HTML report …")

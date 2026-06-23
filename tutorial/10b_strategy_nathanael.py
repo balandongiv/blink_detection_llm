@@ -31,10 +31,10 @@ CSV_PATH = Path(
     r"D:\dataset\drowsy_driving_raja\human_label_annotation_eeg\S1\S01_20170519_043933\ear_eog.csv"
     )
 BRAIN_REGION_YAML = REPO_ROOT / "brain_region.yaml"
-EPOCH_DURATION_S = 60.0
+EPOCH_DURATION_S = 30.0
 FILTER_LOW = 1.0
 FILTER_HIGH = 20.0
-RESAMPLE_RATE = None
+RESAMPLE_RATE = 100.0
 MNE_HALF_WINDOW_S = 0.10
 MNE_LOW_FREQ = 1.0
 MNE_HIGH_FREQ = 20.0
@@ -52,10 +52,8 @@ def main() -> None:
     epochs = mne.make_fixed_length_epochs(
         raw, duration=EPOCH_DURATION_S, preload=True, verbose="ERROR"
     )
-    if N_EPOCHS is not None:
-        epochs = epochs[:N_EPOCHS]
 
-    prepared = prepare_epoch_detection_input(
+    data = prepare_epoch_detection_input(
         epochs,
         pick_types_options={"eeg": True},
         filter_low=FILTER_LOW,
@@ -64,7 +62,7 @@ def main() -> None:
     )
     valid_epoch_indices = get_valid_epoch_indices(epochs)
     channel_results = blink_position_strategy_nathanael(
-        prepared,
+        data,
         valid_epoch_indices,
         half_window_s=MNE_HALF_WINDOW_S,
         l_freq=MNE_LOW_FREQ,

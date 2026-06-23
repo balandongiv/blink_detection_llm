@@ -24,7 +24,7 @@ Part B — Fallback-frequency analysis
 
 Datasets
 --------
-Drowsy Driving Raja corpus and murat_2018.
+Drowsy Driving Raja corpus and Cao2018 sustained-attention driving corpus.
 """
 
 from __future__ import annotations
@@ -43,12 +43,14 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
+from experiment_script.channel_group_config import apply_stage_a_channel_group
 from src.strategy_dbo_drop.autoreject_epoch_screener import screen_epochs_with_autoreject
 from src.strategy_dbo_drop.blink_threshold import compute_flagged_epoch_threshold
 from tutorial.tutorial_utils import (
-    discover_raja_pairs, discover_murat_pairs, make_dataset_loaders, setup_tutorial_logging,
+    DEFAULT_CAO_REGION_YAML, DEFAULT_RAJA_REGION_YAML,
+    discover_cao_pairs, discover_raja_pairs, make_dataset_loaders, setup_tutorial_logging,
+    valid_epoch_indices_for_pair,
 )
 
 logger = logging.getLogger(__name__)
@@ -62,17 +64,18 @@ VERBOSE: bool = True
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-BRAIN_REGION_YAML    = REPO_ROOT / "brain_region.yaml"
+RAJA_REGION_YAML     = DEFAULT_RAJA_REGION_YAML
+CAO_REGION_YAML      = DEFAULT_CAO_REGION_YAML
 RAJA_ANNOTATION_BASE = Path(r"D:\dataset\drowsy_driving_raja\human_label_annotation_eeg")
 RAJA_PROCESSED_BASE  = Path(r"D:\dataset\drowsy_driving_raja_processed")
-MURAT_DATASET_ROOT   = Path(r"D:\dataset\murat_2018")
+CAO_DATASET_ROOT     = Path(r"D:\dataset\sustained_attention_driving")
 
 # ---------------------------------------------------------------------------
 # Experiment parameters
 # ---------------------------------------------------------------------------
 FILTER_LOW  = 1.0
 FILTER_HIGH = 20.0
-RESAMPLE_RATE = None
+RESAMPLE_RATE = 100
 N_EPOCHS: int | None = None
 
 # Stage A / B fixed settings
@@ -98,7 +101,9 @@ CANDIDATE_NMIN_VALUES      = [3, 5, 10]
 
 def _run_stage_a(pair: dict, epoch_duration_s: float = 60.0):
     """Load session and run Stage A only. Return (prepared, valid_epoch_indices, flagged)."""
-    dataset_loaders = make_dataset_loaders(BRAIN_REGION_YAML)
+    dataset_loaders = make_dataset_loaders(
+        raja_region_yaml=RAJA_REGION_YAML, cao_region_yaml=CAO_REGION_YAML
+    )
     load_fn = dataset_loaders[pair["dataset"]]
     raw = load_fn(pair["fif"])
     epochs = mne.make_fixed_length_epochs(
@@ -114,7 +119,8 @@ def _run_stage_a(pair: dict, epoch_duration_s: float = 60.0):
         filter_high=FILTER_HIGH,
         resample_rate=RESAMPLE_RATE,
     )
-    valid_epoch_indices = get_valid_epoch_indices(epochs)
+    prepared = apply_stage_a_channel_group(prepared, pair["dataset"])
+    valid_epoch_indices = valid_epoch_indices_for_pair(pair, epochs, epoch_duration_s)
     screen_result = screen_epochs_with_autoreject(
         prepared,
         valid_epoch_indices,
@@ -275,12 +281,12 @@ def _print_fallback_table(records: list[dict], dataset_name: str) -> None:
 
 def main() -> None:
     setup_tutorial_logging()
-    raja_pairs  = discover_raja_pairs(RAJA_ANNOTATION_BASE, RAJA_PROCESSED_BASE)
-    murat_pairs = discover_murat_pairs(MURAT_DATASET_ROOT)
-    all_pairs   = raja_pairs + murat_pairs
+    raja_pairs = discover_raja_pairs(RAJA_ANNOTATION_BASE, RAJA_PROCESSED_BASE)
+    cao_pairs  = discover_cao_pairs(CAO_DATASET_ROOT)
+    all_pairs  = raja_pairs + cao_pairs
 
-    logger.info("Raja sessions  : %d", len(raja_pairs))
-    logger.info("Murat subjects : %d", len(murat_pairs))
+    logger.info("Raja sessions   : %d", len(raja_pairs))
+    logger.info("Cao2018 sessions: %d", len(cao_pairs))
 
     # -----------------------------------------------------------------------
     # Part A — threshold-variance analysis at 60 s epoch duration
@@ -324,7 +330,7 @@ def main() -> None:
                 logger.error("%s: %s", pair["name"], exc)
                 errors.append(f"ERROR  {pair['name']}: {exc}")
 
-    for ds in ("raja", "murat2018"):
+    for ds in ("raja", "cao2018"):
         _print_variance_table(variance_records, ds)
 
     # -----------------------------------------------------------------------
@@ -367,7 +373,7 @@ def main() -> None:
                 logger.error("%s  dur=%.0fs: %s", pair["name"], dur, exc)
                 errors.append(f"ERROR  {pair['name']}  dur={dur:.0f}s: {exc}")
 
-    for ds in ("raja", "murat2018"):
+    for ds in ("raja", "cao2018"):
         _print_fallback_table(fallback_records, ds)
 
     if errors:

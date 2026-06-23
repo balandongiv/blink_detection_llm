@@ -9,11 +9,11 @@ import mne
 import numpy as np
 import pandas as pd
 
-DEFAULT_STRATEGY_NATHANAEL_MNE_CHANNELS = (
-    "EEG X1 - Pz",
-    "EEG Fp1 - Pz",
-    "EEG Fp2 - Pz",
-)
+# DEFAULT_STRATEGY_NATHANAEL_MNE_CHANNELS = (
+#     "EEG X1 - Pz",
+#     "EEG Fp1 - Pz",
+#     "EEG Fp2 - Pz",
+# )
 
 
 def find_eog_candidate_regions(
@@ -69,16 +69,15 @@ def find_eog_candidate_regions(
         "reject_by_annotation": False,
         "verbose": "ERROR",
     }
-    if thresh is not None:
-        kwargs["thresh"] = float(thresh)
+    # if thresh is not None:
+    #     kwargs["thresh"] = float(thresh)
+    #
 
-    try:
-        events = mne.preprocessing.find_eog_events(raw, **kwargs)
-    except Exception:
-        return pd.DataFrame(columns=columns)
+    events = mne.preprocessing.find_eog_events(raw, **kwargs)
 
-    if len(events) == 0:
-        return pd.DataFrame(columns=columns)
+
+    # if len(events) == 0:
+    #     return pd.DataFrame(columns=columns)
 
     peaks = np.asarray(events[:, 0] - raw.first_samp, dtype=int)
     half_window_samples = max(1, int(round(float(half_window_s) * float(sfreq))))
@@ -98,6 +97,6 @@ def find_eog_candidate_regions(
 
 
 __all__ = [
-    "DEFAULT_STRATEGY_NATHANAEL_MNE_CHANNELS",
+    # "DEFAULT_STRATEGY_NATHANAEL_MNE_CHANNELS",
     "find_eog_candidate_regions",
 ]
