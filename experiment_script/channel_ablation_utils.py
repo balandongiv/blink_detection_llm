@@ -91,8 +91,14 @@ def build_selection_groups(
         ("frontal_left", resolved.get("frontal_left", [])),
         ("frontal_right", resolved.get("frontal_right", [])),
         ("central", central),
+        ("central_left", resolved.get("central_left", [])),
+        ("central_right", resolved.get("central_right", [])),
         ("parietal", parietal),
+        ("parietal_left", resolved.get("parietal_left", [])),
+        ("parietal_right", resolved.get("parietal_right", [])),
         ("occipital", occipital),
+        ("occipital_left", resolved.get("occipital_left", [])),
+        ("occipital_right", resolved.get("occipital_right", [])),
         ("posterior", union(
             "parietal_left", "parietal_right",
             "temporal_parietal_left", "temporal_parietal_right",
@@ -107,6 +113,34 @@ def build_selection_groups(
             groups[f"single:{ch}"] = [ch]
 
     return {name: chs for name, chs in groups.items() if chs}
+
+
+def selection_group_names(
+    pair: dict,
+    *,
+    raja_region_yaml: Path,
+    cao_region_yaml: Path,
+    include_single_frontal: bool = True,
+    groups_filter: set[str] | None = None,
+) -> list[str]:
+    """List the selection-group names available for *pair* (cheap: no data load).
+
+    Reads only the recording's channel names (``preload=False``) so a caller can
+    enumerate the groups and then invoke :func:`run_one_session` once per group.
+    ``groups_filter`` restricts the result to the requested names (preserving order).
+    """
+    region_yaml = raja_region_yaml if pair["dataset"] == "raja" else cao_region_yaml
+    region_map = load_brain_region_map(region_yaml)
+    brain_channels = load_brain_region_channels(region_yaml)
+    raw = mne.io.read_raw_fif(str(pair["fif"]), preload=False, verbose="ERROR")
+    available = resolve_channel_names(brain_channels, raw.ch_names)
+    groups = build_selection_groups(
+        region_map, available, include_single_frontal=include_single_frontal,
+    )
+    names = list(groups)
+    if groups_filter is not None:
+        names = [n for n in names if n in groups_filter]
+    return names
 
 
 # ---------------------------------------------------------------------------
@@ -183,7 +217,14 @@ def run_one_session(
         groups = {name: chs for name, chs in groups.items() if name in groups_filter}
     if not groups:
         return []
+    if len(groups) != 1:
+        raise ValueError(
+            "run_one_session processes exactly ONE selection group/channel per call "
+            f"(got {sorted(groups)}). Pass a single-group groups_filter and loop over "
+            "groups in the caller (see run_exp1_raja.py / check_exp1_vs_10d.py)."
+        )
 
+    # Pick only this group's channels — the whole pipeline runs on this subset only.
     needed = sorted({ch for chs in groups.values() for ch in chs})
     raw.pick(needed)
 
@@ -208,6 +249,7 @@ def run_one_session(
     blink_global = {int(i) for i in gt_raw["epoch_index"].unique()}
     gt_annotations = load_gt_annotations_for_pair(pair, epoch_duration_s, valid_epoch_indices)
 
+    # prepared already contains exactly this group's picked channels — no subsetting.
     group_name = next(iter(groups))
     n_channels = len(prepared.channel_names)
     metric_records: list[dict] = []
@@ -273,16 +315,31 @@ def run_channel_ablation(
     use_multithread: bool = False,
     verbose: bool = False,
 ) -> tuple[list[dict], list[str]]:
-    """Run the channel ablation across *pairs*; return (metrics, errors)."""
-    kwargs = dict(
+    """Run the channel ablation across *pairs*; return (metrics, errors).
+
+    Each pair is expanded into its selection groups (filtered by ``groups_filter``)
+    and :func:`run_one_session` is invoked once per group, so every group is a
+    self-contained detector on its own channel subset.
+    """
+    run_kwargs = dict(
         raja_region_yaml=raja_region_yaml, cao_region_yaml=cao_region_yaml,
         epoch_duration_s=epoch_duration_s, std_threshold=std_threshold,
         center_methods=center_methods, rules=rules,
         autoreject_random_state=autoreject_random_state,
         filter_low=filter_low, filter_high=filter_high, resample_rate=resample_rate,
         include_single_frontal=include_single_frontal,
-        use_epoch_health=use_epoch_health, groups_filter=groups_filter, verbose=verbose,
+        use_epoch_health=use_epoch_health, verbose=verbose,
     )
+
+    def _run_pair(pair: dict) -> list[dict]:
+        names = selection_group_names(
+            pair, raja_region_yaml=raja_region_yaml, cao_region_yaml=cao_region_yaml,
+            include_single_frontal=include_single_frontal, groups_filter=groups_filter,
+        )
+        rows: list[dict] = []
+        for group in names:
+            rows.extend(run_one_session(pair, groups_filter={group}, **run_kwargs))
+        return rows
 
     metrics: list[dict] = []
     errors: list[str] = []
@@ -290,14 +347,13 @@ def run_channel_ablation(
     if use_multithread:
         with ThreadPoolExecutor() as executor:
             future_map = {
-                executor.submit(run_one_session, pair, **kwargs): pair["name"]
+                executor.submit(_run_pair, pair): pair["name"]
                 for pair in pairs
             }
             for future in as_completed(future_map):
                 name = future_map[future]
                 try:
-                    m_rec = future.result()
-                    metrics.extend(m_rec)
+                    metrics.extend(future.result())
                     logger.info("done  %s", name)
                 except Exception as exc:  # noqa: BLE001
                     logger.error("%s: %s", name, exc)
@@ -306,8 +362,7 @@ def run_channel_ablation(
         for pair in pairs:
             logger.info("running  %s …", pair["name"])
             try:
-                m_rec = run_one_session(pair, **kwargs)
-                metrics.extend(m_rec)
+                metrics.extend(_run_pair(pair))
             except Exception as exc:  # noqa: BLE001
                 logger.error("%s: %s", pair["name"], exc)
                 errors.append(f"ERROR  {pair['name']}: {exc}")
@@ -390,6 +445,7 @@ __all__ = [
     "DEFAULT_CENTER_METHODS",
     "DEFAULT_RULES",
     "build_selection_groups",
+    "selection_group_names",
     "run_one_session",
     "run_channel_ablation",
     "condition_summary_rows",
