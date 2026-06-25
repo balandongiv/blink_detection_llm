@@ -98,7 +98,6 @@ def run_exp1_all_median() -> dict:
         filter_low=FILTER_LOW,
         filter_high=FILTER_HIGH,
         resample_rate=RESAMPLE_RATE,
-        n_epochs=None,
         include_single_frontal=False,
         use_epoch_health=True,
         groups_filter={"all"},
@@ -119,11 +118,13 @@ def main() -> None:
     setup_tutorial_logging()
     logger = logging.getLogger(__name__)
 
-    logger.info("Running tutorial/10d pipeline …")
-    r10d = run_10d()
+
 
     logger.info("Running exp1 'all|any|median' …")
     rexp = run_exp1_all_median()
+
+    logger.info("Running tutorial/10d pipeline …")
+    r10d = run_10d()
 
     print("\n" + "=" * 60)
     print(f"{'Metric':<14}  {'tutorial/10d':>12}  {'exp1 all|any|med':>16}  {'match':>5}")

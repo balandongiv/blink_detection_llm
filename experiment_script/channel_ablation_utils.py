@@ -32,11 +32,15 @@ from blink_evaluation import (
     load_annotation_as_reference,
 )
 from src.common.epoch_input import prepare_epoch_detection_input
-from src.io.eeg_channels import load_brain_region_map, resolve_channel_names
+from src.io.eeg_channels import (
+    load_brain_region_channels,
+    load_brain_region_map,
+    load_raw_with_brain_channels,
+    resolve_channel_names,
+)
 from src.strategy_dbo_drop.core import blink_position_strategy_dbo_drop
 from tutorial.tutorial_utils import (
     load_gt_annotations_for_pair,
-    make_dataset_loaders,
     valid_epoch_indices_for_pair,
 )
 
@@ -152,7 +156,6 @@ def run_one_session(
     filter_low: float,
     filter_high: float,
     resample_rate: float,
-    n_epochs: int | None,
     include_single_frontal: bool,
     use_epoch_health: bool,
     groups_filter: set[str] | None,
@@ -161,34 +164,29 @@ def run_one_session(
     """Run blink_position_strategy_dbo_drop for every (group, centre) in a session.
 
     Flow: load raw → pick union of needed channels → epoch → prepare (once) →
-    for each group, slice group channels from prepared → detect.
+    for each (rule, centre), detect and record metrics.
 
     groups_filter
         When not None, only groups whose name is in this set are evaluated.
         ``None`` runs all groups built by :func:`build_selection_groups`.
     """
-    dataset_loaders = make_dataset_loaders(
-        raja_region_yaml=raja_region_yaml, cao_region_yaml=cao_region_yaml
-    )
-    raw = dataset_loaders[pair["dataset"]](pair["fif"])
-
     region_yaml = raja_region_yaml if pair["dataset"] == "raja" else cao_region_yaml
     region_map = load_brain_region_map(region_yaml)
 
-    # Build groups from the full raw channel list; apply filter immediately.
+    brain_channels = load_brain_region_channels(region_yaml)
+    raw = load_raw_with_brain_channels(pair["fif"], brain_channels)
+
     groups = build_selection_groups(
-        region_map, list(raw.ch_names), include_single_frontal=include_single_frontal
+        region_map, list(raw.ch_names), include_single_frontal=include_single_frontal,
     )
     if groups_filter is not None:
         groups = {name: chs for name, chs in groups.items() if name in groups_filter}
     if not groups:
         return []
 
-    # Pick only the channels needed across all selected groups — one pick, done.
-    needed = sorted({ch for chs in groups.values() for ch in chs if ch in raw.ch_names})
+    needed = sorted({ch for chs in groups.values() for ch in chs})
     raw.pick(needed)
 
-    # Make epochs and prepare once from the reduced channel set.
     epochs = mne.make_fixed_length_epochs(
         raw, duration=epoch_duration_s, preload=True, verbose="ERROR"
     )
@@ -210,10 +208,8 @@ def run_one_session(
     blink_global = {int(i) for i in gt_raw["epoch_index"].unique()}
     gt_annotations = load_gt_annotations_for_pair(pair, epoch_duration_s, valid_epoch_indices)
 
-    # prepared already contains exactly the picked channels — no further subsetting.
     group_name = next(iter(groups))
     n_channels = len(prepared.channel_names)
-
     metric_records: list[dict] = []
 
     for rule in rules:
@@ -236,10 +232,7 @@ def run_one_session(
                 list(channel_results[0]["flagged_valid_epoch_indices"])
                 if channel_results else []
             )
-
-            stage_a = _stage_a_metrics(
-                set(flagged_global), blink_global, valid_epoch_indices
-            )
+            stage_a = _stage_a_metrics(set(flagged_global), blink_global, valid_epoch_indices)
             scored = evaluate_channels(
                 channel_results, gt_annotations, epoch_duration=epoch_duration_s
             )
@@ -274,7 +267,6 @@ def run_channel_ablation(
     filter_low: float = 1.0,
     filter_high: float = 20.0,
     resample_rate: float = 100.0,
-    n_epochs: int | None = None,
     include_single_frontal: bool = True,
     use_epoch_health: bool = False,
     groups_filter: set[str] | None = None,
@@ -288,7 +280,7 @@ def run_channel_ablation(
         center_methods=center_methods, rules=rules,
         autoreject_random_state=autoreject_random_state,
         filter_low=filter_low, filter_high=filter_high, resample_rate=resample_rate,
-        n_epochs=n_epochs, include_single_frontal=include_single_frontal,
+        include_single_frontal=include_single_frontal,
         use_epoch_health=use_epoch_health, groups_filter=groups_filter, verbose=verbose,
     )
 

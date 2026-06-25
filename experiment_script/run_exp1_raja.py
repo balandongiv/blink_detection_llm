@@ -166,7 +166,6 @@ def main() -> None:
         filter_low=FILTER_LOW,
         filter_high=FILTER_HIGH,
         resample_rate=RESAMPLE_RATE,
-        n_epochs=None,
         include_single_frontal=True,  # always build all groups; GROUPS_TO_RUN filters below
         use_epoch_health=False,
         groups_filter=GROUPS_TO_RUN,

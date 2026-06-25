@@ -68,7 +68,6 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--epoch-duration-s", type=float, default=EPOCH_DURATION_S)
     p.add_argument("--out-dir", type=Path, default=None)
     p.add_argument("--max-sessions", type=int, default=None)
-    p.add_argument("--n-epochs", type=int, default=None)
     p.add_argument("--std-threshold", type=float, default=STD_THRESHOLD,
                    help="Stage-B k multiplier for MAD (default: %(default)s).")
     p.add_argument("--rules", type=_csv_list, default=("any",),
@@ -101,7 +100,6 @@ def main() -> None:
         center_methods=tuple(args.center_methods),
         rules=tuple(args.rules),
         resample_rate=RESAMPLE_RATE,
-        n_epochs=args.n_epochs,
         include_single_frontal=not args.no_single_frontal,
         use_multithread=args.no_multithread,
         verbose=True,
