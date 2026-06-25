@@ -53,14 +53,18 @@ from blink_evaluation.io import dataframe_to_annotations
 from src.common.epoch_input import prepare_epoch_detection_input
 from experiment_script.channel_group_config import apply_stage_a_channel_group
 from src.strategy_dbo_drop.runner import channel_results_strategy_dbo_drop
+from src.project_paths import EXP_SETUP_DIR, get_cao_paths, get_raja_paths, load_exp_config
 from tutorial.tutorial_utils import (
-    DEFAULT_CAO_REGION_YAML, DEFAULT_RAJA_REGION_YAML,
     discover_cao_pairs, discover_raja_pairs, make_dataset_loaders,
     match_events, extract_window, setup_tutorial_logging,
     valid_epoch_indices_for_pair,
 )
 
 logger = logging.getLogger(__name__)
+
+_EXP_CFG = load_exp_config(EXP_SETUP_DIR / "exp6_morphological.yaml")
+_RAJA    = get_raja_paths()
+_CAO     = get_cao_paths()
 
 # ---------------------------------------------------------------------------
 # Toggles
@@ -71,11 +75,11 @@ VERBOSE: bool = True
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-RAJA_REGION_YAML     = DEFAULT_RAJA_REGION_YAML
-CAO_REGION_YAML      = DEFAULT_CAO_REGION_YAML
-RAJA_ANNOTATION_BASE = Path(r"D:\dataset\drowsy_driving_raja\human_label_annotation_eeg")
-RAJA_PROCESSED_BASE  = Path(r"D:\dataset\drowsy_driving_raja_processed")
-CAO_DATASET_ROOT     = Path(r"D:\dataset\sustained_attention_driving")
+RAJA_REGION_YAML     = _RAJA["brain_region_yaml"]
+CAO_REGION_YAML      = _CAO["brain_region_yaml"]
+RAJA_ANNOTATION_BASE = _RAJA["annotation_base"]
+RAJA_PROCESSED_BASE  = _RAJA["processed_base"]
+CAO_DATASET_ROOT     = _CAO["dataset_root"]
 
 OUTPUT_DIR = Path(__file__).resolve().parent
 REPORT_PATH = OUTPUT_DIR / "exp6_morphological_detailed.html"  # Override via --report-path / --out-dir
@@ -83,18 +87,18 @@ REPORT_PATH = OUTPUT_DIR / "exp6_morphological_detailed.html"  # Override via --
 # ---------------------------------------------------------------------------
 # Experiment parameters
 # ---------------------------------------------------------------------------
-EPOCH_DURATION_S      = 30.0  # Override via --epoch-duration-s (selected by Experiment 1)
+EPOCH_DURATION_S      = float(_EXP_CFG.get("epoch_duration_s", 30.0))
 PEAK_SIDE_TOLERANCE_S = 0.01
 WINDOW_S              = 0.25   # ± 250 ms around peak
-FILTER_LOW            = 1.0
-FILTER_HIGH           = 20.0
+FILTER_LOW            = float(_EXP_CFG.get("filter_low", 1.0))
+FILTER_HIGH           = float(_EXP_CFG.get("filter_high", 20.0))
 RESAMPLE_RATE         = 100
 N_EPOCHS: int | None  = None
 
 # Strategy F (Proposed-Med) parameters
 AUTOREJECT_RANDOM_STATE = 42
-STD_THRESHOLD           = 3.5
-CENTER_METHOD           = "median"
+STD_THRESHOLD           = float(_EXP_CFG.get("std_threshold", 3.5))
+CENTER_METHOD           = _EXP_CFG.get("center_method", "median")
 MIN_FLAGGED_EPOCHS      = 1
 
 # Duration bin edges (seconds)

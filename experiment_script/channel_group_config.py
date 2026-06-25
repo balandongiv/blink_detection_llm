@@ -25,7 +25,7 @@ import yaml
 from experiment_script.channel_ablation_utils import build_selection_groups
 from src.common.epoch_input import PreparedEpochDetectionInput
 from src.io.eeg_channels import load_brain_region_map
-from tutorial.tutorial_utils import DEFAULT_CAO_REGION_YAML, DEFAULT_RAJA_REGION_YAML
+from src.project_paths import get_cao_paths, get_raja_paths
 
 logger = logging.getLogger(__name__)
 
@@ -34,8 +34,8 @@ CHANNEL_GROUP_YAML = REPO_ROOT / "channel_group_selection.yaml"
 
 # Region config used to resolve a group name to actual channels, per dataset.
 _REGION_YAML_BY_DATASET = {
-    "raja": DEFAULT_RAJA_REGION_YAML,
-    "cao2018": DEFAULT_CAO_REGION_YAML,
+    "raja": get_raja_paths()["brain_region_yaml"],
+    "cao2018": get_cao_paths()["brain_region_yaml"],
 }
 
 # Track datasets already warned about (so the all-channels warning fires once each).

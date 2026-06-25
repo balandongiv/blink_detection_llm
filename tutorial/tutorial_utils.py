@@ -17,11 +17,23 @@ logger = logging.getLogger(__name__)
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
-# Per-dataset brain-region configs (replace the single legacy brain_region.yaml).
-#   Raja  -> EGI HydroCel integer indices  (resolved to E1…E128)
-#   Cao2018 -> 10-20 channel names         (resolved case-insensitively)
-DEFAULT_RAJA_REGION_YAML = REPO_ROOT / "brain_region_raja.yaml"
-DEFAULT_CAO_REGION_YAML = REPO_ROOT / "brain_region_cao2018.yaml"
+
+def _load_default_region_yamls() -> tuple[Path, Path]:
+    """Load brain-region YAML paths from paths.yaml; fall back to repo-relative defaults."""
+    try:
+        from src.project_paths import get_raja_paths, get_cao_paths
+        return (
+            get_raja_paths()["brain_region_yaml"],
+            get_cao_paths()["brain_region_yaml"],
+        )
+    except FileNotFoundError:
+        return (
+            REPO_ROOT / "brain_region_raja.yaml",
+            REPO_ROOT / "brain_region_cao2018.yaml",
+        )
+
+
+DEFAULT_RAJA_REGION_YAML, DEFAULT_CAO_REGION_YAML = _load_default_region_yamls()
 
 
 # ---------------------------------------------------------------------------
@@ -90,11 +102,13 @@ def discover_raja_pairs(
         if not fif_path.exists():
             logger.debug("skip — FIF not found: %s", fif_path)
             continue
+        epoch_health = session_dir / "epoch_health.csv"
         pairs.append({
-            "dataset": "raja",
-            "name":    str(rel).replace("\\", "/"),
-            "fif":     fif_path,
-            "csv":     csv_path,
+            "dataset":      "raja",
+            "name":         str(rel).replace("\\", "/"),
+            "fif":          fif_path,
+            "csv":          csv_path,
+            "epoch_health": epoch_health if epoch_health.is_file() else None,
         })
     return pairs
 
@@ -301,16 +315,19 @@ def valid_epoch_indices_for_pair(
 ) -> list[int]:
     """Return valid (non-dropped) epoch indices for *pair*.
 
-    Cao2018 uses the 30-second ``epoch_health.csv`` filter; all other datasets
-    use the generic flat-epoch validity check.
+    When ``epoch_health`` is present in the pair dict (cao2018 or raja), epochs
+    are filtered by the health CSV.  Otherwise falls back to the generic
+    flat-epoch validity check.
     """
     from src.common.bad_epochs import get_valid_epoch_indices
-    if pair["dataset"] == "cao2018":
+    if pair.get("epoch_health"):
         return get_valid_cao_epoch_indices(
-            pair.get("epoch_health"),
+            pair["epoch_health"],
             epoch_duration_s,
             len(epochs),
         )
+    if pair["dataset"] == "cao2018":
+        return get_valid_cao_epoch_indices(None, epoch_duration_s, len(epochs))
     return get_valid_epoch_indices(epochs)
 
 

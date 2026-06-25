@@ -99,20 +99,20 @@ def blink_position_strategy_dbo_drop(
     max_blink_frames = float(max_event_len * sfreq) if max_event_len is not None else None
 
     # ------------------------------------------------------------------ Stage A
-    if flagged_override is not None:
-        # Externally supplied suspicious-epoch set (e.g. a custom channel subset
-        # or aggregation rule).  Fall back to all valid epochs when too few.
-        flagged_list = [int(i) for i in flagged_override]
-        if len(flagged_list) < min_flagged_epochs:
-            flagged_list = []
-        screen_result = SimpleNamespace(
-            flagged_epoch_mask=None,
-            flagged_valid_epoch_indices=flagged_list,
-            channel_thresholds={},
-            n_flagged=len(flagged_list),
-        )
-    else:
-        screen_result = screen_epochs_with_autoreject(
+    # if flagged_override is not None:
+    #     # Externally supplied suspicious-epoch set (e.g. a custom channel subset
+    #     # or aggregation rule).  Fall back to all valid epochs when too few.
+    #     flagged_list = [int(i) for i in flagged_override]
+    #     if len(flagged_list) < min_flagged_epochs:
+    #         flagged_list = []
+    #     screen_result = SimpleNamespace(
+    #         flagged_epoch_mask=None,
+    #         flagged_valid_epoch_indices=flagged_list,
+    #         channel_thresholds={},
+    #         n_flagged=len(flagged_list),
+    #     )
+    # else:
+    screen_result = screen_epochs_with_autoreject(
             prepared,
             valid_epoch_indices,
             random_state=autoreject_random_state,
@@ -139,59 +139,59 @@ def blink_position_strategy_dbo_drop(
     # Compute the two per-epoch-type thresholds once (outside channel loop).
     # thresh_g3_flagged  : from flagged epochs, k=k_flagged  (strict gate)
     # thresh_g3_nonflagged: from ALL valid epochs, k=k_nonflagged (permissive gate)
-    if use_epoch_split:
-        flagged_set = set(screen_result.flagged_valid_epoch_indices)
-        thresh_g3_flagged = compute_flagged_epoch_threshold(
-            prepared,
-            valid_epoch_indices,
-            screen_result.flagged_valid_epoch_indices,
-            std_threshold=float(k_flagged),
-            center_method=center_method,
-            verbose=verbose,
-        )
-        thresh_g3_nonflagged = compute_flagged_epoch_threshold(
-            prepared,
-            valid_epoch_indices,
-            [],  # empty → falls back to all valid epochs
-            std_threshold=float(k_nonflagged),
-            center_method=center_method,
-            verbose=verbose,
-        )
+    # if use_epoch_split:
+    #     flagged_set = set(screen_result.flagged_valid_epoch_indices)
+    #     thresh_g3_flagged = compute_flagged_epoch_threshold(
+    #         prepared,
+    #         valid_epoch_indices,
+    #         screen_result.flagged_valid_epoch_indices,
+    #         std_threshold=float(k_flagged),
+    #         center_method=center_method,
+    #         verbose=verbose,
+    #     )
+    #     thresh_g3_nonflagged = compute_flagged_epoch_threshold(
+    #         prepared,
+    #         valid_epoch_indices,
+    #         [],  # empty → falls back to all valid epochs
+    #         std_threshold=float(k_nonflagged),
+    #         center_method=center_method,
+    #         verbose=verbose,
+    #     )
 
     # ------------------------------------------------------------------ Stage C
     results: list[dict] = []
     for channel_idx, channel_name in enumerate(prepared.channel_names):
         concatenated_signal = prepared.data[valid_indices, channel_idx, :].reshape(-1)
 
-        if use_epoch_split:
-            # G3: scan each epoch individually with its type-specific threshold.
-            # Indices are shifted to the concatenated-signal frame of reference.
-            start_list: list[int] = []
-            end_list:   list[int] = []
-            offset = 0
-            for ep_global_idx in valid_epoch_indices:
-                ep_signal = prepared.data[ep_global_idx, channel_idx, :]
-                if ep_global_idx in flagged_set:
-                    ep_thresh = float(thresh_g3_flagged.thresholds[channel_name])
-                else:
-                    ep_thresh = float(thresh_g3_nonflagged.thresholds[channel_name])
-                ep_starts, ep_ends = scan_threshold_crossings_kleifges(
-                    ep_signal,
-                    ep_thresh,
-                    min_blink_frames,
-                    progress_bar=False,
-                    channel_name=channel_name,
-                )
-                if len(ep_starts) > 0:
-                    start_list.extend((ep_starts + offset).tolist())
-                    end_list.extend((ep_ends   + offset).tolist())
-                offset += prepared.epoch_length_samples
-            start_blinks  = np.array(start_list, dtype=int)
-            end_blinks    = np.array(end_list,   dtype=int)
-            blink_threshold = float(thresh_g3_flagged.thresholds[channel_name])  # for diag
-        else:
-            blink_threshold = float(threshold_result.thresholds[channel_name])
-            start_blinks, end_blinks = scan_threshold_crossings_kleifges(
+        # if use_epoch_split:
+        #     # G3: scan each epoch individually with its type-specific threshold.
+        #     # Indices are shifted to the concatenated-signal frame of reference.
+        #     start_list: list[int] = []
+        #     end_list:   list[int] = []
+        #     offset = 0
+        #     for ep_global_idx in valid_epoch_indices:
+        #         ep_signal = prepared.data[ep_global_idx, channel_idx, :]
+        #         if ep_global_idx in flagged_set:
+        #             ep_thresh = float(thresh_g3_flagged.thresholds[channel_name])
+        #         else:
+        #             ep_thresh = float(thresh_g3_nonflagged.thresholds[channel_name])
+        #         ep_starts, ep_ends = scan_threshold_crossings_kleifges(
+        #             ep_signal,
+        #             ep_thresh,
+        #             min_blink_frames,
+        #             progress_bar=False,
+        #             channel_name=channel_name,
+        #         )
+        #         if len(ep_starts) > 0:
+        #             start_list.extend((ep_starts + offset).tolist())
+        #             end_list.extend((ep_ends   + offset).tolist())
+        #         offset += prepared.epoch_length_samples
+        #     start_blinks  = np.array(start_list, dtype=int)
+        #     end_blinks    = np.array(end_list,   dtype=int)
+        #     blink_threshold = float(thresh_g3_flagged.thresholds[channel_name])  # for diag
+        # else:
+        blink_threshold = float(threshold_result.thresholds[channel_name])
+        start_blinks, end_blinks = scan_threshold_crossings_kleifges(
                 concatenated_signal,
                 blink_threshold,
                 min_blink_frames,
@@ -205,27 +205,27 @@ def blink_position_strategy_dbo_drop(
         #   peak >= center + k_confirm * dispersion
         # This decouples permissive candidate generation (k=1.5) from strict
         # acceptance without introducing new statistics.
-        if k_confirm is not None and len(start_blinks) > 0:
-            center_val     = float(threshold_result.centers[channel_name])
-            dispersion_val = float(threshold_result.dispersions[channel_name])
-            confirm_level  = center_val + float(k_confirm) * dispersion_val
-            keep_mask = np.array(
-                [
-                    float(concatenated_signal[s:e].max()) >= confirm_level
-                    for s, e in zip(start_blinks, end_blinks)
-                ],
-                dtype=bool,
-            )
-            start_blinks = start_blinks[keep_mask]
-            end_blinks   = end_blinks[keep_mask]
+        # if k_confirm is not None and len(start_blinks) > 0:
+        #     center_val     = float(threshold_result.centers[channel_name])
+        #     dispersion_val = float(threshold_result.dispersions[channel_name])
+        #     confirm_level  = center_val + float(k_confirm) * dispersion_val
+        #     keep_mask = np.array(
+        #         [
+        #             float(concatenated_signal[s:e].max()) >= confirm_level
+        #             for s, e in zip(start_blinks, end_blinks)
+        #         ],
+        #         dtype=bool,
+        #     )
+        #     start_blinks = start_blinks[keep_mask]
+        #     end_blinks   = end_blinks[keep_mask]
 
         # Optional: discard events longer than max_blink_frames (removes slow
         # drifts and muscle artifacts that are not physiological blinks).
-        if max_blink_frames is not None and len(start_blinks) > 0:
-            durations = end_blinks - start_blinks
-            keep = durations <= max_blink_frames
-            start_blinks = start_blinks[keep]
-            end_blinks = end_blinks[keep]
+        # if max_blink_frames is not None and len(start_blinks) > 0:
+        #     durations = end_blinks - start_blinks
+        #     keep = durations <= max_blink_frames
+        #     start_blinks = start_blinks[keep]
+        #     end_blinks = end_blinks[keep]
 
         df_positions = pd.DataFrame({"start_blink": start_blinks, "end_blink": end_blinks})
         mapped_candidates = map_concatenated_blinks_to_epochs(

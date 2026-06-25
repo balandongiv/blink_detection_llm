@@ -69,10 +69,15 @@ from tutorial.tutorial_utils import (  # noqa: E402
     setup_tutorial_logging,
 )
 
-BRAIN_REGION_YAML = REPO_ROOT / "brain_region.yaml"
-RAJA_ANNOTATION_BASE = Path(r"D:\dataset\drowsy_driving_raja\human_label_annotation_eeg")
-RAJA_PROCESSED_BASE = Path(r"D:\dataset\drowsy_driving_raja_processed")
-CAO_DATASET_ROOT = Path(r"D:\dataset\sustained_attention_driving")
+from src.project_paths import get_cao_paths, get_raja_paths
+
+_RAJA = get_raja_paths()
+_CAO  = get_cao_paths()
+
+BRAIN_REGION_YAML    = REPO_ROOT / "brain_region.yaml"
+RAJA_ANNOTATION_BASE = _RAJA["annotation_base"]
+RAJA_PROCESSED_BASE  = _RAJA["processed_base"]
+CAO_DATASET_ROOT     = _CAO["dataset_root"]
 
 OUT_DIR = REPO_ROOT / "runs" / "extra_blink_type"
 CACHE_ROOT = OUT_DIR / "cache"

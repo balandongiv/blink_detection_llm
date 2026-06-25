@@ -1,0 +1,3 @@
+std_threshold: 3.5
+filter_low: 1.0
+filter_high: 20.0

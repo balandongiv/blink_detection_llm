@@ -46,6 +46,7 @@ from experiment_script.condition_runner_utils import (
     reference_dataframe,
     run_condition,
 )
+from src.project_paths import EXP_SETUP_DIR, get_cao_paths, get_raja_paths, load_exp_config
 from tutorial.tutorial_utils import (
     discover_cao_pairs,
     discover_raja_pairs,
@@ -55,12 +56,16 @@ from tutorial.tutorial_utils import (
 
 logger = logging.getLogger(__name__)
 
-RAJA_ANNOTATION_BASE = Path(r"D:\dataset\drowsy_driving_raja\human_label_annotation_eeg")
-RAJA_PROCESSED_BASE  = Path(r"D:\dataset\drowsy_driving_raja_processed")
-CAO_DATASET_ROOT     = Path(r"D:\dataset\sustained_attention_driving")
+_EXP_CFG = load_exp_config(EXP_SETUP_DIR / "exp8_long_blink_analysis.yaml")
+_RAJA    = get_raja_paths()
+_CAO     = get_cao_paths()
 
-EPOCH_DURATION_S = 30.0
-LONG_THRESHOLD_S = 0.5  # PERCLOS microsleep boundary
+RAJA_ANNOTATION_BASE = _RAJA["annotation_base"]
+RAJA_PROCESSED_BASE  = _RAJA["processed_base"]
+CAO_DATASET_ROOT     = _CAO["dataset_root"]
+
+EPOCH_DURATION_S = float(_EXP_CFG.get("epoch_duration_s", 30.0))
+LONG_THRESHOLD_S = float(_EXP_CFG.get("long_threshold_s", 0.5))
 
 
 def _recall(scored) -> dict:

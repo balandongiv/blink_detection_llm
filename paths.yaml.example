@@ -1,0 +1,12 @@
+# Machine-specific dataset paths.
+# Copy this file to paths.yaml and edit for your local setup.
+# paths.yaml is git-ignored so each collaborator keeps their own copy.
+
+raja:
+  annotation_base: "D:/dataset/drowsy_driving_raja/human_label_annotation_eeg"
+  processed_base: "D:/dataset/drowsy_driving_raja_processed"
+  brain_region_yaml: "brain_region_raja.yaml"   # relative to repo root
+
+cao2018:
+  dataset_root: "D:/dataset/sustained_attention_driving"
+  brain_region_yaml: "brain_region_cao2018.yaml"  # relative to repo root

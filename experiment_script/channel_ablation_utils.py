@@ -3,22 +3,17 @@
 For every channel-selection group (derived from the per-dataset brain-region YAML)
 the *entire* Proposed pipeline is executed **on that channel subset only**:
 
-    Stage A — autoreject PTP screening over the subset channels, combined with an
-              aggregation rule (any / min2 / min3) to flag suspicious epochs;
+    Stage A — autoreject PTP screening over the subset channels;
     Stage B — robust threshold (median or mean centre) from the flagged epochs;
     Stage C — blink-region detection on the subset channels.
 
-So each (group, rule, centre) condition is a self-contained detector, and
-``(all, any, *)`` reproduces the standard Proposed pipeline as a built-in baseline.
-The estimator comparison (median vs mean) is run for every group.
+So each (group, centre) condition is a self-contained detector, and
+``(all, median)`` reproduces the standard Proposed pipeline as a built-in baseline.
 
 Reported per condition:
     * Stage-A epoch metrics vs. epoch-level ground truth (epoch is blink-containing
       iff it holds >=1 annotated blink): precision / recall / F1 / FPR / %flagged.
     * Downstream best-channel event precision / recall / F1.
-
-Optionally, TP/FN/FP blink-region waveforms are collected for the butterfly report
-(``butterfly_report.build_channel_selection_report``).
 """
 
 from __future__ import annotations
@@ -34,19 +29,15 @@ import mne
 import numpy as np
 
 from blink_evaluation import (
-    enrich_absolute_times,
     evaluate_channels,
     load_annotation_as_reference,
 )
 from src.common.epoch_input import PreparedEpochDetectionInput, prepare_epoch_detection_input
 from src.io.eeg_channels import load_brain_region_map, resolve_channel_names
-from src.strategy_dbo_drop.autoreject_epoch_screener import screen_epochs_with_autoreject
-from src.strategy_dbo_drop.runner import channel_results_strategy_dbo_drop
+from src.strategy_dbo_drop.core import blink_position_strategy_dbo_drop
 from tutorial.tutorial_utils import (
-    extract_window,
     load_gt_annotations_for_pair,
     make_dataset_loaders,
-    match_events,
     valid_epoch_indices_for_pair,
 )
 
@@ -55,7 +46,6 @@ logger = logging.getLogger(__name__)
 RULE_MIN_VOTES = {"any": 1, "min2": 2, "min3": 3}
 DEFAULT_CENTER_METHODS = ("median", "mean")
 DEFAULT_RULES = ("any",)
-DEFAULT_BUTTERFLY_GROUPS = ("all", "frontal", "posterior")
 
 
 # ---------------------------------------------------------------------------
@@ -146,34 +136,6 @@ def _stage_a_metrics(
     }
 
 
-def _subset_prepared(prepared: PreparedEpochDetectionInput, subset_idx: np.ndarray):
-    """Return a copy of *prepared* restricted to *subset_idx* channels."""
-    return replace(
-        prepared,
-        data=prepared.data[:, subset_idx, :],
-        channel_names=tuple(prepared.channel_names[i] for i in subset_idx),
-    )
-
-
-def _build_records(df, indices, signal_by_epoch, sfreq, window_s) -> list[dict]:
-    records = []
-    for idx in indices:
-        row = df.loc[idx]
-        dur = float(row["blink_duration"])
-        w = extract_window(
-            signal_by_epoch, int(row["epoch_index"]),
-            float(row["blink_onset"]), dur, sfreq, window_s,
-        )
-        if w is None:
-            continue
-        records.append({
-            "window": w, "duration": dur,
-            "amplitude": float(np.max(np.abs(w))) * 1e6,
-            "epoch_index": int(row["epoch_index"]),
-        })
-    return records
-
-
 # ---------------------------------------------------------------------------
 # Per-session driver
 # ---------------------------------------------------------------------------
@@ -181,7 +143,6 @@ def _build_records(df, indices, signal_by_epoch, sfreq, window_s) -> list[dict]:
 def run_one_session(
     pair: dict,
     *,
-    region_yaml: Path,
     raja_region_yaml: Path,
     cao_region_yaml: Path,
     epoch_duration_s: float,
@@ -191,115 +152,101 @@ def run_one_session(
     autoreject_random_state: int,
     filter_low: float,
     filter_high: float,
+    resample_rate: float,
     n_epochs: int | None,
     include_single_frontal: bool,
-    butterfly_groups: tuple[str, ...] | None,
-    window_s: float,
-    peak_side_tolerance_s: float,
+    use_epoch_health: bool,
+    groups_filter: set[str] | None,
     verbose: bool,
-) -> tuple[list[dict], list[dict]]:
-    """Load a session once; run the full pipeline for every (group, rule, centre)."""
+) -> list[dict]:
+    """Run blink_position_strategy_dbo_drop for every (group, centre) in a session.
+
+    Flow: load raw → pick union of needed channels → epoch → prepare (once) →
+    for each group, slice group channels from prepared → detect.
+
+    groups_filter
+        When not None, only groups whose name is in this set are evaluated.
+        ``None`` runs all groups built by :func:`build_selection_groups`.
+    """
     dataset_loaders = make_dataset_loaders(
         raja_region_yaml=raja_region_yaml, cao_region_yaml=cao_region_yaml
     )
     raw = dataset_loaders[pair["dataset"]](pair["fif"])
+
+    region_yaml = raja_region_yaml if pair["dataset"] == "raja" else cao_region_yaml
+    region_map = load_brain_region_map(region_yaml)
+
+    # Build groups from the full raw channel list; apply filter immediately.
+    groups = build_selection_groups(
+        region_map, list(raw.ch_names), include_single_frontal=include_single_frontal
+    )
+    if groups_filter is not None:
+        groups = {name: chs for name, chs in groups.items() if name in groups_filter}
+    if not groups:
+        return []
+
+    # Pick only the channels needed across all selected groups — one pick, done.
+    needed = sorted({ch for chs in groups.values() for ch in chs if ch in raw.ch_names})
+    raw.pick(needed)
+
+    # Make epochs and prepare once from the reduced channel set.
     epochs = mne.make_fixed_length_epochs(
         raw, duration=epoch_duration_s, preload=True, verbose="ERROR"
     )
-    if n_epochs is not None:
-        epochs = epochs[:n_epochs]
+    if use_epoch_health:
+        valid_epoch_indices = valid_epoch_indices_for_pair(pair, epochs, epoch_duration_s)
+    else:
+        valid_epoch_indices = list(range(len(epochs)))
+    if not valid_epoch_indices:
+        return []
 
     prepared = prepare_epoch_detection_input(
         epochs, pick_types_options={"eeg": True},
-        filter_low=filter_low, filter_high=filter_high, resample_rate=100,
+        filter_low=filter_low, filter_high=filter_high, resample_rate=resample_rate,
     )
-    valid_epoch_indices = valid_epoch_indices_for_pair(pair, epochs, epoch_duration_s)
-    if len(valid_epoch_indices) == 0:
-        return [], []
 
-    channel_names = list(prepared.channel_names)
-    name_to_idx = {ch: i for i, ch in enumerate(channel_names)}
-    valid_idx = np.asarray(valid_epoch_indices, dtype=int)
-
-    # NOTE: Stage A (autoreject) is recomputed for EACH channel group on that
-    # group's own channels (see the loop below), mirroring the straightforward
-    # tutorial/10d approach. We deliberately do NOT learn thresholds once over the
-    # full montage and reuse them per subset — that is more efficient but confusing.
-
-    # Epoch-level ground truth + downstream evaluator annotations + morphology df.
     gt_raw = load_annotation_as_reference(pair["csv"], epoch_duration_s)
     if pair["dataset"] == "cao2018":
         gt_raw = gt_raw[gt_raw["epoch_index"].isin(valid_epoch_indices)].reset_index(drop=True)
     blink_global = {int(i) for i in gt_raw["epoch_index"].unique()}
     gt_annotations = load_gt_annotations_for_pair(pair, epoch_duration_s, valid_epoch_indices)
-    ground_truth_df = enrich_absolute_times(gt_raw, epoch_duration_s)
 
-    groups = build_selection_groups(
-        load_brain_region_map(region_yaml), channel_names,
-        include_single_frontal=include_single_frontal,
-    )
-    butterfly_set = set(butterfly_groups or ())
+    channel_names = list(prepared.channel_names)
+    name_to_idx = {ch: i for i, ch in enumerate(channel_names)}
 
     metric_records: list[dict] = []
-    morph_records: list[dict] = []
 
     for group_name, chs in groups.items():
-        subset_idx = np.array([name_to_idx[c] for c in chs if c in name_to_idx], dtype=int)
-        if subset_idx.size == 0:
+        group_idx = np.array([name_to_idx[c] for c in chs if c in name_to_idx], dtype=int)
+        if group_idx.size == 0:
             continue
-        subset_prepared = _subset_prepared(prepared, subset_idx)
+        group_prepared = replace(
+            prepared,
+            data=prepared.data[:, group_idx, :],
+            channel_names=tuple(prepared.channel_names[i] for i in group_idx),
+        )
+        n_channels = len(group_prepared.channel_names)
 
         for rule in rules:
             min_votes = RULE_MIN_VOTES[rule]
-            if min_votes > subset_idx.size:
+            if min_votes > n_channels:
                 continue
 
             for center in center_methods:
-                if rule == "any":
-                    # tutorial/10d style: the core recomputes Stage A (autoreject)
-                    # on THIS group's channels, then Stage B/C — no threshold sharing.
-                    setting = {
-                        "autoreject_random_state": autoreject_random_state,
-                        "std_threshold": std_threshold,
-                        "center_method": center,
-                        "min_flagged_epochs": 1,
-                        "verbose": False,
-                    }
-                    channel_results = channel_results_strategy_dbo_drop(
-                        subset_prepared, valid_epoch_indices, setting=setting
-                    )
-                    flagged_global = (
-                        list(channel_results[0]["flagged_valid_epoch_indices"])
-                        if channel_results else []
-                    )
-                else:
-                    # Multi-vote rule: recompute this group's autoreject thresholds,
-                    # require >= min_votes channels to exceed, then run Stage B/C on
-                    # that flagged set via the override.
-                    grp_screen = screen_epochs_with_autoreject(
-                        subset_prepared, valid_epoch_indices,
-                        random_state=autoreject_random_state, verbose=False,
-                    )
-                    grp_thr = np.array(
-                        [grp_screen.channel_thresholds[ch]
-                         for ch in subset_prepared.channel_names],
-                        dtype=float,
-                    )
-                    grp_ptp = (subset_prepared.data[valid_idx, :, :].max(axis=-1)
-                               - subset_prepared.data[valid_idx, :, :].min(axis=-1))
-                    mask = (grp_ptp > grp_thr[np.newaxis, :]).sum(axis=1) >= min_votes
-                    flagged_global = [int(valid_idx[i]) for i in np.where(mask)[0]]
-                    setting = {
-                        "autoreject_random_state": autoreject_random_state,
-                        "std_threshold": std_threshold,
-                        "center_method": center,
-                        "min_flagged_epochs": 1,
-                        "flagged_valid_epoch_indices_override": flagged_global,
-                        "verbose": False,
-                    }
-                    channel_results = channel_results_strategy_dbo_drop(
-                        subset_prepared, valid_epoch_indices, setting=setting
-                    )
+                setting = {
+                    "autoreject_random_state": autoreject_random_state,
+                    "std_threshold": std_threshold,
+                    "center_method": center,
+                    "min_flagged_epochs": 1,
+                    "verbose": False,
+                }
+                channel_results = blink_position_strategy_dbo_drop(
+                    group_prepared, valid_epoch_indices, setting=setting
+                )
+                flagged_global = (
+                    list(channel_results[0]["flagged_valid_epoch_indices"])
+                    if channel_results else []
+                )
 
                 stage_a = _stage_a_metrics(
                     set(flagged_global), blink_global, valid_epoch_indices
@@ -312,7 +259,7 @@ def run_one_session(
                     "dataset": pair["dataset"], "session": pair["name"],
                     "selection": group_name, "rule": rule, "center_method": center,
                     "condition": f"{group_name}|{rule}|{center}",
-                    "n_channels_used": int(subset_idx.size),
+                    "n_channels_used": n_channels,
                     "n_valid": len(valid_epoch_indices),
                     **stage_a,
                     "best_channel": scored.best_channel,
@@ -320,34 +267,14 @@ def run_one_session(
                     "det_precision": em.precision, "det_recall": em.recall, "det_f1": em.f1,
                 })
 
-                # Butterfly morphology: representative config (rule=any, median).
-                if (group_name in butterfly_set and rule == "any" and center == "median"):
-                    sfreq = float(subset_prepared.sfreq)
-                    signal_by_epoch = scored.best_channel_result["signal_by_epoch"]
-                    best_predicted = scored.best_predicted
-                    tp_i, fp_i, fn_i = match_events(
-                        best_predicted, ground_truth_df, signal_by_epoch, sfreq,
-                        peak_side_tolerance_s=peak_side_tolerance_s,
-                    )
-                    morph_records.append({
-                        "dataset": pair["dataset"], "session": pair["name"],
-                        "group": group_name, "center_method": center,
-                        "best_channel": scored.best_channel, "sfreq": sfreq,
-                        "n_tp": em.tp, "n_fp": em.fp, "n_fn": em.fn,
-                        "tp_records": _build_records(best_predicted, tp_i, signal_by_epoch, sfreq, window_s),
-                        "fp_records": _build_records(best_predicted, fp_i, signal_by_epoch, sfreq, window_s),
-                        "fn_records": _build_records(ground_truth_df, fn_i, signal_by_epoch, sfreq, window_s),
-                    })
-
     if verbose:
         logger.info("done  %s  (%d conditions)", pair["name"], len(metric_records))
-    return metric_records, morph_records
+    return metric_records
 
 
 def run_channel_ablation(
     pairs: list[dict],
     *,
-    region_yaml: Path,
     raja_region_yaml: Path,
     cao_region_yaml: Path,
     epoch_duration_s: float = 30.0,
@@ -357,29 +284,26 @@ def run_channel_ablation(
     autoreject_random_state: int = 42,
     filter_low: float = 1.0,
     filter_high: float = 20.0,
+    resample_rate: float = 100.0,
     n_epochs: int | None = None,
     include_single_frontal: bool = True,
-    butterfly_groups: tuple[str, ...] | None = DEFAULT_BUTTERFLY_GROUPS,
-    window_s: float = 0.25,
-    peak_side_tolerance_s: float = 0.01,
+    use_epoch_health: bool = False,
+    groups_filter: set[str] | None = None,
     use_multithread: bool = False,
     verbose: bool = False,
-) -> tuple[list[dict], list[dict], list[str]]:
-    """Run the channel ablation across *pairs*; return (metrics, morphology, errors)."""
+) -> tuple[list[dict], list[str]]:
+    """Run the channel ablation across *pairs*; return (metrics, errors)."""
     kwargs = dict(
-        region_yaml=region_yaml,
         raja_region_yaml=raja_region_yaml, cao_region_yaml=cao_region_yaml,
         epoch_duration_s=epoch_duration_s, std_threshold=std_threshold,
         center_methods=center_methods, rules=rules,
         autoreject_random_state=autoreject_random_state,
-        filter_low=filter_low, filter_high=filter_high, n_epochs=n_epochs,
-        include_single_frontal=include_single_frontal,
-        butterfly_groups=butterfly_groups, window_s=window_s,
-        peak_side_tolerance_s=peak_side_tolerance_s, verbose=verbose,
+        filter_low=filter_low, filter_high=filter_high, resample_rate=resample_rate,
+        n_epochs=n_epochs, include_single_frontal=include_single_frontal,
+        use_epoch_health=use_epoch_health, groups_filter=groups_filter, verbose=verbose,
     )
 
     metrics: list[dict] = []
-    morph: list[dict] = []
     errors: list[str] = []
 
     if use_multithread:
@@ -391,9 +315,8 @@ def run_channel_ablation(
             for future in as_completed(future_map):
                 name = future_map[future]
                 try:
-                    m_rec, mo_rec = future.result()
+                    m_rec = future.result()
                     metrics.extend(m_rec)
-                    morph.extend(mo_rec)
                     logger.info("done  %s", name)
                 except Exception as exc:  # noqa: BLE001
                     logger.error("%s: %s", name, exc)
@@ -402,13 +325,12 @@ def run_channel_ablation(
         for pair in pairs:
             logger.info("running  %s …", pair["name"])
             try:
-                m_rec, mo_rec = run_one_session(pair, **kwargs)
+                m_rec = run_one_session(pair, **kwargs)
                 metrics.extend(m_rec)
-                morph.extend(mo_rec)
             except Exception as exc:  # noqa: BLE001
                 logger.error("%s: %s", pair["name"], exc)
                 errors.append(f"ERROR  {pair['name']}: {exc}")
-    return metrics, morph, errors
+    return metrics, errors
 
 
 # ---------------------------------------------------------------------------
@@ -486,7 +408,6 @@ __all__ = [
     "RULE_MIN_VOTES",
     "DEFAULT_CENTER_METHODS",
     "DEFAULT_RULES",
-    "DEFAULT_BUTTERFLY_GROUPS",
     "build_selection_groups",
     "run_one_session",
     "run_channel_ablation",

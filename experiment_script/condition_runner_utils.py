@@ -22,11 +22,8 @@ from blink_evaluation import (
 from blink_evaluation.io import dataframe_to_annotations
 from src.common.epoch_input import prepare_epoch_detection_input
 from experiment_script.channel_group_config import apply_stage_a_channel_group
-from tutorial.tutorial_utils import (
-    DEFAULT_CAO_REGION_YAML,
-    DEFAULT_RAJA_REGION_YAML,
-    make_dataset_loaders,
-)
+from src.project_paths import get_cao_paths, get_raja_paths
+from tutorial.tutorial_utils import make_dataset_loaders
 
 # Reuse the exact condition runners + ordering from the main comparison.
 from experiment_script.exp2_strategy_comparison import CONDITIONS, _CONDITION_RUNNERS
@@ -44,15 +41,16 @@ def prepare_session(
     pair: dict,
     epoch_duration_s: float,
     *,
-    raja_region_yaml: Path = DEFAULT_RAJA_REGION_YAML,
-    cao_region_yaml: Path = DEFAULT_CAO_REGION_YAML,
+    raja_region_yaml: Path | None = None,
+    cao_region_yaml: Path | None = None,
     n_epochs: int | None = None,
     filter_low: float = 1.0,
     filter_high: float = 20.0,
 ):
     """Load + epoch + prepare one session; return ``(epochs, prepared)``."""
     loaders = make_dataset_loaders(
-        raja_region_yaml=raja_region_yaml, cao_region_yaml=cao_region_yaml
+        raja_region_yaml=raja_region_yaml or get_raja_paths()["brain_region_yaml"],
+        cao_region_yaml=cao_region_yaml or get_cao_paths()["brain_region_yaml"],
     )
     raw = loaders[pair["dataset"]](pair["fif"])
     epochs = mne.make_fixed_length_epochs(

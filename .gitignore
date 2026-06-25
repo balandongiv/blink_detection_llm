@@ -244,6 +244,9 @@ blinker_pyblinker_validation/experiment_results/
 /tutorial/exp6_butterfly_raja.png
 /tutorial/exp6_morphological_detailed.html
 
+# Machine-specific dataset paths (each user keeps their own copy)
+paths.yaml
+
 # Telegram heartbeat secrets/state (do not commit)
 bot_telegram.md
 .telegram_chat_id

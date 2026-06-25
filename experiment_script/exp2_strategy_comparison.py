@@ -58,9 +58,8 @@ from pyblinker.strategies import kleifges_strategy
 from src.strategy_nathanael_mne.runner import blink_position_strategy_nathanael
 from src.strategy_dbo.runner import blink_position_strategy_dbo
 from src.strategy_dbo_drop.runner import channel_results_strategy_dbo_drop
+from src.project_paths import EXP_SETUP_DIR, get_cao_paths, get_raja_paths, load_exp_config
 from tutorial.tutorial_utils import (
-    DEFAULT_CAO_REGION_YAML,
-    DEFAULT_RAJA_REGION_YAML,
     discover_cao_pairs,
     discover_murat_pairs,
     discover_raja_pairs,
@@ -72,6 +71,10 @@ from tutorial.tutorial_utils import (
 
 logger = logging.getLogger(__name__)
 
+_EXP_CFG = load_exp_config(EXP_SETUP_DIR / "exp2_strategy_comparison.yaml")
+_RAJA    = get_raja_paths()
+_CAO     = get_cao_paths()
+
 # ---------------------------------------------------------------------------
 # Toggles
 # ---------------------------------------------------------------------------
@@ -81,19 +84,18 @@ VERBOSE: bool = True
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-RAJA_REGION_YAML     = DEFAULT_RAJA_REGION_YAML
-CAO_REGION_YAML      = DEFAULT_CAO_REGION_YAML
-RAJA_ANNOTATION_BASE = Path(r"D:\dataset\drowsy_driving_raja\human_label_annotation_eeg")
-RAJA_PROCESSED_BASE  = Path(r"D:\dataset\drowsy_driving_raja_processed")
-# MURAT_DATASET_ROOT   = Path(r"D:\dataset\murat_2018")
-CAO_DATASET_ROOT     = Path(r"D:\dataset\sustained_attention_driving")
+RAJA_REGION_YAML     = _RAJA["brain_region_yaml"]
+CAO_REGION_YAML      = _CAO["brain_region_yaml"]
+RAJA_ANNOTATION_BASE = _RAJA["annotation_base"]
+RAJA_PROCESSED_BASE  = _RAJA["processed_base"]
+CAO_DATASET_ROOT     = _CAO["dataset_root"]
 
 # ---------------------------------------------------------------------------
 # Shared parameters
 # ---------------------------------------------------------------------------
-EPOCH_DURATION_S       = 30.0  # Override via --epoch-duration-s (selected by Experiment 1)
-FILTER_LOW             = 1.0
-FILTER_HIGH            = 20.0
+EPOCH_DURATION_S       = float(_EXP_CFG.get("epoch_duration_s", 30.0))
+FILTER_LOW             = float(_EXP_CFG.get("filter_low", 1.0))
+FILTER_HIGH            = float(_EXP_CFG.get("filter_high", 20.0))
 RESAMPLE_RATE          = 100
 N_EPOCHS: int | None   = None  # positive int → limit epochs per session for quick runs
 
@@ -112,7 +114,7 @@ AUTOREJECT_AUGMENT      = False
 
 # Strategy dbo_drop (Proposed-Mean / Proposed-Med) parameters
 MIN_FLAGGED_EPOCHS = 1
-STD_THRESHOLD      = 3.5
+STD_THRESHOLD      = float(_EXP_CFG.get("std_threshold", 3.5))
 
 # Ordered list of conditions — Proposed-Mean (mean) runs before Proposed-Med (median)
 CONDITIONS = ["BLINKER-concat",
