@@ -81,14 +81,14 @@ def blink_position_strategy_dbo_drop(
     min_flagged_epochs = int(options.get("min_flagged_epochs", 1))
     verbose = bool(options.get("verbose", False))
     max_event_len = options.get("max_event_len", None)  # seconds; None = no cap
-    k_confirm = options.get("k_confirm", None)  # float or None; if None, no confirmation step
+    # k_confirm = options.get("k_confirm", None)  # float or None; if None, no confirmation step
     # G3: per-epoch split threshold.  Both keys must be present to activate.
-    k_flagged    = options.get("k_flagged",    None)  # k for autoreject-flagged epochs
-    k_nonflagged = options.get("k_nonflagged", None)  # k for non-flagged epochs
-    use_epoch_split = k_flagged is not None and k_nonflagged is not None
+    # k_flagged    = options.get("k_flagged",    None)  # k for autoreject-flagged epochs
+    # k_nonflagged = options.get("k_nonflagged", None)  # k for non-flagged epochs
+    # use_epoch_split = k_flagged is not None and k_nonflagged is not None
     # Stage A override: when provided, skip autoreject screening and use this
     # explicit flagged-epoch set (channel-selection / aggregation-rule ablation).
-    flagged_override = options.get("flagged_valid_epoch_indices_override", None)
+    # flagged_override = options.get("flagged_valid_epoch_indices_override", None)
 
     params = BlinkDetector._build_detector_params(None, {})
     params["sfreq"] = float(prepared.sfreq)

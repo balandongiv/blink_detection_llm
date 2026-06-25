@@ -22,7 +22,6 @@ import csv
 import logging
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import replace
 from pathlib import Path
 
 import mne
@@ -32,7 +31,7 @@ from blink_evaluation import (
     evaluate_channels,
     load_annotation_as_reference,
 )
-from src.common.epoch_input import PreparedEpochDetectionInput, prepare_epoch_detection_input
+from src.common.epoch_input import prepare_epoch_detection_input
 from src.io.eeg_channels import load_brain_region_map, resolve_channel_names
 from src.strategy_dbo_drop.core import blink_position_strategy_dbo_drop
 from tutorial.tutorial_utils import (
@@ -211,61 +210,51 @@ def run_one_session(
     blink_global = {int(i) for i in gt_raw["epoch_index"].unique()}
     gt_annotations = load_gt_annotations_for_pair(pair, epoch_duration_s, valid_epoch_indices)
 
-    channel_names = list(prepared.channel_names)
-    name_to_idx = {ch: i for i, ch in enumerate(channel_names)}
+    # prepared already contains exactly the picked channels — no further subsetting.
+    group_name = next(iter(groups))
+    n_channels = len(prepared.channel_names)
 
     metric_records: list[dict] = []
 
-    for group_name, chs in groups.items():
-        group_idx = np.array([name_to_idx[c] for c in chs if c in name_to_idx], dtype=int)
-        if group_idx.size == 0:
+    for rule in rules:
+        min_votes = RULE_MIN_VOTES[rule]
+        if min_votes > n_channels:
             continue
-        group_prepared = replace(
-            prepared,
-            data=prepared.data[:, group_idx, :],
-            channel_names=tuple(prepared.channel_names[i] for i in group_idx),
-        )
-        n_channels = len(group_prepared.channel_names)
 
-        for rule in rules:
-            min_votes = RULE_MIN_VOTES[rule]
-            if min_votes > n_channels:
-                continue
+        for center in center_methods:
+            setting = {
+                "autoreject_random_state": autoreject_random_state,
+                "std_threshold": std_threshold,
+                "center_method": center,
+                "min_flagged_epochs": 1,
+                "verbose": False,
+            }
+            channel_results = blink_position_strategy_dbo_drop(
+                prepared, valid_epoch_indices, setting=setting
+            )
+            flagged_global = (
+                list(channel_results[0]["flagged_valid_epoch_indices"])
+                if channel_results else []
+            )
 
-            for center in center_methods:
-                setting = {
-                    "autoreject_random_state": autoreject_random_state,
-                    "std_threshold": std_threshold,
-                    "center_method": center,
-                    "min_flagged_epochs": 1,
-                    "verbose": False,
-                }
-                channel_results = blink_position_strategy_dbo_drop(
-                    group_prepared, valid_epoch_indices, setting=setting
-                )
-                flagged_global = (
-                    list(channel_results[0]["flagged_valid_epoch_indices"])
-                    if channel_results else []
-                )
-
-                stage_a = _stage_a_metrics(
-                    set(flagged_global), blink_global, valid_epoch_indices
-                )
-                scored = evaluate_channels(
-                    channel_results, gt_annotations, epoch_duration=epoch_duration_s
-                )
-                em = scored.best_eval_result.event_metrics
-                metric_records.append({
-                    "dataset": pair["dataset"], "session": pair["name"],
-                    "selection": group_name, "rule": rule, "center_method": center,
-                    "condition": f"{group_name}|{rule}|{center}",
-                    "n_channels_used": n_channels,
-                    "n_valid": len(valid_epoch_indices),
-                    **stage_a,
-                    "best_channel": scored.best_channel,
-                    "det_tp": em.tp, "det_fp": em.fp, "det_fn": em.fn,
-                    "det_precision": em.precision, "det_recall": em.recall, "det_f1": em.f1,
-                })
+            stage_a = _stage_a_metrics(
+                set(flagged_global), blink_global, valid_epoch_indices
+            )
+            scored = evaluate_channels(
+                channel_results, gt_annotations, epoch_duration=epoch_duration_s
+            )
+            em = scored.best_eval_result.event_metrics
+            metric_records.append({
+                "dataset": pair["dataset"], "session": pair["name"],
+                "selection": group_name, "rule": rule, "center_method": center,
+                "condition": f"{group_name}|{rule}|{center}",
+                "n_channels_used": n_channels,
+                "n_valid": len(valid_epoch_indices),
+                **stage_a,
+                "best_channel": scored.best_channel,
+                "det_tp": em.tp, "det_fp": em.fp, "det_fn": em.fn,
+                "det_precision": em.precision, "det_recall": em.recall, "det_f1": em.f1,
+            })
 
     if verbose:
         logger.info("done  %s  (%d conditions)", pair["name"], len(metric_records))
