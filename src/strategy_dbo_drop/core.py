@@ -248,9 +248,9 @@ def blink_position_strategy_dbo_drop(
                 "blink_region_threshold": blink_threshold,
                 "threshold_center": float(threshold_result.centers[channel_name]),
                 "threshold_dispersion": float(threshold_result.dispersions[channel_name]),
-                "k_confirm": k_confirm,
-                "k_flagged": k_flagged,
-                "k_nonflagged": k_nonflagged,
+                # "k_confirm": k_confirm,
+                # "k_flagged": k_flagged,
+                # "k_nonflagged": k_nonflagged,
             }
         )
     return results

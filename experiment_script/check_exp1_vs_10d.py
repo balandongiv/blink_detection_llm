@@ -88,7 +88,6 @@ def run_exp1_all_median() -> dict:
     }
     records = run_one_session(
         pair,
-        region_yaml=BRAIN_REGION_YAML,
         raja_region_yaml=BRAIN_REGION_YAML,
         cao_region_yaml=BRAIN_REGION_YAML,
         epoch_duration_s=EPOCH_DURATION_S,
@@ -98,8 +97,11 @@ def run_exp1_all_median() -> dict:
         autoreject_random_state=AUTOREJECT_RS,
         filter_low=FILTER_LOW,
         filter_high=FILTER_HIGH,
+        resample_rate=RESAMPLE_RATE,
         n_epochs=None,
         include_single_frontal=False,
+        use_epoch_health=True,
+        groups_filter={"all"},
         verbose=False,
     )
     # find the 'all|any|median' row
