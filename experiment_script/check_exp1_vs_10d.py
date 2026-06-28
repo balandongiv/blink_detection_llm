@@ -120,8 +120,8 @@ def main() -> None:
 
 
 
-    logger.info("Running exp1 'all|any|median' …")
-    rexp = run_exp1_all_median()
+    # logger.info("Running exp1 'all|any|median' …")
+    # rexp = run_exp1_all_median()
 
     logger.info("Running tutorial/10d pipeline …")
     r10d = run_10d()

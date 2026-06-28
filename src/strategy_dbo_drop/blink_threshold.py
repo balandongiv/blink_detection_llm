@@ -14,7 +14,6 @@ import numpy as np
 from src.common.epoch_input import PreparedEpochDetectionInput
 from pyblinker.fitutils import mad
 
-# SCALING_FACTOR = 1.4826  # normalises MAD to be consistent with std for Gaussian data
 
 _SUPPORTED_CENTER_METHODS = ("median", "mean")
 
@@ -118,7 +117,7 @@ def compute_flagged_epoch_threshold(
     valid_epoch_indices: list[int],
     flagged_valid_epoch_indices: list[int],
     *,
-    std_threshold: float = 3.5,
+    std_threshold: float = 3.0,
     center_method: str = "median",
     verbose: bool = False,
 ) -> SimpleNamespace:
