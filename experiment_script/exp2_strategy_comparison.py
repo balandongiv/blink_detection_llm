@@ -2,11 +2,10 @@
 
 Naive Epoch Concatenation vs Epoch-Aware Pipeline (Sec. 3.3.1–3.3.3).
 Tests whether BLINKER-concat, MNE-annot, and DBO are outperformed by the proposed
-three-stage pipeline, primarily through improved recall.
+three-stage pipeline, primarily through improved f1 score.
 
 Threshold Estimator at Stage B (Sec. 3.3.4).
-Tests whether the robust MAD-based (median) estimator outperforms the mean-based
-estimator, especially for sessions with extreme outlier amplitudes.
+Tests whether the robust MAD-based (median) estimator outperforms the mean-based estimator, especially for sessions with extreme outlier amplitudes.
 
 Both contrasts share the same result table.  Strategy F runs with ``center_method``
 ``"mean"`` first and ``"median"`` second, as required by the experimental design.

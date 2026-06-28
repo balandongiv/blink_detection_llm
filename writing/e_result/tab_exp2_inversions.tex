@@ -1,0 +1,13 @@
+\begin{table}[ht]
+    \centering
+    \caption{Channel groups and datasets where a baseline algorithm equals or exceeds Proposed-Med in macro-F1 ($\Delta F_1 \geq 0$). BL = baseline; Prop = Proposed-Med. Higher recall with lower precision explains most cases: the baseline trades precision for recall and happens to achieve equal or higher F1 on this channel subset.}
+    \label{tab:exp2_inversions}
+    \begin{tabular}{lllccccc}
+        \toprule
+        Dataset & Selection & Baseline & BL-P & BL-R & BL-F1 & Prop-F1 & $\Delta F_1$ \\
+        \midrule
+        Raja & single:E23 & BLINKER-concat & 0.6105 & 0.8971 & 0.6931 & 0.6042 & +0.0889 \\
+        Raja & single:E3 & BLINKER-concat & 0.6438 & 0.9374 & 0.7333 & 0.6716 & +0.0616 \\
+        \bottomrule
+    \end{tabular}
+\end{table}

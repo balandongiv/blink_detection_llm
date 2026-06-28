@@ -1,36 +1,55 @@
-% Source: runs/exp41_cao_30s/exp41_strategy_comparison_summary.csv; runs/reports/TCAO4_stats.json; script tutorial/41_exp1_exp2_strategy_comparison.py
-\begin{table}[ht]
+% Source: runs/exp2_raja/exp2_strategy_comparison_raja_results.csv;
+%         runs/exp2_cao/exp2_strategy_comparison_cao2018_results.csv;
+%         script experiment_script/update_exp2_latex.py
+\begin{table*}[ht]
     \centering
-    \caption{Main comparison on 30-second epochs. Values are macro-averaged across sessions.
-        Best macro-F1 within each dataset block is shown in \textbf{bold}. Pairwise Wilcoxon
-        tests use the visible four-condition family, $C(4,2)=6$ comparisons; exact
-        Bonferroni-corrected $p$-values are listed below.}
+    \caption{Strategy comparison across channel groups and both datasets (macro-averaged, 30-second epochs). Combined groups: \textit{frontal}, \textit{frontal\_left}, \textit{frontal\_right}. Single-channel groups: \textit{single:X}. Best macro-F1 per (dataset, channel group) shown in \textbf{bold}. $\dagger$ marks cells where a baseline exceeds or matches Proposed-Med.}
     \label{tab:exp1_main}
-    \begin{tabular}{llcccc}
+    \begin{tabular}{llllccc}
         \toprule
-        Dataset & Condition & $n$ & Macro precision & Macro recall & Macro F1 \\
+        Dataset & Group type & Channel group & Condition & Prec. & Rec. & F1 \\
         \midrule
-        Raja & BLINKER-concat & 46 & 0.668643 & 0.959200 & 0.758780 \\
-        Raja & MNE-annot & 46 & 0.695237 & 0.642037 & 0.609699 \\
-        Raja & Proposed-Mean & 46 & 0.911370 & 0.793596 & 0.817118 \\
-        Raja & Proposed-Med & 46 & 0.907756 & 0.813874 & \textbf{0.830510} \\
+        Raja & Combined & frontal & BLINKER-concat & 0.6774 & 0.9531 & 0.7644 \\
+         &  &  & MNE-annot & 0.7122 & 0.6868 & 0.6526 \\
+         &  &  & Proposed-Mean & 0.9067 & 0.8161 & 0.8300 \\
+         &  &  & Proposed-Med & 0.9047 & 0.8344 & \textbf{0.8440} \\
+         & Combined & frontal\_left & BLINKER-concat & 0.6637 & 0.9508 & 0.7529 \\
+         &  &  & MNE-annot & 0.6635 & 0.6652 & 0.6046 \\
+         &  &  & Proposed-Mean & 0.9024 & 0.7961 & 0.8151 \\
+         &  &  & Proposed-Med & 0.9007 & 0.8173 & \textbf{0.8312} \\
+         & Combined & frontal\_right & BLINKER-concat & 0.6608 & 0.9510 & 0.7504 \\
+         &  &  & MNE-annot & 0.6777 & 0.6187 & 0.5740 \\
+         &  &  & Proposed-Mean & 0.9050 & 0.7858 & 0.8059 \\
+         &  &  & Proposed-Med & 0.9033 & 0.8014 & \textbf{0.8182} \\
+         & Single ch. & E22 & BLINKER-concat & 0.6526 & 0.9572 & 0.7451 \\
+         &  &  & MNE-annot & 0.6235 & 0.5955 & 0.5456 \\
+         &  &  & Proposed-Mean & 0.9033 & 0.7675 & 0.7930 \\
+         &  &  & Proposed-Med & 0.9007 & 0.7908 & \textbf{0.8099} \\
+         & Single ch. & E9 & BLINKER-concat & 0.6414 & 0.9589 & 0.7342 \\
+         &  &  & MNE-annot & 0.6446 & 0.5303 & 0.5021 \\
+         &  &  & Proposed-Mean & 0.9027 & 0.7684 & 0.7953 \\
+         &  &  & Proposed-Med & 0.8990 & 0.7884 & \textbf{0.8084} \\
+         & Single ch. & E3 & BLINKER-concat & 0.6438 & 0.9374 & \textbf{0.7333}$^\dagger$ \\
+         &  &  & MNE-annot & 0.5246 & 0.5568 & 0.4404 \\
+         &  &  & Proposed-Mean & 0.8884 & 0.5673 & 0.6466 \\
+         &  &  & Proposed-Med & 0.8879 & 0.5947 & 0.6716 \\
+         & Single ch. & E23 & BLINKER-concat & 0.6105 & 0.8971 & \textbf{0.6931}$^\dagger$ \\
+         &  &  & MNE-annot & 0.5164 & 0.5556 & 0.4619 \\
+         &  &  & Proposed-Mean & 0.8214 & 0.5221 & 0.5879 \\
+         &  &  & Proposed-Med & 0.8194 & 0.5431 & 0.6042 \\
         \midrule
-        Cao2018 & BLINKER-concat & 58 & 0.734429 & 0.986020 & 0.824156 \\
-        Cao2018 & MNE-annot & 58 & 0.821379 & 0.887149 & 0.838279 \\
-        Cao2018 & Proposed-Mean & 58 & 0.899163 & 0.883237 & 0.882237 \\
-        Cao2018 & Proposed-Med & 58 & 0.891602 & 0.911316 & \textbf{0.895359} \\
-        \midrule
-        Pooled & BLINKER-concat & 104 & 0.705331 & 0.974157 & 0.795239 \\
-        Pooled & MNE-annot & 104 & 0.765586 & 0.778734 & 0.737176 \\
-        Pooled & Proposed-Mean & 104 & 0.904562 & 0.843588 & 0.853434 \\
-        Pooled & Proposed-Med & 104 & 0.898747 & 0.868216 & \textbf{0.866676} \\
+        Cao2018 & Combined & frontal & BLINKER-concat & 0.5660 & 0.9826 & 0.6924 \\
+         &  &  & MNE-annot & 0.5843 & 0.5550 & 0.5101 \\
+         &  &  & Proposed-Mean & 0.8129 & 0.7646 & 0.7601 \\
+         &  &  & Proposed-Med & 0.8071 & 0.7876 & \textbf{0.7758} \\
+         & Combined & frontal\_left & BLINKER-concat & 0.5630 & 0.9838 & 0.6899 \\
+         &  &  & MNE-annot & 0.4834 & 0.3866 & 0.3699 \\
+         &  &  & Proposed-Mean & 0.8081 & 0.7268 & 0.7298 \\
+         &  &  & Proposed-Med & 0.7984 & 0.7609 & \textbf{0.7485} \\
+         & Combined & frontal\_right & BLINKER-concat & 0.5557 & 0.9792 & 0.6833 \\
+         &  &  & MNE-annot & 0.5603 & 0.5293 & 0.4854 \\
+         &  &  & Proposed-Mean & 0.8068 & 0.7129 & 0.7258 \\
+         &  &  & Proposed-Med & 0.7997 & 0.7441 & \textbf{0.7449} \\
         \bottomrule
     \end{tabular}
-    \begin{minipage}{0.98\linewidth}
-    \footnotesize
-    Bonferroni-adjusted $p$-values:
-    Raja: BLINKER-concat vs MNE-annot 0.808546603; Proposed-Mean vs BLINKER-concat 0.134535249; Proposed-Med vs BLINKER-concat 0.040217714; Proposed-Mean vs MNE-annot 0.011472361; Proposed-Med vs MNE-annot 0.002441489; Proposed-Mean vs Proposed-Med 0.000504607.
-    Cao2018: BLINKER-concat vs MNE-annot 0.063012150; Proposed-Mean vs BLINKER-concat 0.000445011; Proposed-Med vs BLINKER-concat 0.000026958; Proposed-Mean vs MNE-annot 0.299755449; Proposed-Med vs MNE-annot 0.031506075; Proposed-Mean vs Proposed-Med 0.004596023.
-    Pooled: BLINKER-concat vs MNE-annot 1.000000000; Proposed-Mean vs BLINKER-concat 0.000230102; Proposed-Med vs BLINKER-concat 0.000006588; Proposed-Mean vs MNE-annot 0.004704930; Proposed-Med vs MNE-annot 0.000126287; Proposed-Mean vs Proposed-Med 0.000001385.
-    \end{minipage}
-\end{table}
+\end{table*}

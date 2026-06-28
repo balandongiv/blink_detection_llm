@@ -154,8 +154,11 @@ stage becomes.
 \fi
 \subsubsection{Strategy F}
 
-% Source: runs/exp41_cao_30s/exp41_strategy_comparison_summary.csv; script tutorial/41_exp1_exp2_strategy_comparison.py
+% Source: runs/exp2_raja/ + runs/exp2_cao/; script experiment_script/update_exp2_latex.py
 \input{e_result/tab_comparison_30s_epoch}
+
+% Channels where a baseline equals or exceeds Proposed-Med (E3, E23 on Raja only — low-recall single channels).
+\input{e_result/tab_exp2_inversions}
 
 \begin{figure}[ht]
   \centering
@@ -337,20 +340,16 @@ Using Raja and Cao2018, this analysis asks whether the selected best channel is 
 % Source: runs/exp41_cao_30s/exp41_strategy_comparison_results.csv; script runs/reports/TCAO4_derived_stats.md
 \input{e_result/tab_channel_robustness}
 
-\subsection{EEG Channel Selection}
+\subsection{Experiment 1: EEG Channel-Selection Ablation}
+\label{sec:exp1_channel}
 
 \paragraph{Motivation.}
-Using Raja and Cao2018, this analysis asks which EEG channels are most frequently selected across methods and datasets (Table~\ref{tab:channel_selection}; Figure~\ref{fig:channel_selection}).
+While EEG blink artefacts are known to be largest over frontal scalp sites, it is unclear how much performance degrades when only a subset of available channels is used. This experiment systematically ablates channel groups and individual channels to characterise the performance-versus-coverage trade-off and identify a compact, reliable channel set.
 
-% Source: runs/exp_channel_selection/*.csv; script tutorial/47_exp_channel_selection_frequency.py
-\input{e_result/p009/paragraph}
-% Source: runs/exp_channel_selection/*.csv; script tutorial/47_exp_channel_selection_frequency.py
-\input{e_result/tab_channel_selection}
+\paragraph{Design.}
+The full blink detection pipeline (30-second epochs, \texttt{std\_threshold}=3.5, resample 100\,Hz, median centre) was applied independently for each channel group across all sessions of both datasets. Group selections range from the full frontal cap to single individual channels. Performance is reported as macro-averaged precision, recall, and $F_1$ (Table~\ref{tab:exp1_channel_ablation}).
 
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=0.8\linewidth]{fig_channel_selection.pdf}
-  % Source: runs/exp_channel_selection/*.csv; script tutorial/47_exp_channel_selection_frequency.py
-  \caption{Channel-selection frequency by dataset and method.}
-  \label{fig:channel_selection}
-\end{figure}
+\input{e_result/tab_exp1_channel_ablation}
+
+\paragraph{Findings.}
+Frontal channels dominate performance on both datasets: the frontal group alone achieves $F_1 = 0.844$ on Raja and $F_1 = 0.776$ on Cao2018, within 0.022 and 0.012 of the respective full-channel baselines (0.866 and 0.788). Non-frontal regions yield near-zero recall on Raja (central $F_1 = 0.088$, parietal 0.025, occipital 0.034, posterior 0.037), though the gap is smaller on Cao2018 (central $F_1 = 0.365$), reflecting differences in electrode coverage and cap layout between the two datasets. Among individual channels, E22 and E9 perform best on Raja ($F_1 = 0.810$ and 0.808 respectively), while FP1 and FP2 lead on Cao2018 ($F_1 = 0.743$ and 0.713), in each case approaching the frontal-group result with a single electrode. These findings confirm that a compact frontal subset---or even a single well-placed electrode---is sufficient to retain most detection performance.

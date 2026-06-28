@@ -66,8 +66,16 @@ from __future__ import annotations
 import csv
 import json
 import logging
+import os
 import sys
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
+
+# Limit per-process BLAS/OpenMP threads so the process pool (N_JOBS below) scales
+# cleanly across CPUs without oversubscription.  Must run before numpy/mne import.
+for _v in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS",
+           "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
+    os.environ.setdefault(_v, "1")
 
 # ---------------------------------------------------------------------------
 # *** User-facing settings — edit these ***
@@ -79,6 +87,14 @@ OUT_DIR = Path("runs/exp1_channel_cao")
 # Set True to re-run sessions that already have a result CSV;
 # set False to skip them (safe resume after interruption).
 OVERWRITE = False
+
+# Quick-check limit: process only the first N discovered sessions.
+# None  → all sessions (the real sweep).  1 → fast single-session smoke test.
+MAX_SESSIONS = None
+
+# CPU parallelism for the sweep: number of worker processes (one session each).
+# None → use most cores (cpu_count - 1).  1 → serial (easiest to debug).
+N_JOBS = 16  # 16 of 24 logical threads (i7-13700F)
 
 # Which channel groups to run.
 # None              → run every group (all conditions from extende_experiment.md).
@@ -145,13 +161,85 @@ def _session_csv(out_dir: Path, session_name: str) -> Path:
 
 
 def _write_session_csv(path: Path, rows: list[dict]) -> None:
+    """Write a session's rows atomically (temp file -> fsync -> os.replace).
+
+    Power-outage safety: the final CSV appears only after a complete write, so a
+    crash mid-write never leaves a partial file that resume would mistake for a
+    finished session.  A leftover ``*.tmp`` from a crash is simply ignored on
+    resume (only the final path is checked) and overwritten on the next attempt.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     if not rows:
         return
-    with path.open("w", newline="", encoding="utf-8") as fh:
-        writer = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
+    # Build fieldnames as union of all row keys (preserving first-seen order)
+    # so that rows with different schemas can coexist without DictWriter raising ValueError.
+    all_keys: list[str] = []
+    seen: set[str] = set()
+    for row in rows:
+        for k in row.keys():
+            if k not in seen:
+                all_keys.append(k)
+                seen.add(k)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    with tmp.open("w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=all_keys, extrasaction="ignore", restval="")
         writer.writeheader()
         writer.writerows(rows)
+        fh.flush()
+        os.fsync(fh.fileno())
+    os.replace(tmp, path)  # atomic on Windows and POSIX
+
+
+# Shared per-call parameters.  Each run_one_session call processes ONE group only;
+# the worker below loops over a session's groups.  Module-level so it is available
+# in the spawned worker processes on Windows.
+_SESSION_KWARGS = dict(
+    raja_region_yaml=RAJA_REGION_YAML,
+    cao_region_yaml=CAO_REGION_YAML,
+    epoch_duration_s=EPOCH_DURATION_S,
+    std_threshold=STD_THRESHOLD,
+    center_methods=DEFAULT_CENTER_METHODS,
+    rules=DEFAULT_RULES,
+    autoreject_random_state=42,
+    filter_low=FILTER_LOW,
+    filter_high=FILTER_HIGH,
+    resample_rate=RESAMPLE_RATE,
+    include_single_frontal=True,  # build single-channel groups; GROUPS_TO_RUN filters
+    use_epoch_health=USE_EPOCH_HEALTH,
+    verbose=False,
+)
+
+
+def _resolve_n_jobs(n_tasks: int) -> int:
+    """Number of worker processes: N_JOBS, or most cores when None, capped at n_tasks."""
+    if N_JOBS is not None:
+        n = max(1, int(N_JOBS))
+    else:
+        n = max(1, (os.cpu_count() or 2) - 1)
+    return max(1, min(n, n_tasks))
+
+
+def _process_one_session(pair: dict) -> tuple[str, list[dict], list[str]]:
+    """Worker: run every selected channel group for one session.
+
+    Picklable, top-level — safe to dispatch to a ProcessPoolExecutor.  Returns
+    (session_name, metric_rows, error_messages).
+    """
+    group_names = selection_group_names(
+        pair,
+        raja_region_yaml=RAJA_REGION_YAML,
+        cao_region_yaml=CAO_REGION_YAML,
+        include_single_frontal=True,
+        groups_filter=GROUPS_TO_RUN,
+    )
+    rows: list[dict] = []
+    errs: list[str] = []
+    for group in group_names:
+        try:
+            rows.extend(run_one_session(pair, groups_filter={group}, **_SESSION_KWARGS))
+        except Exception as exc:  # noqa: BLE001
+            errs.append(f"ERROR  {pair['name']} [{group}]: {exc}")
+    return pair["name"], rows, errs
 
 
 def main() -> None:
@@ -165,63 +253,50 @@ def main() -> None:
         return
 
     logger.info("Cao2018 sessions discovered: %d", len(pairs))
-
-    # Parameters shared by every per-group run_one_session call.  Each call
-    # processes ONE group only (pick that group's channels → Stage A/B/C on them);
-    # we loop over the groups below.  See check_exp1_vs_10d.py for the single-group call.
-    session_kwargs = dict(
-        raja_region_yaml=RAJA_REGION_YAML,
-        cao_region_yaml=CAO_REGION_YAML,
-        epoch_duration_s=EPOCH_DURATION_S,
-        std_threshold=STD_THRESHOLD,
-        center_methods=DEFAULT_CENTER_METHODS,
-        rules=DEFAULT_RULES,
-        autoreject_random_state=42,
-        filter_low=FILTER_LOW,
-        filter_high=FILTER_HIGH,
-        resample_rate=RESAMPLE_RATE,
-        include_single_frontal=True,  # build single-channel groups; GROUPS_TO_RUN filters
-        use_epoch_health=USE_EPOCH_HEALTH,
-        verbose=False,
-    )
+    if MAX_SESSIONS is not None:
+        pairs = pairs[:MAX_SESSIONS]
+        logger.info("MAX_SESSIONS=%d → limiting to %d session(s)", MAX_SESSIONS, len(pairs))
 
     all_metrics: list[dict] = []
     errors: list[str] = []
 
-    for i, pair in enumerate(pairs, 1):
-        name = pair["name"]
-        csv_path = _session_csv(out_dir, name)
-
+    # Resume: load already-finished sessions from cache; queue the rest.
+    todo: list[dict] = []
+    for pair in pairs:
+        csv_path = _session_csv(out_dir, pair["name"])
         if not OVERWRITE and csv_path.is_file():
-            logger.info("[%d/%d] SKIP (already done): %s", i, len(pairs), name)
+            logger.info("SKIP (cached): %s", pair["name"])
             with csv_path.open(encoding="utf-8") as fh:
                 all_metrics.extend(list(csv.DictReader(fh)))
-            continue
+        else:
+            todo.append(pair)
 
-        group_names = selection_group_names(
-            pair,
-            raja_region_yaml=RAJA_REGION_YAML,
-            cao_region_yaml=CAO_REGION_YAML,
-            include_single_frontal=True,
-            groups_filter=GROUPS_TO_RUN,
-        )
-        logger.info("[%d/%d] running: %s  (%d groups)", i, len(pairs), name, len(group_names))
+    def _store(name: str, rows: list[dict], errs: list[str]) -> None:
+        errors.extend(errs)
+        if rows:
+            _write_session_csv(_session_csv(out_dir, name), rows)
+            all_metrics.extend(rows)
+        logger.info("done %s -> %d rows%s", name, len(rows),
+                    f"  ({len(errs)} err)" if errs else "")
 
-        session_rows: list[dict] = []
-        for group in group_names:
-            try:
-                rows = run_one_session(pair, groups_filter={group}, **session_kwargs)
-                session_rows.extend(rows)
-                logger.info("    %-18s -> %d rows", group, len(rows))
-            except Exception as exc:  # noqa: BLE001
-                msg = f"ERROR  {name} [{group}]: {exc}"
-                logger.error(msg)
-                errors.append(msg)
-
-        if session_rows:
-            _write_session_csv(csv_path, session_rows)
-            all_metrics.extend(session_rows)
-            logger.info("  -> %d condition rows written", len(session_rows))
+    if todo:
+        n_jobs = _resolve_n_jobs(len(todo))
+        logger.info("Running %d session(s) with n_jobs=%d (of %d cpus)",
+                    len(todo), n_jobs, os.cpu_count() or 1)
+        if n_jobs == 1:
+            for pair in todo:
+                _store(*_process_one_session(pair))
+        else:
+            with ProcessPoolExecutor(max_workers=n_jobs) as ex:
+                fut_map = {ex.submit(_process_one_session, pair): pair["name"]
+                           for pair in todo}
+                for fut in as_completed(fut_map):
+                    name = fut_map[fut]
+                    try:
+                        _store(*fut.result())
+                    except Exception as exc:  # noqa: BLE001
+                        logger.error("ERROR  %s: %s", name, exc)
+                        errors.append(f"ERROR  {name}: {exc}")
 
     if not all_metrics:
         print("No metrics collected.")

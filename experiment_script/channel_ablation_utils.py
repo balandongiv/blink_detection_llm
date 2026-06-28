@@ -194,6 +194,7 @@ def run_one_session(
     use_epoch_health: bool,
     groups_filter: set[str] | None,
     verbose: bool,
+    min_flagged_epochs: int = 1,
 ) -> list[dict]:
     """Run blink_position_strategy_dbo_drop for every (group, centre) in a session.
 
@@ -264,7 +265,7 @@ def run_one_session(
                 "autoreject_random_state": autoreject_random_state,
                 "std_threshold": std_threshold,
                 "center_method": center,
-                "min_flagged_epochs": 1,
+                "min_flagged_epochs": min_flagged_epochs,
                 "verbose": False,
             }
             channel_results = blink_position_strategy_dbo_drop(
@@ -275,21 +276,26 @@ def run_one_session(
                 if channel_results else []
             )
             stage_a = _stage_a_metrics(set(flagged_global), blink_global, valid_epoch_indices)
-            scored = evaluate_channels(
-                channel_results, gt_annotations, epoch_duration=epoch_duration_s
-            )
-            em = scored.best_eval_result.event_metrics
-            metric_records.append({
-                "dataset": pair["dataset"], "session": pair["name"],
-                "selection": group_name, "rule": rule, "center_method": center,
-                "condition": f"{group_name}|{rule}|{center}",
-                "n_channels_used": n_channels,
-                "n_valid": len(valid_epoch_indices),
-                **stage_a,
-                "best_channel": scored.best_channel,
-                "det_tp": em.tp, "det_fp": em.fp, "det_fn": em.fn,
-                "det_precision": em.precision, "det_recall": em.recall, "det_f1": em.f1,
-            })
+            # Evaluate each channel individually.
+            # Stage A+B threshold is shared across ALL channels in the group.
+            # Stage C (detection) runs per-channel, so we report one F1 per channel.
+            for ch_result in channel_results:
+                channel_name = ch_result["channel"]
+                scored = evaluate_channels(
+                    [ch_result], gt_annotations, epoch_duration=epoch_duration_s
+                )
+                em = scored.best_eval_result.event_metrics
+                metric_records.append({
+                    "dataset": pair["dataset"], "session": pair["name"],
+                    "selection": group_name, "rule": rule, "center_method": center,
+                    "channel_in_group": channel_name,
+                    "condition": f"{group_name}|{rule}|{center}|{channel_name}",
+                    "n_channels_used": n_channels,
+                    "n_valid": len(valid_epoch_indices),
+                    **stage_a,
+                    "det_tp": em.tp, "det_fp": em.fp, "det_fn": em.fn,
+                    "det_precision": em.precision, "det_recall": em.recall, "det_f1": em.f1,
+                })
 
     if verbose:
         logger.info("done  %s  (%d conditions)", pair["name"], len(metric_records))
@@ -374,18 +380,27 @@ def run_channel_ablation(
 # ---------------------------------------------------------------------------
 
 def condition_summary_rows(records: list[dict], dataset_label: str) -> list[dict]:
-    """Macro-average Stage-A and downstream metrics per (selection, rule, centre)."""
-    buckets: dict[tuple[str, str, str], list[dict]] = defaultdict(list)
+    """Macro-average Stage-A and downstream metrics per (selection, channel_in_group, rule, centre).
+
+    Each row now represents one individual channel within a selection group,
+    enabling comparison of per-channel F1 across the group.  The Stage A/B
+    metrics in each row reflect the *group-level* threshold shared by all channels.
+    """
+    buckets: dict[tuple[str, str, str, str], list[dict]] = defaultdict(list)
     for r in records:
-        buckets[(r["selection"], r["rule"], r["center_method"])].append(r)
+        ch = r.get("channel_in_group", r.get("best_channel", "unknown"))
+        buckets[(r["selection"], ch, r["rule"], r["center_method"])].append(r)
 
     out: list[dict] = []
-    for (selection, rule, center), bucket in buckets.items():
+    for (selection, channel_in_group, rule, center), bucket in buckets.items():
         def m(key: str) -> float:
-            return float(np.mean([b[key] for b in bucket]))
+            vals = [b[key] for b in bucket if key in b and b[key] is not None]
+            return float(np.mean(vals)) if vals else float("nan")
         out.append({
             "dataset": dataset_label,
-            "selection": selection, "rule": rule, "center_method": center,
+            "selection": selection,
+            "channel_in_group": channel_in_group,
+            "rule": rule, "center_method": center,
             "n_sessions": len(bucket),
             "mean_n_channels": m("n_channels_used"),
             "stageA_precision": m("stageA_precision"),
@@ -398,7 +413,8 @@ def condition_summary_rows(records: list[dict], dataset_label: str) -> list[dict
             "det_f1": m("det_f1"),
         })
     out.sort(key=lambda r: (r["selection"].startswith("single:"),
-                            r["selection"], r["rule"], -r["det_f1"]))
+                            r["selection"], r["channel_in_group"],
+                            r["rule"], -r["det_f1"]))
     return out
 
 
@@ -408,8 +424,7 @@ def print_condition_summary(records: list[dict], dataset_label: str) -> None:
         print(f"\nNo records for {dataset_label}.")
         return
     header = (
-        f"{'selection':<16}  {'rule':<5}  {'centre':<6}  {'nCh':>3}  "
-        f"{'A_prec':>7}  {'A_rec':>7}  {'A_F1':>7}  {'A_FPR':>7}  {'%flag':>6}  "
+        f"{'selection':<16}  {'channel':<8}  {'rule':<5}  {'centre':<6}  {'nCh':>3}  "
         f"{'det_P':>7}  {'det_R':>7}  {'det_F1':>7}"
     )
     sep = "-" * len(header)
@@ -421,10 +436,9 @@ def print_condition_summary(records: list[dict], dataset_label: str) -> None:
     print(sep)
     for r in rows:
         print(
-            f"{r['selection']:<16}  {r['rule']:<5}  {r['center_method']:<6}  "
+            f"{r['selection']:<16}  {r.get('channel_in_group', '?'):<8}  "
+            f"{r['rule']:<5}  {r['center_method']:<6}  "
             f"{r['mean_n_channels']:>3.0f}  "
-            f"{r['stageA_precision']:>7.4f}  {r['stageA_recall']:>7.4f}  "
-            f"{r['stageA_f1']:>7.4f}  {r['stageA_fpr']:>7.4f}  {r['pct_flagged']:>6.2f}  "
             f"{r['det_precision']:>7.4f}  {r['det_recall']:>7.4f}  {r['det_f1']:>7.4f}"
         )
     print(f"{'=' * len(header)}\n")
@@ -434,8 +448,17 @@ def write_csv(path: Path, rows: list[dict]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     if not rows:
         return
+    # Build union of all keys so mixed-schema rows (e.g. baseline vs. proposed)
+    # don't cause DictWriter to raise on extra fields.
+    all_keys: list[str] = []
+    seen: set[str] = set()
+    for row in rows:
+        for k in row.keys():
+            if k not in seen:
+                all_keys.append(k)
+                seen.add(k)
     with path.open("w", newline="", encoding="utf-8") as fh:
-        writer = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
+        writer = csv.DictWriter(fh, fieldnames=all_keys, extrasaction="ignore", restval="")
         writer.writeheader()
         writer.writerows(rows)
 

@@ -1,0 +1,52 @@
+% Source: runs/exp1_channel_raja/exp1_channel_selection_raja_summary.csv
+%         runs/exp1_channel_cao/exp1_channel_selection_cao2018_summary.csv
+% Filter: rule==any, center_method==median
+\begin{table}[ht]
+\centering
+\scriptsize
+\caption{Channel-selection ablation results. Each row reports macro-averaged blink detection
+  precision, recall, and F1 over all sessions in the dataset, for the named channel subset.
+  Ch = mean number of channels in that selection.
+  Best F1 within each dataset block shown in bold.}
+\label{tab:exp1_channel_ablation}
+\begin{tabular}{llrrrr}
+\toprule
+Dataset & Selection & Ch & Precision & Recall & F1 \\
+\midrule
+\multicolumn{6}{l}{\textit{Raja --- channel groups}} \\[2pt]
+Raja & \textbf{all}           & 26 & \textbf{0.902} & \textbf{0.861} & \textbf{0.866} \\
+     & frontal                &  7 & 0.905 & 0.834 & 0.844 \\
+     & frontal\_left          &  4 & 0.901 & 0.817 & 0.831 \\
+     & frontal\_right         &  3 & 0.903 & 0.801 & 0.818 \\
+     & central                &  7 & 0.485 & 0.051 & 0.088 \\
+     & parietal               &  8 & 0.243 & 0.014 & 0.025 \\
+     & occipital              &  4 & 0.187 & 0.020 & 0.034 \\
+     & posterior              & 12 & 0.216 & 0.022 & 0.037 \\[2pt]
+\multicolumn{6}{l}{\textit{Raja --- single channels}} \\[2pt]
+     & \textbf{E22}           &  1 & \textbf{0.901} & \textbf{0.791} & \textbf{0.810} \\
+     & E9                     &  1 & 0.899 & 0.788 & 0.808 \\
+     & E3                     &  1 & 0.888 & 0.595 & 0.672 \\
+     & E23                    &  1 & 0.819 & 0.543 & 0.604 \\
+     & E24                    &  1 & 0.631 & 0.243 & 0.311 \\
+     & E124                   &  1 & 0.696 & 0.222 & 0.297 \\
+     & E33                    &  1 & 0.216 & 0.024 & 0.039 \\
+\midrule
+\multicolumn{6}{l}{\textit{Cao2018 --- channel groups}} \\[2pt]
+Cao2018 & \textbf{all}        & 22 & \textbf{0.799} & \textbf{0.813} & \textbf{0.788} \\
+        & frontal             &  6 & 0.807 & 0.788 & 0.776 \\
+        & frontal\_left       &  2 & 0.798 & 0.761 & 0.748 \\
+        & frontal\_right      &  4 & 0.800 & 0.744 & 0.745 \\
+        & central             &  6 & 0.705 & 0.283 & 0.365 \\
+        & parietal            &  6 & 0.502 & 0.079 & 0.122 \\
+        & occipital           &  4 & 0.350 & 0.031 & 0.052 \\
+        & posterior           & 10 & 0.498 & 0.080 & 0.124 \\[2pt]
+\multicolumn{6}{l}{\textit{Cao2018 --- single channels}} \\[2pt]
+        & \textbf{FP1}        &  1 & \textbf{0.796} & \textbf{0.755} & \textbf{0.743} \\
+        & FP2                 &  1 & 0.794 & 0.711 & 0.713 \\
+        & F7                  &  1 & 0.719 & 0.386 & 0.451 \\
+        & F8                  &  1 & 0.730 & 0.361 & 0.438 \\
+        & F4                  &  1 & 0.690 & 0.323 & 0.391 \\
+        & F3                  &  1 & 0.691 & 0.317 & 0.387 \\
+\bottomrule
+\end{tabular}
+\end{table}
