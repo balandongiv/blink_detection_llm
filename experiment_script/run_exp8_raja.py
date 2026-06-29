@@ -84,7 +84,7 @@ from src.common.epoch_input import prepare_epoch_detection_input
 from src.io.eeg_channels import (
     load_brain_region_channels, load_brain_region_map, resolve_channel_names,
 )
-from src.strategy_dbo_drop.core import blink_position_strategy_dbo_drop
+from pyblinker.double_thresholding import blink_position_strategy_dbo
 from src.project_paths import EXP_SETUP_DIR, get_cao_paths, get_raja_paths, load_exp_config
 from tutorial.tutorial_utils import (
     discover_raja_pairs, load_gt_annotations_for_pair, setup_tutorial_logging,
@@ -178,7 +178,7 @@ def _process_one_session(pair: dict) -> tuple[str, list[dict], list[str]]:
                 "min_flagged_epochs": 1,
                 "verbose": False,
             }
-            ch_results = blink_position_strategy_dbo_drop(
+            ch_results = blink_position_strategy_dbo(
                 prepared, valid_epoch_indices, setting=setting
             )
 

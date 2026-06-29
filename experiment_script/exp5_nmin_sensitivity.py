@@ -45,8 +45,8 @@ if str(REPO_ROOT) not in sys.path:
 
 from src.common.epoch_input import prepare_epoch_detection_input
 from experiment_script.channel_group_config import apply_stage_a_channel_group
-from src.strategy_dbo_drop.autoreject_epoch_screener import screen_epochs_with_autoreject
-from src.strategy_dbo_drop.blink_threshold import compute_flagged_epoch_threshold
+from pyblinker.double_thresholding import screen_epochs_with_autoreject
+from pyblinker.double_thresholding import compute_flagged_epoch_threshold
 from src.project_paths import EXP_SETUP_DIR, get_cao_paths, get_raja_paths, load_exp_config
 from tutorial.tutorial_utils import (
     discover_cao_pairs, discover_raja_pairs, make_dataset_loaders, setup_tutorial_logging,

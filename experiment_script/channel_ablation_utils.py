@@ -38,7 +38,7 @@ from src.io.eeg_channels import (
     load_raw_with_brain_channels,
     resolve_channel_names,
 )
-from src.strategy_dbo_drop.core import blink_position_strategy_dbo_drop
+from pyblinker.double_thresholding import blink_position_strategy_dbo
 from tutorial.tutorial_utils import (
     load_gt_annotations_for_pair,
     valid_epoch_indices_for_pair,
@@ -196,7 +196,7 @@ def run_one_session(
     verbose: bool,
     min_flagged_epochs: int = 1,
 ) -> list[dict]:
-    """Run blink_position_strategy_dbo_drop for every (group, centre) in a session.
+    """Run blink_position_strategy_dbo for every (group, centre) in a session.
 
     Flow: load raw → pick union of needed channels → epoch → prepare (once) →
     for each (rule, centre), detect and record metrics.
@@ -268,7 +268,7 @@ def run_one_session(
                 "min_flagged_epochs": min_flagged_epochs,
                 "verbose": False,
             }
-            channel_results = blink_position_strategy_dbo_drop(
+            channel_results = blink_position_strategy_dbo(
                 prepared, valid_epoch_indices, setting=setting
             )
             flagged_global = (

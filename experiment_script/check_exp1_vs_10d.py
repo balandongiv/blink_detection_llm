@@ -25,7 +25,7 @@ from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
 from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
 from src.project_paths import get_raja_paths
-from src.strategy_dbo_drop.core import blink_position_strategy_dbo_drop
+from pyblinker.double_thresholding import blink_position_strategy_dbo
 from experiment_script.channel_ablation_utils import run_one_session
 from tutorial.tutorial_utils import setup_tutorial_logging
 
@@ -67,7 +67,7 @@ def run_10d() -> dict:
         "min_flagged_epochs": 1,
         "verbose": False,
     }
-    channel_results = blink_position_strategy_dbo_drop(prepared, valid_epoch_indices, setting=setting)
+    channel_results = blink_position_strategy_dbo(prepared, valid_epoch_indices, setting=setting)
     gt_annotations = load_ground_truth_annotations(CSV_PATH, EPOCH_DURATION_S)
     scored = evaluate_channels(channel_results, gt_annotations, epoch_duration=EPOCH_DURATION_S)
     em = scored.best_eval_result.event_metrics

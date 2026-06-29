@@ -42,7 +42,7 @@ if str(REPO_ROOT) not in sys.path:
 from blink_evaluation import evaluate_channels
 from src.common.epoch_input import prepare_epoch_detection_input
 from experiment_script.channel_group_config import apply_stage_a_channel_group
-from src.strategy_dbo_drop.runner import channel_results_strategy_dbo_drop
+from pyblinker.double_thresholding import blink_position_strategy_dbo
 from src.project_paths import EXP_SETUP_DIR, get_cao_paths, get_raja_paths, load_exp_config
 from tutorial.tutorial_utils import (
     discover_cao_pairs, discover_raja_pairs,
@@ -130,7 +130,7 @@ def run_one(pair: dict, epoch_duration_s: float) -> dict:
         "min_flagged_epochs": MIN_FLAGGED_EPOCHS,
         "verbose":            VERBOSE,
     }
-    channel_results = channel_results_strategy_dbo_drop(prepared, valid_epoch_indices, setting=setting)
+    channel_results = blink_position_strategy_dbo(prepared, valid_epoch_indices, setting=setting)
 
     gt_annotations = load_gt_annotations_for_pair(pair, float(epoch_duration_s), valid_epoch_indices)
     scored = evaluate_channels(channel_results, gt_annotations, epoch_duration=epoch_duration_s)

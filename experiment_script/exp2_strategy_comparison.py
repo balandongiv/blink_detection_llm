@@ -56,7 +56,7 @@ from experiment_script.channel_group_config import apply_stage_a_channel_group
 from pyblinker.strategies import kleifges_strategy
 from src.strategy_nathanael_mne.runner import blink_position_strategy_nathanael
 from src.strategy_dbo.runner import blink_position_strategy_dbo
-from src.strategy_dbo_drop.runner import channel_results_strategy_dbo_drop
+from pyblinker.double_thresholding import blink_position_strategy_dbo
 from src.project_paths import EXP_SETUP_DIR, get_cao_paths, get_raja_paths, load_exp_config
 from tutorial.tutorial_utils import (
     discover_cao_pairs,
@@ -169,7 +169,7 @@ def _run_proposed_mean(prepared, valid_epoch_indices):
         "min_flagged_epochs": MIN_FLAGGED_EPOCHS,
         "verbose":           VERBOSE,
     }
-    return channel_results_strategy_dbo_drop(prepared, valid_epoch_indices, setting=setting)
+    return blink_position_strategy_dbo(prepared, valid_epoch_indices, setting=setting)
 
 
 def _run_proposed_med(prepared, valid_epoch_indices):
@@ -180,7 +180,7 @@ def _run_proposed_med(prepared, valid_epoch_indices):
         "min_flagged_epochs": MIN_FLAGGED_EPOCHS,
         "verbose":           VERBOSE,
     }
-    return channel_results_strategy_dbo_drop(prepared, valid_epoch_indices, setting=setting)
+    return blink_position_strategy_dbo(prepared, valid_epoch_indices, setting=setting)
 
 
 _CONDITION_RUNNERS = {

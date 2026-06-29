@@ -52,7 +52,7 @@ from blink_evaluation import evaluate_channels, load_annotation_as_reference, en
 from blink_evaluation.io import dataframe_to_annotations
 from src.common.epoch_input import prepare_epoch_detection_input
 from experiment_script.channel_group_config import apply_stage_a_channel_group
-from src.strategy_dbo_drop.runner import channel_results_strategy_dbo_drop
+from pyblinker.double_thresholding import blink_position_strategy_dbo
 from src.project_paths import EXP_SETUP_DIR, get_cao_paths, get_raja_paths, load_exp_config
 from tutorial.tutorial_utils import (
     discover_cao_pairs, discover_raja_pairs, make_dataset_loaders,
@@ -172,7 +172,7 @@ def run_one_session(pair: dict) -> dict:
         "min_flagged_epochs": MIN_FLAGGED_EPOCHS,
         "verbose":            VERBOSE,
     }
-    channel_results = channel_results_strategy_dbo_drop(prepared, valid_epoch_indices, setting=setting)
+    channel_results = blink_position_strategy_dbo(prepared, valid_epoch_indices, setting=setting)
 
     ground_truth_raw = load_annotation_as_reference(pair["csv"], EPOCH_DURATION_S)
     if pair["dataset"] == "cao2018":
