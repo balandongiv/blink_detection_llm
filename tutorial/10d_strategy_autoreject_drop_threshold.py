@@ -26,7 +26,7 @@ from blink_evaluation import evaluate_channels, load_ground_truth_annotations
 from src.common.bad_epochs import get_valid_epoch_indices
 from src.common.epoch_input import prepare_epoch_detection_input
 from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
-from src.strategy_dbo_drop.runner import channel_results_strategy_dbo_drop
+from pyblinker.double_thresholding import blink_position_strategy_dbo
 
 FIF_PATH = Path(
     r"D:\dataset\drowsy_driving_raja_processed\S1\S01_20170519_043933\seg_data_raw\eeg_eog_raw.fif"
@@ -80,7 +80,7 @@ def main() -> None:
         "min_flagged_epochs": MIN_FLAGGED_EPOCHS,
         "verbose": VERBOSE,
     }
-    channel_results = channel_results_strategy_dbo_drop(
+    channel_results = blink_position_strategy_dbo(
         prepared,
         valid_epoch_indices,
         setting=setting,

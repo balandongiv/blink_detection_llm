@@ -30,7 +30,7 @@ from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_
 from pyblinker.strategies import kleifges_strategy
 from src.strategy_nathanael_mne.runner import blink_position_strategy_nathanael
 from src.strategy_dbo.runner import blink_position_strategy_dbo
-from src.strategy_dbo_drop.runner import channel_results_strategy_dbo_drop
+from pyblinker.double_thresholding import blink_position_strategy_dbo
 from tutorial.tutorial_utils import discover_raja_pairs, setup_tutorial_logging
 
 logger = logging.getLogger(__name__)
@@ -124,7 +124,7 @@ def _run_strategy_dbo_drop(prepared, valid_epoch_indices):
         "min_flagged_epochs": MIN_FLAGGED_EPOCHS,
         "verbose": VERBOSE,
     }
-    return channel_results_strategy_dbo_drop(prepared, valid_epoch_indices, setting=setting)
+    return blink_position_strategy_dbo(prepared, valid_epoch_indices, setting=setting)
 
 
 _STRATEGY_RUNNERS = {
