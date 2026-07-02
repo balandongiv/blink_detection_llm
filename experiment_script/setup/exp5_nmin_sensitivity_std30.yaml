@@ -1,0 +1,4 @@
+std_threshold: 3.0
+center_method: median
+filter_low: 1.0
+filter_high: 20.0

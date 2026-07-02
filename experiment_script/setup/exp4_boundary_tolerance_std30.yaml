@@ -1,0 +1,6 @@
+epoch_duration_s: 60.0
+std_threshold: 3.0
+center_method: median
+min_flagged_epochs: 1
+filter_low: 1.0
+filter_high: 20.0

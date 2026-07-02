@@ -1,0 +1,3 @@
+epoch_duration_s: 30.0
+std_threshold: 3.0
+min_health: 3
