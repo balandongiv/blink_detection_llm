@@ -41,7 +41,7 @@ CSV_PATH = _RAJA["annotation_base"] / _SESSION / "ear_eog.csv"
 BRAIN_REGION_YAML = REPO_ROOT / "brain_region.yaml"
 
 EPOCH_DURATION_S = 30.0
-STD_THRESHOLD = 3.0
+STD_THRESHOLD = 3.0  # matches experiment_script/setup/exp1_channel_selection_raja_std30.yaml
 CENTER_METHOD = "median"
 FILTER_LOW = 1.0
 FILTER_HIGH = 20.0
@@ -61,8 +61,7 @@ def test_exp1_all_median_lane_summary_matches_fixture_raja() -> None:
     }
     records = run_one_session(
         pair,
-        raja_region_yaml=BRAIN_REGION_YAML,
-        cao_region_yaml=BRAIN_REGION_YAML,
+        region_yaml=BRAIN_REGION_YAML,
         epoch_duration_s=EPOCH_DURATION_S,
         std_threshold=STD_THRESHOLD,
         center_methods=(CENTER_METHOD,),
@@ -70,21 +69,22 @@ def test_exp1_all_median_lane_summary_matches_fixture_raja() -> None:
         filter_low=FILTER_LOW,
         filter_high=FILTER_HIGH,
         resample_rate=RESAMPLE_RATE,
-        use_epoch_health=True,
+        # No epoch_health.csv for raja pairs, so this is a no-op here (falls back to
+        # the generic epoch-validity check either way) — kept False to match production.
+        use_epoch_health=False,
         groups_filter={"all"},
         verbose=False,
     )
     group_records = [r for r in records if r["condition"].startswith("all|")]
     assert group_records, "'all' group not found in exp1 records"
 
-    actual = pd.DataFrame(group_records).rename(columns={
-        "channel_in_group": "channel",
-        "det_tp": "tp", "det_fp": "fp", "det_fn": "fn",
-        "det_precision": "precision", "det_recall": "recall", "det_f1": "f1",
-    })
-    actual = actual.sort_values(["f1", "tp", "fp", "channel"], ascending=[False, False, True, True])
-    actual = actual[["channel", "tp", "fp", "fn", "precision", "recall", "f1"]].reset_index(drop=True)
+    # records already carry lane_summary's own columns (channel/tp/fp/fn/precision/
+    # recall/f1), pre-sorted by f1/tp/fp/channel — no renaming or re-sorting needed.
+    actual = pd.DataFrame(group_records)[["channel", "tp", "fp", "fn", "precision", "recall", "f1"]]
+    actual = actual.reset_index(drop=True)
 
     expected = pd.read_csv(FIXTURE_CSV)[["channel", "tp", "fp", "fn", "precision", "recall", "f1"]]
 
     pd.testing.assert_frame_equal(actual, expected, check_dtype=False)
+    print(actual)
+    print("rpb All tests passed")
