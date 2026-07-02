@@ -102,12 +102,13 @@ def run_exp1_all_median() -> dict:
         groups_filter={"all"},
         verbose=False,
     )
-    # find the 'all|any|median' row
-    row = next((r for r in records if r["selection"] == "all"), None)
-    if row is None:
+    # records hold one row per channel in the 'all' group; pick the best-F1 channel.
+    group_records = [r for r in records if r["condition"].startswith("all|")]
+    if not group_records:
         raise RuntimeError("'all' group not found in exp1 records")
+    row = max(group_records, key=lambda r: r["det_f1"])
     return {
-        "best_channel": row["best_channel"],
+        "best_channel": row["channel_in_group"],
         "tp": row["det_tp"], "fp": row["det_fp"], "fn": row["det_fn"],
         "precision": row["det_precision"], "recall": row["det_recall"], "f1": row["det_f1"],
     }
