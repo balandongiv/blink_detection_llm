@@ -29,7 +29,6 @@ from __future__ import annotations
 
 import argparse
 import functools
-import json
 import logging
 import os
 import sys
@@ -45,12 +44,9 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from experiment_script.channel_ablation_utils import (
-    DEFAULT_CENTER_METHODS,
-    run_one_session,
-    selection_group_names,
-    write_csv,
-)
+from experiment_script.channel_ablation_utils import DEFAULT_CENTER_METHODS
+from src.exp.session_worker import process_one_session as _process_one_session
+from src.exp.session_worker import write_exp1_results
 from src.project_paths import EXP_SETUP_DIR, get_cao_paths, get_raja_paths, load_exp_config
 from src.utils.dataset_discovery import discover_cao_pairs
 from src.utils.experiment_utils import csv_list as _csv_list, log_run_config, setup_tutorial_logging
@@ -105,32 +101,6 @@ def _parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
-def _process_one_session(
-    pair: dict,
-    *,
-    groups_filter: set[str] | None,
-    session_kwargs: dict,
-) -> tuple[str, list[dict], list[str]]:
-    """Worker: run every selected channel group for one session.
-
-    Picklable, top-level — safe to dispatch to a ProcessPoolExecutor.  Returns
-    (session_name, metric_rows, error_messages).
-    """
-    group_names = selection_group_names(
-        pair,
-        region_yaml=session_kwargs["region_yaml"],
-        groups_filter=groups_filter,
-    )
-    rows: list[dict] = []
-    errs: list[str] = []
-    for group in group_names:
-        try:
-            rows.extend(run_one_session(pair, groups_filter={group}, **session_kwargs))
-        except Exception as exc:  # noqa: BLE001
-            errs.append(f"ERROR  {pair['name']} [{group}]: {exc}")
-    return pair["name"], rows, errs
-
-
 def main() -> None:
     args = _parse_args()
     setup_tutorial_logging()
@@ -180,47 +150,17 @@ def main() -> None:
         pairs, out_dir, worker, overwrite=args.overwrite, n_jobs=args.n_jobs,
     )
 
-    if not all_metrics:
-        print("No metrics collected.")
-        for e in errors:
-            print(e)
-        return
-
-    # Re-cast numeric fields from str when rows were read back from existing CSVs.
-    numeric_keys = {
-        "raw_candidate_count", "mapped_candidate_count", "n_channels_used", "n_valid",
-        "tp", "fp", "fn", "precision", "recall", "f1",
-    }
-    coerced: list[dict] = []
-    for r in all_metrics:
-        row = dict(r)
-        for k in numeric_keys:
-            if k in row and isinstance(row[k], str):
-                try:
-                    row[k] = float(row[k])
-                except ValueError:
-                    pass
-        coerced.append(row)
-
-    write_csv(out_dir / f"exp1_channel_selection_{DATASET}_results.csv", coerced)
-    (out_dir / "summary.json").write_text(json.dumps({
-        "experiment": f"exp1_channel_selection_{DATASET}",
-        "epoch_duration_s": float(args.epoch_duration_s),
-        "resample_rate": RESAMPLE_RATE,
-        "use_epoch_health": args.use_epoch_health,
-        "groups_run": sorted(groups_filter) if groups_filter is not None else "all",
-        "metric_primary": "f1 per (selection, channel, centre)",
-        "n_sessions": len(pairs),
-        "n_rows": len(coerced),
-        "n_errors": len(errors),
-    }, indent=2), encoding="utf-8")
-
-    if errors:
-        print(f"\n{len(errors)} error(s):")
-        for e in errors:
-            print(e)
-
-    print(f"\nResults written to: {out_dir}")
+    write_exp1_results(
+        out_dir=out_dir,
+        dataset=DATASET,
+        all_metrics=all_metrics,
+        errors=errors,
+        epoch_duration_s=float(args.epoch_duration_s),
+        resample_rate=RESAMPLE_RATE,
+        use_epoch_health=args.use_epoch_health,
+        groups_filter=groups_filter,
+        n_sessions=len(pairs),
+    )
 
 
 if __name__ == "__main__":
