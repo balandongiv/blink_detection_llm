@@ -46,7 +46,6 @@ from tutorial.tutorial_utils import (
 
 logger = logging.getLogger(__name__)
 
-RULE_MIN_VOTES = {"any": 1, "min2": 2, "min3": 3}
 DEFAULT_CENTER_METHODS = ("median", "mean")
 DEFAULT_RULES = ("any",)
 
@@ -107,10 +106,6 @@ def build_selection_groups(
         if chs:
             groups[name] = chs
 
-    # if include_single_frontal:
-    #     for ch in frontal:
-    #         groups[f"single:{ch}"] = [ch]
-
     return {name: chs for name, chs in groups.items() if chs}
 
 
@@ -138,8 +133,17 @@ def selection_group_names(
         # include_single_frontal=include_single_frontal,
     )
     names = list(groups)
+
+    # names = list(groups)
+
     if groups_filter is not None:
-        names = [n for n in names if n in groups_filter]
+        if isinstance(groups_filter, str):
+            groups_filter = {groups_filter}
+        else:
+            groups_filter = set(groups_filter)
+
+        names = [name for name in names if name in groups_filter]
+
     return names
 
 
@@ -185,12 +189,10 @@ def run_one_session(
     epoch_duration_s: float,
     std_threshold: float,
     center_methods: tuple[str, ...],
-    rules: tuple[str, ...],
     autoreject_random_state: int,
     filter_low: float,
     filter_high: float,
     resample_rate: float,
-    # include_single_frontal: bool,
     use_epoch_health: bool,
     groups_filter: set[str] | None,
     verbose: bool,
@@ -212,7 +214,8 @@ def run_one_session(
     raw = load_raw_with_brain_channels(pair["fif"], brain_channels)
 
     groups = build_selection_groups(
-        region_map, list(raw.ch_names), include_single_frontal=include_single_frontal,
+        region_map, list(raw.ch_names),
+        # include_single_frontal=include_single_frontal,
     )
     if groups_filter is not None:
         groups = {name: chs for name, chs in groups.items() if name in groups_filter}
@@ -233,6 +236,7 @@ def run_one_session(
         raw, duration=epoch_duration_s, preload=True, verbose="ERROR"
     )
     if use_epoch_health:
+        logger.info("using epoch health to filter valid epochs for %s", pair["name"])
         valid_epoch_indices = valid_epoch_indices_for_pair(pair, epochs, epoch_duration_s)
     else:
         valid_epoch_indices = list(range(len(epochs)))
@@ -244,10 +248,6 @@ def run_one_session(
         filter_low=filter_low, filter_high=filter_high, resample_rate=resample_rate,
     )
 
-    gt_raw = load_annotation_as_reference(pair["csv"], epoch_duration_s)
-    if pair["dataset"] == "cao2018":
-        gt_raw = gt_raw[gt_raw["epoch_index"].isin(valid_epoch_indices)].reset_index(drop=True)
-    blink_global = {int(i) for i in gt_raw["epoch_index"].unique()}
     gt_annotations = load_gt_annotations_for_pair(pair, epoch_duration_s, valid_epoch_indices)
 
     # prepared already contains exactly this group's picked channels — no subsetting.
@@ -255,40 +255,35 @@ def run_one_session(
     n_channels = len(prepared.channel_names)
     metric_records: list[dict] = []
 
-    for rule in rules:
-        min_votes = RULE_MIN_VOTES[rule]
-        if min_votes > n_channels:
-            continue
-
-        for center in center_methods:
-            setting = {
+    for center in center_methods:
+        setting = {
                 "autoreject_random_state": autoreject_random_state,
                 "std_threshold": std_threshold,
                 "center_method": center,
                 "min_flagged_epochs": min_flagged_epochs,
-                "verbose": False,
+                "verbose": True,
             }
-            channel_results = blink_position_strategy_dbo(
+
+        # The blink_position_strategy_dbo will return per channel result
+        channel_results = blink_position_strategy_dbo(
                 prepared, valid_epoch_indices, setting=setting
             )
-            # Evaluate each channel individually.
-            # Stage A+B threshold is shared across ALL channels in the group.
-            # Stage C (detection) runs per-channel, so we report one F1 per channel.
-            for ch_result in channel_results:
-                channel_name = ch_result["channel"]
-                scored = evaluate_channels(
-                    [ch_result], gt_annotations, epoch_duration=epoch_duration_s
-                )
-                em = scored.best_eval_result.event_metrics
-                metric_records.append({
+        # Stage A+B threshold is shared across ALL channels in the group and Stage C
+        # (detection) runs per-channel, so evaluate_channels scores every channel in
+        # one pass and its lane_summary already has one row per channel.
+        scored = evaluate_channels(
+                channel_results, gt_annotations, epoch_duration=epoch_duration_s
+            )
+        for row in scored.lane_summary.itertuples(index=False):
+            metric_records.append({
                     "dataset": pair["dataset"], "session": pair["name"],
-                    "selection": group_name, "rule": rule, "center_method": center,
-                    "channel_in_group": channel_name,
-                    "condition": f"{group_name}|{rule}|{center}|{channel_name}",
+                    "center_method": center,
+                    "channel_in_group": row.channel,
+                    "condition": f"{group_name}|{center}|{row.channel}",
                     "n_channels_used": n_channels,
                     "n_valid": len(valid_epoch_indices),
-                    "det_tp": em.tp, "det_fp": em.fp, "det_fn": em.fn,
-                    "det_precision": em.precision, "det_recall": em.recall, "det_f1": em.f1,
+                    "det_tp": row.tp, "det_fp": row.fp, "det_fn": row.fn,
+                    "det_precision": row.precision, "det_recall": row.recall, "det_f1": row.f1,
                 })
 
     if verbose:
@@ -304,12 +299,10 @@ def run_channel_ablation(
     epoch_duration_s: float = 30.0,
     std_threshold: float = 1.5,
     center_methods: tuple[str, ...] = DEFAULT_CENTER_METHODS,
-    rules: tuple[str, ...] = DEFAULT_RULES,
     autoreject_random_state: int = 42,
     filter_low: float = 1.0,
     filter_high: float = 20.0,
     resample_rate: float = 100.0,
-    # include_single_frontal: bool = True,
     use_epoch_health: bool = False,
     groups_filter: set[str] | None = None,
     use_multithread: bool = False,
@@ -322,19 +315,22 @@ def run_channel_ablation(
     self-contained detector on its own channel subset.
     """
     run_kwargs = dict(
-        raja_region_yaml=raja_region_yaml, cao_region_yaml=cao_region_yaml,
-        epoch_duration_s=epoch_duration_s, std_threshold=std_threshold,
-        center_methods=center_methods, rules=rules,
+        raja_region_yaml=raja_region_yaml,
+        cao_region_yaml=cao_region_yaml,
+        epoch_duration_s=epoch_duration_s,
+        std_threshold=std_threshold,
+        center_methods=center_methods,
+        groups_filter=groups_filter,
         autoreject_random_state=autoreject_random_state,
-        filter_low=filter_low, filter_high=filter_high, resample_rate=resample_rate,
-        # include_single_frontal=include_single_frontal,
+        filter_low=filter_low,
+        filter_high=filter_high,
+        resample_rate=resample_rate,
         use_epoch_health=use_epoch_health, verbose=verbose,
     )
 
     def _run_pair(pair: dict) -> list[dict]:
         names = selection_group_names(
             pair, raja_region_yaml=raja_region_yaml, cao_region_yaml=cao_region_yaml,
-            # include_single_frontal=include_single_frontal,
             groups_filter=groups_filter,
         )
         rows: list[dict] = []
@@ -342,7 +338,16 @@ def run_channel_ablation(
         # For experiment 1, we usually select `all`, and this loop will process all the possible channel combination, or selected individual channel to the proposed algorith
         for group in names:
             logger.info(f"Processing group: {group}, as we subject it into the 3 stages algorithm")
-            rows.extend(run_one_session(pair, groups_filter={group}, **run_kwargs))
+            group_run_kwargs = {
+                **run_kwargs,
+                "groups_filter": {group},  # replaces any old value in run_kwargs
+            }
+            rows.extend(
+                run_one_session(
+                    pair,
+                    **group_run_kwargs,
+                )
+            )
         return rows
 
     metrics: list[dict] = []
@@ -457,7 +462,7 @@ def write_csv(path: Path, rows: list[dict]) -> None:
 
 
 __all__ = [
-    "RULE_MIN_VOTES",
+    # "RULE_MIN_VOTES",
     "DEFAULT_CENTER_METHODS",
     "DEFAULT_RULES",
     "build_selection_groups",

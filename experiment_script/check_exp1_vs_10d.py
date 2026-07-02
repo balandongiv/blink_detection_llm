@@ -39,7 +39,7 @@ BRAIN_REGION_YAML = REPO_ROOT / "brain_region.yaml"
 
 # ── shared parameters (must match tutorial/10d exactly) ────────────────────
 EPOCH_DURATION_S = 30.0
-STD_THRESHOLD    = 3.5
+STD_THRESHOLD    = 3.0
 CENTER_METHOD    = "median"
 FILTER_LOW       = 1.0
 FILTER_HIGH      = 20.0
@@ -70,6 +70,7 @@ def run_10d() -> dict:
     channel_results = blink_position_strategy_dbo(prepared, valid_epoch_indices, setting=setting)
     gt_annotations = load_ground_truth_annotations(CSV_PATH, EPOCH_DURATION_S)
     scored = evaluate_channels(channel_results, gt_annotations, epoch_duration=EPOCH_DURATION_S)
+
     em = scored.best_eval_result.event_metrics
     return {
         "best_channel": scored.best_channel,
@@ -93,12 +94,10 @@ def run_exp1_all_median() -> dict:
         epoch_duration_s=EPOCH_DURATION_S,
         std_threshold=STD_THRESHOLD,
         center_methods=(CENTER_METHOD,),
-        rules=("any",),
         autoreject_random_state=AUTOREJECT_RS,
         filter_low=FILTER_LOW,
         filter_high=FILTER_HIGH,
         resample_rate=RESAMPLE_RATE,
-        include_single_frontal=False,
         use_epoch_health=True,
         groups_filter={"all"},
         verbose=False,
@@ -120,8 +119,8 @@ def main() -> None:
 
 
 
-    # logger.info("Running exp1 'all|any|median' …")
-    # rexp = run_exp1_all_median()
+    logger.info("Running exp1 'all|any|median' …")
+    rexp = run_exp1_all_median()
 
     logger.info("Running tutorial/10d pipeline …")
     r10d = run_10d()
