@@ -55,9 +55,13 @@ from src.utils.session_sweep import run_session_sweep
 logger = logging.getLogger(__name__)
 
 _EXP_YAML_PATH = EXP_SETUP_DIR / (Path(__file__).stem + ".yaml")
+_PATHS_YAML = EXP_SETUP_DIR / "exp1_channel_selection_paths.yaml"
 print(f"[exp1_channel_selection_raja] loading exp config from: {_EXP_YAML_PATH}")
 _EXP_CFG  = load_exp_config(_EXP_YAML_PATH)
 print(f"[exp1_channel_selection_raja] exp config values: {_EXP_CFG}")
+print(f"[exp1_channel_selection_raja] loading path defaults from: {_PATHS_YAML}")
+_PATH_CFG = load_exp_config(_PATHS_YAML)
+print(f"[exp1_channel_selection_raja] path config values: {_PATH_CFG}")
 _RAJA     = get_raja_paths()
 print(f"[exp1_channel_selection_raja] raja paths: {_RAJA}")
 
@@ -71,6 +75,7 @@ STD_THRESHOLD        = float(_EXP_CFG["std_threshold"])
 FILTER_LOW           = float(_EXP_CFG.get("filter_low", 1.0))
 FILTER_HIGH          = float(_EXP_CFG.get("filter_high", 20.0))
 RESAMPLE_RATE        = float(_EXP_CFG.get("resample_rate", 100.0))
+DEFAULT_OUT_DIR      = REPO_ROOT / Path(_PATH_CFG["raja_out_dir"])
 
 
 def _parse_args() -> argparse.Namespace:
@@ -80,8 +85,8 @@ def _parse_args() -> argparse.Namespace:
                    help="Stage-B k multiplier for MAD (default: %(default)s).")
     p.add_argument("--center-methods", type=_csv_list, default="median",
                    help="Stage-B centres (default: median,mean).")
-    p.add_argument("--out-dir", type=Path, default=REPO_ROOT / "runsX" / "exp1_channel_raja",
-                   help="Output directory (default: %(default)s).")
+    p.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR,
+                   help="Output directory (default from setup/exp1_channel_selection_paths.yaml: %(default)s).")
     p.add_argument("--overwrite", action="store_true", default=True,
                    help="Re-run sessions that already have a cached result CSV "
                         "(default: skip them and resume).")
