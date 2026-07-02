@@ -1,4 +1,4 @@
-std_threshold: 3.5
+std_threshold: 3.0
 filter_low: 1.0
 filter_high: 20.0
 resample_rate: 100

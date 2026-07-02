@@ -1,6 +1,0 @@
-std_threshold: 3.0
-filter_low: 1.0
-filter_high: 20.0
-resample_rate: 100
-reference_epoch_duration_s: 30.0
-epoch_durations_s: [10, 20, 30, 40, 50, 60, 120]
