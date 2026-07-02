@@ -74,7 +74,7 @@ def _parse_args() -> argparse.Namespace:
                    help="Aggregation rules: any,min2,min3 (default: any).")
     p.add_argument("--center-methods", type=_csv_list, default=DEFAULT_CENTER_METHODS,
                    help="Stage-B centres (default: median,mean).")
-    p.add_argument("--no-single-frontal", action="store_true")
+    # p.add_argument("--no-single-frontal", action="store_true")
     p.add_argument("--no-multithread", action="store_true", default=False)
     return p.parse_args()
 
@@ -100,7 +100,7 @@ def main() -> None:
         center_methods=tuple(args.center_methods),
         rules=tuple(args.rules),
         resample_rate=RESAMPLE_RATE,
-        include_single_frontal=not args.no_single_frontal,
+        # include_single_frontal=not args.no_single_frontal,
         use_multithread=args.no_multithread,
         verbose=True,
     )

@@ -1,16 +1,15 @@
-% Source: runs/exp42_cao_30s/exp42_boundary_tolerance_summary.csv
-% Provenance: values verified against runs/reports/TCAO4_derived_stats.md, Boundary tolerance source snapshot.
+% Source: runs_second_iteration/ (std=3.0 validated re-run); script experiment_script/regen_paper_tables.py
 \begin{table}[ht]
   \centering
-  \caption{Boundary-tolerance analysis for Proposed-Med on Raja, Cao2018, and the pooled 104-session set at 30\,s epochs. Macro-$F_1$ is shown for increasing event-matching IoU thresholds; macro-$F_1$ falls as the overlap criterion tightens.}
+  \caption{Boundary-tolerance analysis for Proposed-Med (best-channel-per-session macro-$F_1$). Macro-$F_1$ is shown for increasing event-matching IoU thresholds; performance falls as the overlap criterion tightens.}
   \label{tab:boundary_tolerance}
   \begin{tabular}{lcccccc}
     \toprule
     Dataset & $n$ & IoU 0.0 & IoU 0.1 & IoU 0.2 & IoU 0.3 & IoU 0.5 \\
     \midrule
-    Raja & 46 & 0.892100 & 0.830510 & 0.780355 & 0.679374 & 0.329248 \\
-    Cao2018 & 58 & 0.963797 & 0.895359 & 0.859942 & 0.712317 & 0.210391 \\
-    Pooled & 104 & 0.932085 & 0.866676 & 0.824740 & 0.697746 & 0.262962 \\
+    Raja & 46 & 0.9545 & 0.8754 & 0.8325 & 0.7541 & 0.4507 \\
+    Cao2018 & 58 & 0.9506 & 0.8176 & 0.7863 & 0.6708 & 0.2247 \\
+    Pooled & 104 & 0.9523 & 0.8432 & 0.8067 & 0.7076 & 0.3246 \\
     \bottomrule
   \end{tabular}
 \end{table}

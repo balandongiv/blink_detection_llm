@@ -1,18 +1,16 @@
-% Source: runs/exp41_cao_30s/exp41_strategy_comparison_results.csv; script tutorial/48_exp_error_structure_session.py
+% Source: runs_second_iteration/ (std=3.0 validated re-run); script experiment_script/regen_paper_tables.py
 \begin{table}[ht]
   \centering
-  \caption{Error-structure decomposition by condition. Mean false positives (FP) and false negatives (FN) are reported per session.}
+  \caption{Error-structure decomposition by condition (best-channel-per-session). Mean false positives (FP) and false negatives (FN) per session, pooled over 104 sessions.}
   \label{tab:error-structure}
   \begin{tabular}{lcccl}
     \toprule
     Condition & Mean FP/session & Mean FN/session & FP:FN & Regime \\
     \midrule
-    BLINKER-concat & 244.0 & 14.2 & 17.119 & FP-heavy \\
-    MNE-annot & 95.6 & 190.9 & 0.501 & FN-heavy \\
-% DBO-related results are intentionally commented out because DBO is reserved for a future paper.
-%    DBO & -- & -- & -- & reserved \\
-    Proposed-Mean & 49.0 & 157.2 & 0.312 & FN-heavy \\
-    Proposed-Med & 55.6 & 126.8 & 0.438 & FN-heavy \\
+    BLINKER-concat & 641.5 & 20.4 & 31.410 & FP-heavy \\
+    MNE-annot & 207.6 & 531.8 & 0.390 & FN-heavy \\
+    Proposed-Mean & 162.6 & 184.4 & 0.882 & FN-heavy \\
+    Proposed-Med & 180.7 & 151.7 & 1.192 & FP-heavy \\
     \bottomrule
   \end{tabular}
 \end{table}

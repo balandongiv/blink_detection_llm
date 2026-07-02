@@ -189,6 +189,24 @@ def _send_telegram(message: str) -> None:
         pass
 
 
+def _send_telegram_chunked(message: str) -> None:
+    """Send Telegram message, splitting into <=4000-char chunks if needed."""
+    import urllib.parse
+    import urllib.request
+    token_path = REPO_ROOT / "bot_telegram.md"
+    if not token_path.exists():
+        return
+    token = token_path.read_text(encoding="utf-8").strip()
+    chat_id = "7784180158"
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    for chunk in [message[i:i+4000] for i in range(0, len(message), 4000)]:
+        data = urllib.parse.urlencode({"chat_id": chat_id, "text": chunk}).encode()
+        try:
+            urllib.request.urlopen(url, data=data, timeout=10)
+        except Exception:  # noqa: BLE001
+            pass
+
+
 def _heartbeat_thread(
     stop_event: threading.Event,
     progress: dict,

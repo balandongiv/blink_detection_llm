@@ -1,21 +1,16 @@
-% Source: tutorial/50_exp_blink_type_recall.py; runs/extra_blink_type/recall_by_blink_type.csv
+% Source: runs_second_iteration/ (std=3.0 validated re-run); script experiment_script/regen_paper_tables.py
 \begin{table}[ht]
   \centering
-  \caption{Extra analysis: event-level recall split by blink duration
-    (30\,s epochs). Normal $=$ duration $<0.5$\,s, Long $=$ duration $\geq0.5$\,s
-    (the long-closure threshold). Ground truth contains 81{,}852 normal and
-    7{,}377 long blinks across Raja and Cao2018. Best recall per column in \textbf{bold}.}
+  \caption{Event-level recall of Proposed-Med split by blink duration (best-channel-per-session, 30\,s epochs). Normal $=$ duration $<0.5$\,s, Long $=$ duration $\geq0.5$\,s. Ground truth contains 105{,}763 normal and 10{,}650 long blinks across Raja and Cao2018. Baselines are reported in Table~\ref{tab:exp1_main}; the long-blink ablation was run for Proposed-Med only.}
   \label{tab:blink_type_recall}
   \begin{tabular}{lcc}
     \toprule
-    Condition & Normal recall & Long recall \\
+    Dataset & Normal recall & Long recall \\
     \midrule
-    BLINKER-concat & \textbf{0.9848} & \textbf{0.9676} \\
-    MNE-annot      & 0.7761 & 0.7931 \\
-% DBO-related results are intentionally commented out because DBO is reserved for a future paper.
-%    DBO            & 0.0000 & 0.0000 \\
-    Proposed-Mean  & 0.8186 & 0.7961 \\
-    Proposed-Med   & 0.8548 & 0.8230 \\
+    Raja & 0.8967 & 0.7668 \\
+    Cao2018 & 0.8693 & 0.8027 \\
+    \midrule
+    Pooled & 0.8814 & 0.7868 \\
     \bottomrule
   \end{tabular}
 \end{table}

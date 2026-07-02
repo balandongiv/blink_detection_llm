@@ -58,8 +58,7 @@ DEFAULT_RULES = ("any",)
 def build_selection_groups(
     region_map: dict[str, list],
     available_ch_names: list[str],
-    *,
-    include_single_frontal: bool = True,
+    # include_single_frontal: bool = True,
 ) -> dict[str, list[str]]:
     """Return ``{group_name: [actual_channel_name, ...]}`` selection groups."""
     resolved = {
@@ -108,9 +107,9 @@ def build_selection_groups(
         if chs:
             groups[name] = chs
 
-    if include_single_frontal:
-        for ch in frontal:
-            groups[f"single:{ch}"] = [ch]
+    # if include_single_frontal:
+    #     for ch in frontal:
+    #         groups[f"single:{ch}"] = [ch]
 
     return {name: chs for name, chs in groups.items() if chs}
 
@@ -120,7 +119,7 @@ def selection_group_names(
     *,
     raja_region_yaml: Path,
     cao_region_yaml: Path,
-    include_single_frontal: bool = True,
+    # include_single_frontal: bool = True,
     groups_filter: set[str] | None = None,
 ) -> list[str]:
     """List the selection-group names available for *pair* (cheap: no data load).
@@ -135,7 +134,8 @@ def selection_group_names(
     raw = mne.io.read_raw_fif(str(pair["fif"]), preload=False, verbose="ERROR")
     available = resolve_channel_names(brain_channels, raw.ch_names)
     groups = build_selection_groups(
-        region_map, available, include_single_frontal=include_single_frontal,
+        region_map, available,
+        # include_single_frontal=include_single_frontal,
     )
     names = list(groups)
     if groups_filter is not None:
@@ -190,7 +190,7 @@ def run_one_session(
     filter_low: float,
     filter_high: float,
     resample_rate: float,
-    include_single_frontal: bool,
+    # include_single_frontal: bool,
     use_epoch_health: bool,
     groups_filter: set[str] | None,
     verbose: bool,
@@ -271,11 +271,6 @@ def run_one_session(
             channel_results = blink_position_strategy_dbo(
                 prepared, valid_epoch_indices, setting=setting
             )
-            flagged_global = (
-                list(channel_results[0]["flagged_valid_epoch_indices"])
-                if channel_results else []
-            )
-            stage_a = _stage_a_metrics(set(flagged_global), blink_global, valid_epoch_indices)
             # Evaluate each channel individually.
             # Stage A+B threshold is shared across ALL channels in the group.
             # Stage C (detection) runs per-channel, so we report one F1 per channel.
@@ -292,7 +287,6 @@ def run_one_session(
                     "condition": f"{group_name}|{rule}|{center}|{channel_name}",
                     "n_channels_used": n_channels,
                     "n_valid": len(valid_epoch_indices),
-                    **stage_a,
                     "det_tp": em.tp, "det_fp": em.fp, "det_fn": em.fn,
                     "det_precision": em.precision, "det_recall": em.recall, "det_f1": em.f1,
                 })
@@ -315,7 +309,7 @@ def run_channel_ablation(
     filter_low: float = 1.0,
     filter_high: float = 20.0,
     resample_rate: float = 100.0,
-    include_single_frontal: bool = True,
+    # include_single_frontal: bool = True,
     use_epoch_health: bool = False,
     groups_filter: set[str] | None = None,
     use_multithread: bool = False,
@@ -333,17 +327,21 @@ def run_channel_ablation(
         center_methods=center_methods, rules=rules,
         autoreject_random_state=autoreject_random_state,
         filter_low=filter_low, filter_high=filter_high, resample_rate=resample_rate,
-        include_single_frontal=include_single_frontal,
+        # include_single_frontal=include_single_frontal,
         use_epoch_health=use_epoch_health, verbose=verbose,
     )
 
     def _run_pair(pair: dict) -> list[dict]:
         names = selection_group_names(
             pair, raja_region_yaml=raja_region_yaml, cao_region_yaml=cao_region_yaml,
-            include_single_frontal=include_single_frontal, groups_filter=groups_filter,
+            # include_single_frontal=include_single_frontal,
+            groups_filter=groups_filter,
         )
         rows: list[dict] = []
+
+        # For experiment 1, we usually select `all`, and this loop will process all the possible channel combination, or selected individual channel to the proposed algorith
         for group in names:
+            logger.info(f"Processing group: {group}, as we subject it into the 3 stages algorithm")
             rows.extend(run_one_session(pair, groups_filter={group}, **run_kwargs))
         return rows
 
@@ -403,11 +401,6 @@ def condition_summary_rows(records: list[dict], dataset_label: str) -> list[dict
             "rule": rule, "center_method": center,
             "n_sessions": len(bucket),
             "mean_n_channels": m("n_channels_used"),
-            "stageA_precision": m("stageA_precision"),
-            "stageA_recall": m("stageA_recall"),
-            "stageA_f1": m("stageA_f1"),
-            "stageA_fpr": m("stageA_fpr"),
-            "pct_flagged": m("pct_flagged"),
             "det_precision": m("det_precision"),
             "det_recall": m("det_recall"),
             "det_f1": m("det_f1"),

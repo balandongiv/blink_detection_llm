@@ -1,52 +1,65 @@
-% Source: runs/exp1_channel_raja/exp1_channel_selection_raja_summary.csv
-%         runs/exp1_channel_cao/exp1_channel_selection_cao2018_summary.csv
-% Filter: rule==any, center_method==median
-\begin{table}[ht]
+% Source: runs_second_iteration/ (std=3.0 validated re-run); script experiment_script/regen_paper_tables.py
+\begin{table}[htbp]
 \centering
 \scriptsize
-\caption{Channel-selection ablation results. Each row reports macro-averaged blink detection
-  precision, recall, and F1 over all sessions in the dataset, for the named channel subset.
-  Ch = mean number of channels in that selection.
-  Best F1 within each dataset block shown in bold.}
+\setlength{\tabcolsep}{4pt}
+\caption{Experiment~1 channel-by-channel detection performance of Proposed-Med (median centre), organised by scalp region with \emph{no} region-level aggregation. Each entry is \texttt{proposed\_median\_$\langle$region$\rangle$\_$\langle$channel$\rangle$}: the median-thresholded detector evaluated on a single channel, with macro-averaged precision, recall and $F_1$ averaged over all sessions (values read directly from the \texttt{selection=all} rows of the Experiment~1 results CSV). For Raja the native EGI label is shown with its 10--20 equivalent from the channel map (Table~\ref{tab:egi_map}); a dash marks electrodes without a standard 10--20 label. Cao2018 is recorded directly in 10--20 nomenclature. Best $F_1$ per dataset in \textbf{bold}.}
 \label{tab:exp1_channel_ablation}
-\begin{tabular}{llrrrr}
+\begin{tabular}{lllrrr}
 \toprule
-Dataset & Selection & Ch & Precision & Recall & F1 \\
+Region & Channel & 10--20 & Precision & Recall & $F_1$ \\
 \midrule
-\multicolumn{6}{l}{\textit{Raja --- channel groups}} \\[2pt]
-Raja & \textbf{all}           & 26 & \textbf{0.902} & \textbf{0.861} & \textbf{0.866} \\
-     & frontal                &  7 & 0.905 & 0.834 & 0.844 \\
-     & frontal\_left          &  4 & 0.901 & 0.817 & 0.831 \\
-     & frontal\_right         &  3 & 0.903 & 0.801 & 0.818 \\
-     & central                &  7 & 0.485 & 0.051 & 0.088 \\
-     & parietal               &  8 & 0.243 & 0.014 & 0.025 \\
-     & occipital              &  4 & 0.187 & 0.020 & 0.034 \\
-     & posterior              & 12 & 0.216 & 0.022 & 0.037 \\[2pt]
-\multicolumn{6}{l}{\textit{Raja --- single channels}} \\[2pt]
-     & \textbf{E22}           &  1 & \textbf{0.901} & \textbf{0.791} & \textbf{0.810} \\
-     & E9                     &  1 & 0.899 & 0.788 & 0.808 \\
-     & E3                     &  1 & 0.888 & 0.595 & 0.672 \\
-     & E23                    &  1 & 0.819 & 0.543 & 0.604 \\
-     & E24                    &  1 & 0.631 & 0.243 & 0.311 \\
-     & E124                   &  1 & 0.696 & 0.222 & 0.297 \\
-     & E33                    &  1 & 0.216 & 0.024 & 0.039 \\
+\multicolumn{6}{l}{\textit{Raja (EGI 128, 46 sessions)}} \\[2pt]
+frontal\_left & E22 & Fp1 & 0.866 & 0.886 & 0.862 \\
+ & E23 & -- & 0.819 & 0.713 & 0.734 \\
+ & E24 & F3 & 0.640 & 0.391 & 0.451 \\
+ & E33 & F7 & 0.209 & 0.049 & 0.073 \\
+frontal\_right & E9 & Fp2 & 0.864 & 0.895 & \textbf{0.868} \\
+ & E3 & -- & 0.870 & 0.772 & 0.801 \\
+ & E124 & F4 & 0.697 & 0.370 & 0.446 \\
+central\_left & E28 & -- & 0.385 & 0.071 & 0.112 \\
+ & E112 & -- & 0.277 & 0.017 & 0.031 \\
+ & E13 & -- & 0.294 & 0.017 & 0.030 \\
+ & E36 & C3 & 0.147 & 0.012 & 0.022 \\
+central\_right & E122 & F8 & 0.297 & 0.058 & 0.090 \\
+ & E117 & -- & 0.371 & 0.049 & 0.078 \\
+ & E104 & C4 & 0.159 & 0.010 & 0.018 \\
+parietal\_left & E37 & -- & 0.151 & 0.012 & 0.022 \\
+ & E47 & -- & 0.123 & 0.010 & 0.017 \\
+ & E58 & T5 & 0.113 & 0.010 & 0.017 \\
+ & E52 & P3 & 0.127 & 0.010 & 0.017 \\
+parietal\_right & E87 & -- & 0.172 & 0.011 & 0.020 \\
+ & E92 & P4 & 0.109 & 0.011 & 0.019 \\
+ & E96 & T6 & 0.123 & 0.010 & 0.017 \\
+ & E98 & -- & 0.119 & 0.010 & 0.017 \\
+occipital\_left & E67 & -- & 0.141 & 0.023 & 0.035 \\
+ & E70 & O1 & 0.122 & 0.012 & 0.021 \\
+occipital\_right & E77 & -- & 0.145 & 0.018 & 0.030 \\
+ & E83 & O2 & 0.117 & 0.013 & 0.021 \\
 \midrule
-\multicolumn{6}{l}{\textit{Cao2018 --- channel groups}} \\[2pt]
-Cao2018 & \textbf{all}        & 22 & \textbf{0.799} & \textbf{0.813} & \textbf{0.788} \\
-        & frontal             &  6 & 0.807 & 0.788 & 0.776 \\
-        & frontal\_left       &  2 & 0.798 & 0.761 & 0.748 \\
-        & frontal\_right      &  4 & 0.800 & 0.744 & 0.745 \\
-        & central             &  6 & 0.705 & 0.283 & 0.365 \\
-        & parietal            &  6 & 0.502 & 0.079 & 0.122 \\
-        & occipital           &  4 & 0.350 & 0.031 & 0.052 \\
-        & posterior           & 10 & 0.498 & 0.080 & 0.124 \\[2pt]
-\multicolumn{6}{l}{\textit{Cao2018 --- single channels}} \\[2pt]
-        & \textbf{FP1}        &  1 & \textbf{0.796} & \textbf{0.755} & \textbf{0.743} \\
-        & FP2                 &  1 & 0.794 & 0.711 & 0.713 \\
-        & F7                  &  1 & 0.719 & 0.386 & 0.451 \\
-        & F8                  &  1 & 0.730 & 0.361 & 0.438 \\
-        & F4                  &  1 & 0.690 & 0.323 & 0.391 \\
-        & F3                  &  1 & 0.691 & 0.317 & 0.387 \\
+\multicolumn{6}{l}{\textit{Cao2018 (10--20, 58 sessions)}} \\[2pt]
+frontal\_left & FP1 & FP1 & 0.742 & 0.900 & \textbf{0.795} \\
+ & F3 & F3 & 0.726 & 0.543 & 0.589 \\
+frontal\_right & FP2 & FP2 & 0.741 & 0.873 & 0.783 \\
+ & F7 & F7 & 0.709 & 0.563 & 0.596 \\
+ & F8 & F8 & 0.708 & 0.547 & 0.589 \\
+ & F4 & F4 & 0.718 & 0.524 & 0.574 \\
+central\_left & FC3 & FC3 & 0.669 & 0.370 & 0.438 \\
+ & FT7 & FT7 & 0.620 & 0.330 & 0.401 \\
+ & C3 & C3 & 0.596 & 0.242 & 0.309 \\
+central\_right & FT8 & FT8 & 0.644 & 0.338 & 0.411 \\
+ & FC4 & FC4 & 0.647 & 0.341 & 0.406 \\
+ & C4 & C4 & 0.579 & 0.231 & 0.298 \\
+parietal\_left & CP3 & CP3 & 0.481 & 0.125 & 0.177 \\
+ & P3 & P3 & 0.422 & 0.083 & 0.126 \\
+parietal\_right & CP4 & CP4 & 0.492 & 0.138 & 0.194 \\
+ & P4 & P4 & 0.426 & 0.082 & 0.125 \\
+occipital\_left & T5 & T5 & 0.355 & 0.059 & 0.092 \\
+ & O1 & O1 & 0.229 & 0.018 & 0.031 \\
+occipital\_right & T6 & T6 & 0.350 & 0.051 & 0.082 \\
+ & O2 & O2 & 0.256 & 0.019 & 0.033 \\
+temporal\_parietal\_left & TP7 & TP7 & 0.410 & 0.090 & 0.134 \\
+temporal\_parietal\_right & TP8 & TP8 & 0.449 & 0.097 & 0.147 \\
 \bottomrule
 \end{tabular}
 \end{table}

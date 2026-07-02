@@ -86,7 +86,6 @@ if str(REPO_ROOT) not in sys.path:
 from experiment_script.channel_ablation_utils import (
     build_selection_groups,
     write_csv,
-    _stage_a_metrics,
 )
 from blink_evaluation import evaluate_channels, load_annotation_as_reference
 from src.common.epoch_input import prepare_epoch_detection_input
@@ -245,13 +244,7 @@ def _run_one_group_all_conditions(
                     ch_results = blink_position_strategy_dbo(
                         prepared, valid_epoch_indices, setting=setting
                     )
-                    flagged_global = (
-                        list(ch_results[0]["flagged_valid_epoch_indices"]) if ch_results else []
-                    )
-                    stage_a = _stage_a_metrics(
-                        set(flagged_global), blink_global, valid_epoch_indices
-                    )
-                    rows.extend(_eval_per_channel(ch_results, cond, center, extra=stage_a))
+                    rows.extend(_eval_per_channel(ch_results, cond, center))
             except Exception as exc:  # noqa: BLE001
                 errs.append(f"ERROR  {pair['name']} [{group_name}] {cond}: {exc}")
 

@@ -1,31 +1,35 @@
-% Source: runs/exp40_cao/exp1_epoch_duration_summary.csv; runs/exp40_cao/exp1_epoch_duration_results.csv; runs/reports/TCAO4_stats.json; script runs/r3_epoch_artifacts.py
+% Source: runs_second_iteration/ (std=3.0 validated re-run); script experiment_script/regen_paper_tables.py
 \begin{table}[ht]
-    \centering
-    \caption{Macro F1 of Proposed-Med across epoch durations.
-        $p$-values (Wilcoxon, two-tailed) compare each duration against the 30-second reference.
-        \textbf{Bold} marks the best epoch within each dataset block.}
-    \label{tab:epoch_duration}
-    \begin{tabular}{llccc}
-        \toprule
-        Dataset & Epoch duration & $n$ & Macro F1 & $p$ vs.\ 30\,s \\
-        \midrule
-        Raja & 10\,s & 46 & 0.797538 & 0.094837587 \\
-        Raja & 20\,s & 46 & 0.823601 & 0.851877758 \\
-        Raja & 30\,s & 46 & 0.830510 & reference \\
-        Raja & 40\,s & 46 & \textbf{0.833218} & 0.334501904 \\
-        Raja & 60\,s & 46 & 0.822354 & 0.672886398 \\
-        \midrule
-        Cao2018 & 10\,s & 58 & 0.884117 & 0.050265194 \\
-        Cao2018 & 20\,s & 58 & 0.890888 & 0.801329921 \\
-        Cao2018 & 30\,s & 58 & \textbf{0.895359} & reference \\
-        Cao2018 & 40\,s & 58 & 0.877670 & 0.735610872 \\
-        Cao2018 & 60\,s & 57 & 0.871752 & 0.759688011 \\
-        \midrule
-        Pooled & 10\,s & 104 & 0.845822 & 0.017543417 \\
-        Pooled & 20\,s & 104 & 0.861126 & 0.837339163 \\
-        Pooled & 30\,s & 104 & \textbf{0.866676} & reference \\
-        Pooled & 40\,s & 104 & 0.858009 & 0.373667028 \\
-        Pooled & 60\,s & 103 & 0.849691 & 0.782276821 \\
-        \bottomrule
-    \end{tabular}
+  \centering
+  \caption{Best-channel-per-session macro-$F_1$ of Proposed-Med across epoch durations. $p$-values (two-tailed Wilcoxon on session-level $F_1$, Bonferroni-corrected over six non-reference durations) compare each duration against the 30\,s reference. \textbf{Bold} marks the best duration within each block.}
+  \label{tab:epoch_duration}
+  \begin{tabular}{llccc}
+    \toprule
+    Dataset & Epoch duration & $n$ & Macro $F_1$ & $p$ vs.\ 30\,s \\
+    \midrule
+    Raja & 10\,s & 46 & 0.8709 & 1.000 \\
+     & 20\,s & 46 & 0.8749 & 1.000 \\
+     & 30\,s & 46 & 0.8777 & reference \\
+     & 40\,s & 46 & 0.8717 & 0.751 \\
+     & 50\,s & 46 & \textbf{0.8778} & 1.000 \\
+     & 60\,s & 46 & 0.8754 & 0.531 \\
+     & 120\,s & 46 & 0.8531 & 0.008 \\
+    \midrule
+    Cao2018 & 10\,s & 58 & 0.8086 & 0.946 \\
+     & 20\,s & 58 & 0.8087 & 1.000 \\
+     & 30\,s & 58 & 0.8087 & reference \\
+     & 40\,s & 58 & 0.8119 & 1.000 \\
+     & 50\,s & 58 & 0.8121 & 1.000 \\
+     & 60\,s & 58 & \textbf{0.8176} & 0.212 \\
+     & 120\,s & 58 & 0.8160 & 0.290 \\
+    \midrule
+    Pooled & 10\,s & 104 & 0.8362 & 1.000 \\
+     & 20\,s & 104 & 0.8380 & 1.000 \\
+     & 30\,s & 104 & 0.8392 & reference \\
+     & 40\,s & 104 & 0.8383 & 1.000 \\
+     & 50\,s & 104 & 0.8412 & 1.000 \\
+     & 60\,s & 104 & \textbf{0.8432} & 1.000 \\
+     & 120\,s & 104 & 0.8324 & 0.422 \\
+    \bottomrule
+  \end{tabular}
 \end{table}

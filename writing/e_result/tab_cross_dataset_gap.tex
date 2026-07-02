@@ -1,16 +1,16 @@
-% Source: runs/exp41_cao_30s/exp41_strategy_comparison_summary.csv; runs/reports/TCAO4_stats.json; script tutorial/41_exp1_exp2_strategy_comparison.py
+% Source: runs_second_iteration/ (std=3.0 validated re-run); script experiment_script/regen_paper_tables.py
 \begin{table}[ht]
   \centering
-  \caption{Extra analysis: cross-dataset generalisation gap (macro-F1, 30\,s epochs). Gap $=$ Raja $-$ Cao2018.}
+  \caption{Cross-dataset generalisation gap (best-channel-per-session macro-$F_1$, 30\,s epochs). Gap $=$ Raja $-$ Cao2018.}
   \label{tab:cross_dataset_gap}
   \begin{tabular}{lccc}
     \toprule
     Condition & Raja & Cao2018 & Gap \\
     \midrule
-    BLINKER-concat & 0.758780 & 0.824156 & -0.065376 \\
-    MNE-annot & 0.609699 & 0.838279 & -0.228580 \\
-    Proposed-Mean & 0.817118 & 0.882237 & -0.065119 \\
-    Proposed-Med & 0.830510 & 0.895359 & -0.064849 \\
+    BLINKER-concat & 0.7644 & 0.6924 & +0.0720 \\
+    MNE-annot & 0.6526 & 0.5101 & +0.1424 \\
+    Proposed-Mean & 0.8671 & 0.8041 & +0.0630 \\
+    Proposed-Med & 0.8777 & 0.8087 & +0.0690 \\
     \bottomrule
   \end{tabular}
 \end{table}
