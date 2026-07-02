@@ -54,13 +54,16 @@ from src.utils.session_sweep import run_session_sweep
 
 logger = logging.getLogger(__name__)
 
-_EXP_CFG  = load_exp_config(EXP_SETUP_DIR / (Path(__file__).stem + ".yaml"))
+_EXP_YAML_PATH = EXP_SETUP_DIR / (Path(__file__).stem + ".yaml")
+print(f"[exp1_channel_selection_raja] loading exp config from: {_EXP_YAML_PATH}")
+_EXP_CFG  = load_exp_config(_EXP_YAML_PATH)
+print(f"[exp1_channel_selection_raja] exp config values: {_EXP_CFG}")
 _RAJA     = get_raja_paths()
-_CAO      = get_cao_paths()
+print(f"[exp1_channel_selection_raja] raja paths: {_RAJA}")
+
 
 DATASET              = _EXP_CFG["dataset"]
 RAJA_REGION_YAML     = _RAJA["brain_region_yaml"]
-CAO_REGION_YAML      = _CAO["brain_region_yaml"]
 RAJA_ANNOTATION_BASE = _RAJA["annotation_base"]
 RAJA_PROCESSED_BASE  = _RAJA["processed_base"]
 EPOCH_DURATION_S     = float(_EXP_CFG["epoch_duration_s"])
@@ -75,7 +78,7 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--epoch-duration-s", type=float, default=EPOCH_DURATION_S)
     p.add_argument("--std-threshold", type=float, default=STD_THRESHOLD,
                    help="Stage-B k multiplier for MAD (default: %(default)s).")
-    p.add_argument("--center-methods", type=_csv_list, default=DEFAULT_CENTER_METHODS,
+    p.add_argument("--center-methods", type=_csv_list, default="median",
                    help="Stage-B centres (default: median,mean).")
     p.add_argument("--out-dir", type=Path, default=REPO_ROOT / "runsX" / "exp1_channel_raja",
                    help="Output directory (default: %(default)s).")

@@ -54,13 +54,16 @@ from src.utils.session_sweep import run_session_sweep
 
 logger = logging.getLogger(__name__)
 
-_EXP_CFG = load_exp_config(EXP_SETUP_DIR / (Path(__file__).stem + ".yaml"))
-_RAJA    = get_raja_paths()
+_EXP_YAML_PATH = EXP_SETUP_DIR / (Path(__file__).stem + ".yaml")
+print(f"[exp1_channel_selection_cao2018] loading exp config from: {_EXP_YAML_PATH}")
+_EXP_CFG = load_exp_config(_EXP_YAML_PATH)
+print(f"[exp1_channel_selection_cao2018] exp config values: {_EXP_CFG}")
 _CAO     = get_cao_paths()
+print(f"[exp1_channel_selection_cao2018] cao paths: {_CAO}")
+
 
 DATASET          = _EXP_CFG["dataset"]
 CAO_REGION_YAML  = _CAO["brain_region_yaml"]
-RAJA_REGION_YAML = _RAJA["brain_region_yaml"]
 CAO_DATASET_ROOT = _CAO["dataset_root"]
 EPOCH_DURATION_S = float(_EXP_CFG["epoch_duration_s"])
 STD_THRESHOLD    = float(_EXP_CFG["std_threshold"])
