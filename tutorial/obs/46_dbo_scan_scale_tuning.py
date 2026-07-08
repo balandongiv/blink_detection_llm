@@ -57,7 +57,8 @@ from src.common.epoch_input import prepare_epoch_detection_input
 from src.common.pipeline_utils import build_epoch_boundaries, build_signal_by_epoch
 from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
 from src.strategy_dbo.single_channel_autoreject import learn_strategy_dbo_thresholds
-from tutorial.tutorial_utils import discover_raja_pairs, setup_tutorial_logging
+from src.utils.dataset_discovery import discover_raja_pairs
+from src.utils.experiment_utils import setup_tutorial_logging
 
 logger = logging.getLogger(__name__)
 

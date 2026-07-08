@@ -83,7 +83,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from experiment_script.channel_ablation_utils import (
+from src.utils.channel_ablation_utils import (
     build_selection_groups,
     write_csv,
 )
@@ -98,11 +98,9 @@ from pyblinker.double_thresholding import blink_position_strategy_dbo
 from src.strategy_nathanael_mne.runner import blink_position_strategy_nathanael
 from pyblinker.strategies import kleifges_strategy
 from src.project_paths import EXP_SETUP_DIR, get_cao_paths, get_raja_paths, load_exp_config
-from tutorial.tutorial_utils import (
-    discover_cao_pairs,
-    load_gt_annotations_for_pair,
-    setup_tutorial_logging,
-)
+from src.utils.dataset_discovery import discover_cao_pairs
+from src.utils.experiment_utils import load_gt_annotations_for_pair, setup_tutorial_logging
+
 import mne
 
 logger = logging.getLogger(__name__)

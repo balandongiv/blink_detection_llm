@@ -82,7 +82,8 @@ from blink_evaluation import evaluate_channels, load_ground_truth_annotations
 from blink_evaluation.epoch_utils import enrich_absolute_times
 from blink_evaluation.io import dataframe_to_annotations
 from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
-from tutorial.tutorial_utils import discover_raja_pairs, setup_tutorial_logging
+from src.utils.dataset_discovery import discover_raja_pairs
+from src.utils.experiment_utils import setup_tutorial_logging
 
 from pyblinker.blinker.pyblinker import BlinkDetector
 from pyblinker.pipeline_steps import process_channel_data as _pyblinker_process_channel_data

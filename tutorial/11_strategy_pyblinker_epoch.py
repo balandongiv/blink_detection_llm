@@ -45,7 +45,8 @@ from src.common.epoch_channel import map_concatenated_blinks_to_epochs
 from src.common.epoch_input import PreparedEpochDetectionInput, prepare_epoch_detection_input
 from src.common.pipeline_utils import build_epoch_boundaries
 from src.io.eeg_channels import load_brain_region_channels, load_raw_with_brain_channels
-from tutorial.tutorial_utils import discover_raja_pairs, setup_tutorial_logging
+from src.utils.dataset_discovery import discover_raja_pairs
+from src.utils.experiment_utils import setup_tutorial_logging
 
 from pyblinker.blinker.default_setting import build_blink_params
 from pyblinker.pipeline_steps import process_channel_data as _pyblinker_process_channel_data

@@ -56,7 +56,7 @@ EXPERIMENTS = [
         "runs": [
             {
                 "dataset": "raja",
-                "script": "experiment_script/run_exp1_raja.py",
+                "script": "experiment_script/exp1_channel_selection_raja.py",
                 "orig_out": "runs/exp1_channel_raja",
                 "std30_out": "runs_second_iteration/exp1_channel_raja",
                 "orig_yaml": "exp1_channel_selection_raja.yaml",
@@ -65,7 +65,7 @@ EXPERIMENTS = [
             },
             {
                 "dataset": "cao2018",
-                "script": "experiment_script/run_exp1_cao2018.py",
+                "script": "experiment_script/exp1_channel_selection_cao2018.py",
                 "orig_out": "runs/exp1_channel_cao",
                 "std30_out": "runs_second_iteration/exp1_channel_cao",
                 "orig_yaml": "exp1_channel_selection_cao2018.yaml",

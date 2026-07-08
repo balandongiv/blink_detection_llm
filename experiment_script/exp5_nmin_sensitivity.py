@@ -48,10 +48,9 @@ from experiment_script.channel_group_config import apply_stage_a_channel_group
 from pyblinker.double_thresholding import screen_epochs_with_autoreject
 from pyblinker.double_thresholding import compute_flagged_epoch_threshold
 from src.project_paths import EXP_SETUP_DIR, get_cao_paths, get_raja_paths, load_exp_config
-from tutorial.tutorial_utils import (
-    discover_cao_pairs, discover_raja_pairs, make_dataset_loaders, setup_tutorial_logging,
-    valid_epoch_indices_for_pair,
-)
+from src.utils.dataset_discovery import discover_cao_pairs, discover_raja_pairs
+from src.utils.experiment_utils import make_dataset_loaders, setup_tutorial_logging, valid_epoch_indices_for_pair
+
 
 logger = logging.getLogger(__name__)
 
@@ -84,7 +83,7 @@ N_EPOCHS: int | None = None
 
 # Stage A / B fixed settings
 AUTOREJECT_RANDOM_STATE = 42
-STD_THRESHOLD           = float(_EXP_CFG.get("std_threshold", 3.5))
+STD_THRESHOLD           = float(_EXP_CFG.get("std_threshold", 3.0))
 CENTER_METHOD           = _EXP_CFG.get("center_method", "median")
 
 # Part A — threshold-variance analysis

@@ -39,7 +39,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from blink_evaluation import evaluate_channels
-from experiment_script.condition_runner_utils import (
+from src.utils.condition_runner_utils import (
     CONDITIONS,
     annotations_from_reference,
     prepare_session,
@@ -47,12 +47,13 @@ from experiment_script.condition_runner_utils import (
     run_condition,
 )
 from src.project_paths import EXP_SETUP_DIR, get_cao_paths, get_raja_paths, load_exp_config
-from tutorial.tutorial_utils import (
-    discover_cao_pairs,
-    discover_raja_pairs,
+from src.utils.dataset_discovery import discover_cao_pairs, discover_raja_pairs
+from src.utils.experiment_utils import (
     setup_tutorial_logging,
     valid_epoch_indices_for_pair,
+    write_csv as _write_csv,
 )
+
 
 logger = logging.getLogger(__name__)
 
@@ -155,15 +156,6 @@ def _print_summary(rows: list[dict]) -> None:
               f"{r['normal_recall']:>7.4f}  {r['long_recall']:>7.4f}  {r['recall_drop']:>+8.4f}")
     print(f"{'=' * len(header)}\n")
 
-
-def _write_csv(path: Path, rows: list[dict]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if not rows:
-        return
-    with path.open("w", newline="", encoding="utf-8") as fh:
-        w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
-        w.writeheader()
-        w.writerows(rows)
 
 
 def _parse_args() -> argparse.Namespace:

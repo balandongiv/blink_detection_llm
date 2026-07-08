@@ -20,7 +20,7 @@ dbo_drop_Med    - with center_method="median" at Stage B (primary).
 
 Datasets
 --------
-Drowsy Driving Raja corpus and murat_2018 dataset.
+Drowsy Driving Raja corpus and Cao2018 dataset.
 
 Statistical tests
 -----------------
@@ -58,14 +58,13 @@ from src.strategy_nathanael_mne.runner import blink_position_strategy_nathanael
 from src.strategy_dbo.runner import blink_position_strategy_dbo
 from pyblinker.double_thresholding import blink_position_strategy_dbo
 from src.project_paths import EXP_SETUP_DIR, get_cao_paths, get_raja_paths, load_exp_config
-from tutorial.tutorial_utils import (
-    discover_cao_pairs,
-    discover_murat_pairs,
-    discover_raja_pairs,
+from src.utils.dataset_discovery import discover_cao_pairs, discover_raja_pairs
+from src.utils.experiment_utils import (
     load_gt_annotations_for_pair,
     make_dataset_loaders,
     setup_tutorial_logging,
     valid_epoch_indices_for_pair,
+    write_csv as _write_csv,
 )
 
 logger = logging.getLogger(__name__)
@@ -113,7 +112,7 @@ AUTOREJECT_AUGMENT      = False
 
 # Strategy dbo_drop (Proposed-Mean / Proposed-Med) parameters
 MIN_FLAGGED_EPOCHS = 1
-STD_THRESHOLD      = float(_EXP_CFG.get("std_threshold", 3.5))
+STD_THRESHOLD      = float(_EXP_CFG.get("std_threshold", 3.0))
 
 # Ordered list of conditions — Proposed-Mean (mean) runs before Proposed-Med (median)
 CONDITIONS = ["BLINKER-concat",
@@ -390,15 +389,6 @@ def _summary_rows(results: list[dict], dataset_name: str) -> list[dict]:
     return out
 
 
-def _write_csv(path: Path, rows: list[dict]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if not rows:
-        return
-    with path.open("w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
-        w.writeheader()
-        w.writerows(rows)
-
 
 def _parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
@@ -433,14 +423,9 @@ def _parse_args() -> argparse.Namespace:
         help="Reduce strategy verbosity.",
     )
     p.add_argument(
-        "--use-murat2018",
-        action="store_true",
-        help="Use Raja + Murat2018 instead of the default Raja + Cao2018.",
-    )
-    p.add_argument(
         "--cao-only",
         action="store_true",
-        help="Run only Cao2018 sessions (ignored with --use-murat2018).",
+        help="Run only Cao2018 sessions.",
     )
     p.add_argument(
         "--max-cao-sessions",
@@ -556,19 +541,12 @@ def main() -> None:
 
     setup_tutorial_logging()
     raja_pairs  = discover_raja_pairs(RAJA_ANNOTATION_BASE, RAJA_PROCESSED_BASE)
-    if args.use_murat2018:
-        cao_pairs = []
-        murat_pairs = discover_murat_pairs(MURAT_DATASET_ROOT)
-        all_pairs = raja_pairs + murat_pairs
-    else:
-        cao_pairs = discover_cao_pairs(CAO_DATASET_ROOT)
-        if args.max_cao_sessions is not None:
-            cao_pairs = cao_pairs[:args.max_cao_sessions]
-        murat_pairs = []
-        all_pairs = cao_pairs if args.cao_only else raja_pairs + cao_pairs
+    cao_pairs = discover_cao_pairs(CAO_DATASET_ROOT)
+    if args.max_cao_sessions is not None:
+        cao_pairs = cao_pairs[:args.max_cao_sessions]
+    all_pairs = cao_pairs if args.cao_only else raja_pairs + cao_pairs
 
     logger.info("Raja sessions  : %d", len(raja_pairs))
-    logger.info("Murat subjects : %d", len(murat_pairs))
     logger.info("Cao2018 sessions: %d", len(cao_pairs))
     logger.info("Total sessions : %d", len(all_pairs))
     logger.info("Conditions     : %s", RUN_CONDITIONS)
@@ -610,7 +588,7 @@ def main() -> None:
         return
 
     # Per-dataset per-session tables
-    report_datasets = ("raja", "murat2018") if args.use_murat2018 else ("raja", "cao2018")
+    report_datasets = ("raja", "cao2018")
     for ds in report_datasets:
         _print_per_session_table(results, ds)
 

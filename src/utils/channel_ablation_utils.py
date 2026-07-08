@@ -20,12 +20,10 @@ from __future__ import annotations
 
 import csv
 import logging
-from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import mne
-import numpy as np
 
 from blink_evaluation import (
     evaluate_channels,
@@ -39,10 +37,8 @@ from src.io.eeg_channels import (
     resolve_channel_names,
 )
 from pyblinker.double_thresholding import blink_position_strategy_dbo
-from tutorial.tutorial_utils import (
-    load_gt_annotations_for_pair,
-    valid_epoch_indices_for_pair,
-)
+from src.utils.experiment_utils import load_gt_annotations_for_pair, valid_epoch_indices_for_pair
+
 
 logger = logging.getLogger(__name__)
 
@@ -112,8 +108,7 @@ def build_selection_groups(
 def selection_group_names(
     pair: dict,
     *,
-    raja_region_yaml: Path,
-    cao_region_yaml: Path,
+    region_yaml: Path,
     # include_single_frontal: bool = True,
     groups_filter: set[str] | None = None,
 ) -> list[str]:
@@ -123,7 +118,6 @@ def selection_group_names(
     enumerate the groups and then invoke :func:`run_one_session` once per group.
     ``groups_filter`` restricts the result to the requested names (preserving order).
     """
-    region_yaml = raja_region_yaml if pair["dataset"] == "raja" else cao_region_yaml
     region_map = load_brain_region_map(region_yaml)
     brain_channels = load_brain_region_channels(region_yaml)
     raw = mne.io.read_raw_fif(str(pair["fif"]), preload=False, verbose="ERROR")
@@ -184,8 +178,7 @@ def _stage_a_metrics(
 def run_one_session(
     pair: dict,
     *,
-    raja_region_yaml: Path,
-    cao_region_yaml: Path,
+    region_yaml: Path,
     epoch_duration_s: float,
     std_threshold: float,
     center_methods: tuple[str, ...],
@@ -207,7 +200,6 @@ def run_one_session(
         When not None, only groups whose name is in this set are evaluated.
         ``None`` runs all groups built by :func:`build_selection_groups`.
     """
-    region_yaml = raja_region_yaml if pair["dataset"] == "raja" else cao_region_yaml
     region_map = load_brain_region_map(region_yaml)
 
     brain_channels = load_brain_region_channels(region_yaml)
@@ -225,7 +217,7 @@ def run_one_session(
         raise ValueError(
             "run_one_session processes exactly ONE selection group/channel per call "
             f"(got {sorted(groups)}). Pass a single-group groups_filter and loop over "
-            "groups in the caller (see run_exp1_raja.py / check_exp1_vs_10d.py)."
+            "groups in the caller (see exp1_channel_selection_raja.py)."
         )
 
     # Pick only this group's channels — the whole pipeline runs on this subset only.
@@ -274,28 +266,41 @@ def run_one_session(
         scored = evaluate_channels(
                 channel_results, gt_annotations, epoch_duration=epoch_duration_s
             )
-        for row in scored.lane_summary.itertuples(index=False):
-            metric_records.append({
-                    "dataset": pair["dataset"], "session": pair["name"],
-                    "center_method": center,
-                    "channel_in_group": row.channel,
-                    "condition": f"{group_name}|{center}|{row.channel}",
-                    "n_channels_used": n_channels,
-                    "n_valid": len(valid_epoch_indices),
-                    "det_tp": row.tp, "det_fp": row.fp, "det_fn": row.fn,
-                    "det_precision": row.precision, "det_recall": row.recall, "det_f1": row.f1,
-                })
+        # lane_summary has one row per channel with channel/tp/fp/fn/precision/recall/f1.
+        # Rename to the schema expected by exp1_write_results()/exp1_step_b_get_best_region_channel.py
+        # (selection, channel_in_group, rule, det_*) before attaching per-call metadata.
+        lane = scored.lane_summary.rename(columns={
+            "channel": "channel_in_group",
+            "tp": "det_tp", "fp": "det_fp", "fn": "det_fn",
+            "precision": "det_precision", "recall": "det_recall", "f1": "det_f1",
+        }).assign(
+            dataset=pair["dataset"],
+            session=pair["name"],
+            selection=group_name,
+            rule="any",
+            center_method=center,
+            condition=[f"{group_name}|any|{center}|{ch}" for ch in scored.lane_summary["channel"]],
+            n_channels_used=n_channels,
+            n_valid=len(valid_epoch_indices),
+        )
+        metric_records.extend(lane.to_dict("records"))
 
     if verbose:
         logger.info("done  %s  (%d conditions)", pair["name"], len(metric_records))
+        logger.info(lane.to_dict("records"))
+        best = max(metric_records, key=lambda r: r["det_f1"])
+        logger.info(
+            "best  %s  channel=%s center=%s f1=%.3f precision=%.3f recall=%.3f",
+            pair["name"], best["channel_in_group"], best["center_method"],
+            best["det_f1"], best["det_precision"], best["det_recall"],
+        )
     return metric_records
 
 
 def run_channel_ablation(
     pairs: list[dict],
     *,
-    raja_region_yaml: Path,
-    cao_region_yaml: Path,
+    region_yaml: Path,
     epoch_duration_s: float = 30.0,
     std_threshold: float = 1.5,
     center_methods: tuple[str, ...] = DEFAULT_CENTER_METHODS,
@@ -315,8 +320,7 @@ def run_channel_ablation(
     self-contained detector on its own channel subset.
     """
     run_kwargs = dict(
-        raja_region_yaml=raja_region_yaml,
-        cao_region_yaml=cao_region_yaml,
+        region_yaml=region_yaml,
         epoch_duration_s=epoch_duration_s,
         std_threshold=std_threshold,
         center_methods=center_methods,
@@ -330,7 +334,7 @@ def run_channel_ablation(
 
     def _run_pair(pair: dict) -> list[dict]:
         names = selection_group_names(
-            pair, raja_region_yaml=raja_region_yaml, cao_region_yaml=cao_region_yaml,
+            pair, region_yaml=region_yaml,
             groups_filter=groups_filter,
         )
         rows: list[dict] = []
@@ -382,66 +386,6 @@ def run_channel_ablation(
 # Reporting
 # ---------------------------------------------------------------------------
 
-def condition_summary_rows(records: list[dict], dataset_label: str) -> list[dict]:
-    """Macro-average Stage-A and downstream metrics per (selection, channel_in_group, rule, centre).
-
-    Each row now represents one individual channel within a selection group,
-    enabling comparison of per-channel F1 across the group.  The Stage A/B
-    metrics in each row reflect the *group-level* threshold shared by all channels.
-    """
-    buckets: dict[tuple[str, str, str, str], list[dict]] = defaultdict(list)
-    for r in records:
-        ch = r.get("channel_in_group", r.get("best_channel", "unknown"))
-        buckets[(r["selection"], ch, r["rule"], r["center_method"])].append(r)
-
-    out: list[dict] = []
-    for (selection, channel_in_group, rule, center), bucket in buckets.items():
-        def m(key: str) -> float:
-            vals = [b[key] for b in bucket if key in b and b[key] is not None]
-            return float(np.mean(vals)) if vals else float("nan")
-        out.append({
-            "dataset": dataset_label,
-            "selection": selection,
-            "channel_in_group": channel_in_group,
-            "rule": rule, "center_method": center,
-            "n_sessions": len(bucket),
-            "mean_n_channels": m("n_channels_used"),
-            "det_precision": m("det_precision"),
-            "det_recall": m("det_recall"),
-            "det_f1": m("det_f1"),
-        })
-    out.sort(key=lambda r: (r["selection"].startswith("single:"),
-                            r["selection"], r["channel_in_group"],
-                            r["rule"], -r["det_f1"]))
-    return out
-
-
-def print_condition_summary(records: list[dict], dataset_label: str) -> None:
-    rows = condition_summary_rows(records, dataset_label)
-    if not rows:
-        print(f"\nNo records for {dataset_label}.")
-        return
-    header = (
-        f"{'selection':<16}  {'channel':<8}  {'rule':<5}  {'centre':<6}  {'nCh':>3}  "
-        f"{'det_P':>7}  {'det_R':>7}  {'det_F1':>7}"
-    )
-    sep = "-" * len(header)
-    print(f"\n{'=' * len(header)}")
-    print(f"CHANNEL ABLATION SUMMARY — {dataset_label.upper()}  "
-          f"(macro over {rows[0]['n_sessions']} sessions)")
-    print(f"{'=' * len(header)}")
-    print(header)
-    print(sep)
-    for r in rows:
-        print(
-            f"{r['selection']:<16}  {r.get('channel_in_group', '?'):<8}  "
-            f"{r['rule']:<5}  {r['center_method']:<6}  "
-            f"{r['mean_n_channels']:>3.0f}  "
-            f"{r['det_precision']:>7.4f}  {r['det_recall']:>7.4f}  {r['det_f1']:>7.4f}"
-        )
-    print(f"{'=' * len(header)}\n")
-
-
 def write_csv(path: Path, rows: list[dict]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     if not rows:
@@ -462,14 +406,11 @@ def write_csv(path: Path, rows: list[dict]) -> None:
 
 
 __all__ = [
-    # "RULE_MIN_VOTES",
     "DEFAULT_CENTER_METHODS",
     "DEFAULT_RULES",
     "build_selection_groups",
     "selection_group_names",
     "run_one_session",
     "run_channel_ablation",
-    "condition_summary_rows",
-    "print_condition_summary",
     "write_csv",
 ]

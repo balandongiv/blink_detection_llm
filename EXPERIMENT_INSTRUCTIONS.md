@@ -61,7 +61,7 @@ python experiment_script\run_exp1_cao2018.py
 Run the channel selection script to pick the top 4 individual channels and top 4 regional groups for each dataset:
 
 ```
-python experiment_script\select_channels_post_exp1.py
+python experiment_script\exp1_get_best_region_channel.py
 ```
 
 This script reads both Exp1 summaries and writes:

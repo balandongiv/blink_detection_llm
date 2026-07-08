@@ -54,11 +54,16 @@ from src.common.epoch_input import prepare_epoch_detection_input
 from experiment_script.channel_group_config import apply_stage_a_channel_group
 from pyblinker.double_thresholding import blink_position_strategy_dbo
 from src.project_paths import EXP_SETUP_DIR, get_cao_paths, get_raja_paths, load_exp_config
-from tutorial.tutorial_utils import (
-    discover_cao_pairs, discover_raja_pairs, make_dataset_loaders,
-    match_events, extract_window, setup_tutorial_logging,
+from src.utils.dataset_discovery import discover_cao_pairs, discover_raja_pairs
+from src.utils.matching_event import match_events
+from src.utils.experiment_utils import (
+    make_dataset_loaders,
+    extract_window,
+    setup_tutorial_logging,
     valid_epoch_indices_for_pair,
+    write_csv as _write_csv,
 )
+
 
 logger = logging.getLogger(__name__)
 
@@ -97,7 +102,7 @@ N_EPOCHS: int | None  = None
 
 # Strategy F (Proposed-Med) parameters
 AUTOREJECT_RANDOM_STATE = 42
-STD_THRESHOLD           = float(_EXP_CFG.get("std_threshold", 3.5))
+STD_THRESHOLD           = float(_EXP_CFG.get("std_threshold", 3.0))
 CENTER_METHOD           = _EXP_CFG.get("center_method", "median")
 MIN_FLAGGED_EPOCHS      = 1
 
@@ -691,15 +696,6 @@ def _print_event_counts(sessions: list[dict], dataset_name: str) -> None:
     )
     print(f"{'=' * len(hdr)}\n")
 
-
-def _write_csv(path: Path, rows: list[dict]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    if not rows:
-        return
-    with path.open("w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=list(rows[0].keys()))
-        w.writeheader()
-        w.writerows(rows)
 
 
 def _parse_args() -> argparse.Namespace:

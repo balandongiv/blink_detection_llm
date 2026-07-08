@@ -61,13 +61,13 @@ from blink_evaluation import (  # noqa: E402
 from blink_evaluation.io import dataframe_to_annotations  # noqa: E402
 from src.common.bad_epochs import get_valid_epoch_indices  # noqa: E402
 from src.common.epoch_input import prepare_epoch_detection_input  # noqa: E402
-from tutorial.tutorial_utils import (  # noqa: E402
-    discover_cao_pairs,
-    discover_raja_pairs,
+from src.utils.dataset_discovery import discover_cao_pairs, discover_raja_pairs  # noqa: E402
+from src.utils.experiment_utils import (  # noqa: E402
     get_valid_cao_epoch_indices,
     make_dataset_loaders,
     setup_tutorial_logging,
 )
+
 
 from src.project_paths import get_cao_paths, get_raja_paths
 

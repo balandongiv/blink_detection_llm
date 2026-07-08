@@ -22,7 +22,7 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-from experiment_script.channel_ablation_utils import build_selection_groups
+from src.utils.channel_ablation_utils import build_selection_groups
 from src.common.epoch_input import PreparedEpochDetectionInput
 from src.io.eeg_channels import load_brain_region_map
 from src.project_paths import get_cao_paths, get_raja_paths

@@ -45,8 +45,9 @@ All scripts assume the conda env `pyblinker_worktree_epoch_blink` and resolve th
 | `channel_group_config.py` | Reads the channel-group gate (`channel_group_selection.yaml`) and subsets a prepared session to the approved Stage-A group. No-op when the group is `all`. | **exp2–exp8** |
 | `__init__.py` | Marks `experiment_script` as a package so the `exp*` scripts can import the utils above. | — |
 
-> `tutorial/tutorial_utils.py` is **not** here on purpose — it is shared by ~20 non-experiment
-> tutorials. The experiments import it as `tutorial.tutorial_utils`.
+> `src/utils/experiment_utils.py`, `src/utils/dataset_discovery.py`, and
+> `src/utils/matching_event/` are **not** here on purpose — they are shared by ~20
+> non-experiment tutorials in addition to the `exp*` scripts.
 
 ---
 

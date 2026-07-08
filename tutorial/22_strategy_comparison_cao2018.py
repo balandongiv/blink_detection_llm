@@ -41,7 +41,7 @@ from pyblinker.strategies import kleifges_strategy
 from src.strategy_nathanael_mne.runner import blink_position_strategy_nathanael
 from src.strategy_dbo.runner import blink_position_strategy_dbo
 from pyblinker.double_thresholding import blink_position_strategy_dbo
-from tutorial.tutorial_utils import setup_tutorial_logging
+from src.utils.experiment_utils import setup_tutorial_logging
 
 logger = logging.getLogger(__name__)
 

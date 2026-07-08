@@ -23,7 +23,7 @@ from blink_evaluation.io import dataframe_to_annotations
 from src.common.epoch_input import prepare_epoch_detection_input
 from experiment_script.channel_group_config import apply_stage_a_channel_group
 from src.project_paths import get_cao_paths, get_raja_paths
-from tutorial.tutorial_utils import make_dataset_loaders
+from src.utils.experiment_utils import make_dataset_loaders
 
 # Reuse the exact condition runners + ordering from the main comparison.
 from experiment_script.exp2_strategy_comparison import CONDITIONS, _CONDITION_RUNNERS

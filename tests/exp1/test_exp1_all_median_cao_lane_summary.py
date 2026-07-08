@@ -22,7 +22,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from src.project_paths import get_cao_paths
-from experiment_script.channel_ablation_utils import run_one_session
+from src.utils.channel_ablation_utils import run_one_session
 from src.utils.dataset_discovery import discover_cao_pairs
 
 FIXTURE_CSV = Path(__file__).resolve().parent / "scored_lane_summary_cao.csv"
@@ -71,9 +71,14 @@ def test_exp1_all_median_lane_summary_matches_fixture_cao() -> None:
     group_records = [r for r in records if r["condition"].startswith("frontal_left|")]
     assert group_records, "'frontal_left' group not found in exp1 records"
 
-    # records already carry lane_summary's own columns (channel/tp/fp/fn/precision/
-    # recall/f1), pre-sorted by f1/tp/fp/channel — no renaming or re-sorting needed.
-    actual = pd.DataFrame(group_records)[["channel", "tp", "fp", "fn", "precision", "recall", "f1"]]
+    # records carry the renamed lane_summary columns (channel_in_group/det_tp/det_fp/
+    # det_fn/det_precision/det_recall/det_f1); map back to the fixture's plain names.
+    actual = pd.DataFrame(group_records)[
+        ["channel_in_group", "det_tp", "det_fp", "det_fn", "det_precision", "det_recall", "det_f1"]
+    ].rename(columns={
+        "channel_in_group": "channel", "det_tp": "tp", "det_fp": "fp", "det_fn": "fn",
+        "det_precision": "precision", "det_recall": "recall", "det_f1": "f1",
+    })
     actual = actual.reset_index(drop=True)
 
     expected = pd.read_csv(FIXTURE_CSV)[["channel", "tp", "fp", "fn", "precision", "recall", "f1"]]

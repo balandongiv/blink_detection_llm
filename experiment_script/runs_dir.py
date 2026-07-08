@@ -72,7 +72,7 @@ def make_fresh_runs_dir(name: str | None = None, *, prefix: str = "runs_replica"
     print(f"  Point the ENTIRE pipeline (runners + extraction) at this folder by setting:")
     print(f"     bash/zsh   :  export {ENV_VAR}={name}")
     print(f"     PowerShell :  $env:{ENV_VAR}='{name}'")
-    print(f"  Then run exp1..exp8, select_channels_post_exp1.py, and")
+    print(f"  Then run exp1..exp8, exp1_get_best_region_channel.py, and")
     print(f"  reproduce_manuscript.py build in that same shell.")
     print(bar)
     return p

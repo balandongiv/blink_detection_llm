@@ -55,7 +55,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from experiment_script.channel_ablation_utils import (
+from src.utils.channel_ablation_utils import (
     build_selection_groups, write_csv,
 )
 from blink_evaluation import evaluate_channels, load_annotation_as_reference
@@ -66,9 +66,9 @@ from src.io.eeg_channels import (
 )
 from pyblinker.double_thresholding import blink_position_strategy_dbo
 from src.project_paths import EXP_SETUP_DIR, get_cao_paths, get_raja_paths, load_exp_config
-from tutorial.tutorial_utils import (
-    discover_cao_pairs, load_gt_annotations_for_pair, setup_tutorial_logging,
-)
+from src.utils.dataset_discovery import discover_cao_pairs
+from src.utils.experiment_utils import load_gt_annotations_for_pair, setup_tutorial_logging
+
 import mne
 
 logger = logging.getLogger(__name__)
@@ -82,7 +82,7 @@ CAO_REGION_YAML  = _CAO["brain_region_yaml"]
 CAO_DATASET_ROOT = _CAO["dataset_root"]
 EPOCH_DURATION_S = float(_CFG.get("epoch_duration_s", 30.0))
 LONG_THRESHOLD_S = float(_CFG.get("long_threshold_s", LONG_THRESHOLD_S))
-STD_THRESHOLD    = float(_CFG.get("std_threshold", 3.5))
+STD_THRESHOLD    = float(_CFG.get("std_threshold", 3.0))
 FILTER_LOW       = float(_CFG.get("filter_low", 1.0))
 FILTER_HIGH      = float(_CFG.get("filter_high", 20.0))
 RESAMPLE_RATE    = float(_CFG.get("resample_rate", 100.0))

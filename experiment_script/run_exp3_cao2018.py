@@ -80,15 +80,15 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from experiment_script.channel_ablation_utils import (
+from src.utils.channel_ablation_utils import (
     run_one_session,
     selection_group_names,
     write_csv,
     DEFAULT_CENTER_METHODS,
-    DEFAULT_RULES,
 )
 from src.project_paths import EXP_SETUP_DIR, get_cao_paths, get_raja_paths, load_exp_config
-from tutorial.tutorial_utils import discover_cao_pairs, setup_tutorial_logging
+from src.utils.dataset_discovery import discover_cao_pairs
+from src.utils.experiment_utils import setup_tutorial_logging
 
 logger = logging.getLogger(__name__)
 
@@ -138,26 +138,21 @@ def _process_one_task(task: tuple[dict, float]) -> tuple[str, float, list[dict],
     pair, epoch_duration_s = task
 
     session_kwargs = dict(
-        raja_region_yaml=RAJA_REGION_YAML,
-        cao_region_yaml=CAO_REGION_YAML,
+        region_yaml=CAO_REGION_YAML,
         epoch_duration_s=epoch_duration_s,
         std_threshold=STD_THRESHOLD,
         center_methods=DEFAULT_CENTER_METHODS,
-        rules=DEFAULT_RULES,
         autoreject_random_state=42,
         filter_low=FILTER_LOW,
         filter_high=FILTER_HIGH,
         resample_rate=RESAMPLE_RATE,
-        include_single_frontal=True,
         use_epoch_health=False,
         verbose=False,
     )
 
     group_names = selection_group_names(
         pair,
-        raja_region_yaml=RAJA_REGION_YAML,
-        cao_region_yaml=CAO_REGION_YAML,
-        include_single_frontal=True,
+        region_yaml=CAO_REGION_YAML,
         groups_filter=GROUPS_TO_RUN,
     )
     rows: list[dict] = []
