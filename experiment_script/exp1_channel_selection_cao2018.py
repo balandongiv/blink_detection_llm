@@ -1,5 +1,12 @@
 """Experiment 1 (Cao2018): channel-selection ablation — full 3-stage pipeline per group.
 
+Run order:
+  1. Run this script first to generate the exp1 per-session results.
+  2. This script calls exp1_write_results(), which writes the exp1 results
+     CSV, summary CSV, and summary.json.
+  3. Run exp1_step_b_get_best_region_channel.py afterwards to pick the top 4
+     channels and top 4 region groups from those summary CSVs.
+
 For each channel-selection group (all / frontal / central / parietal / occipital /
 posterior / frontal hemispheres / single frontal channels) the complete Stage A->B->C
 pipeline is run on that subset, for both the median and mean Stage-B centre, and
@@ -44,9 +51,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from experiment_script.channel_ablation_utils import DEFAULT_CENTER_METHODS
-from src.exp.session_worker import process_one_session as _process_one_session
-from src.exp.session_worker import write_exp1_results
+from src.exp.session_worker import exp1_write_results, process_one_session as _process_one_session
 from src.project_paths import EXP_SETUP_DIR, get_cao_paths, get_raja_paths, load_exp_config
 from src.utils.dataset_discovery import discover_cao_pairs
 from src.utils.experiment_utils import csv_list as _csv_list, log_run_config, setup_tutorial_logging
@@ -55,7 +60,7 @@ from src.utils.session_sweep import run_session_sweep
 logger = logging.getLogger(__name__)
 
 _EXP_YAML_PATH = EXP_SETUP_DIR / (Path(__file__).stem + ".yaml")
-_PATHS_YAML = EXP_SETUP_DIR / "exp1_channel_selection_paths.yaml"
+_PATHS_YAML = EXP_SETUP_DIR / "exp_path.yaml"
 print(f"[exp1_channel_selection_cao2018] loading exp config from: {_EXP_YAML_PATH}")
 _EXP_CFG = load_exp_config(_EXP_YAML_PATH)
 print(f"[exp1_channel_selection_cao2018] exp config values: {_EXP_CFG}")
@@ -82,19 +87,19 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--epoch-duration-s", type=float, default=EPOCH_DURATION_S)
     p.add_argument("--std-threshold", type=float, default=STD_THRESHOLD,
                    help="Stage-B k multiplier for MAD (default: %(default)s).")
-    p.add_argument("--center-methods", type=_csv_list, default="median",
+    p.add_argument("--center-methods", type=_csv_list, default="median,mean",
                    help="Stage-B centres (default: median,mean).")
     p.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR,
                    help="Output directory (default from setup/exp1_channel_selection_paths.yaml: %(default)s).")
-    p.add_argument("--overwrite", action="store_true", default=True,
+    p.add_argument("--overwrite", action="store_true", default=False,
                    help="Re-run sessions that already have a cached result CSV "
                         "(default: skip them and resume).")
-    p.add_argument("--max-sessions", type=int, default=1,
+    p.add_argument("--max-sessions", type=int, default=None,
                    help="Limit to the first N discovered sessions (None = all).")
-    p.add_argument("--n-jobs", type=int, default=None,
+    p.add_argument("--n-jobs", type=int, default=10,
                    help="Worker processes for the session sweep (default: cpu_count - 1).")
 
-    p.add_argument("--groups", type=_csv_list, default="frontal_left",
+    p.add_argument("--groups", type=_csv_list, default="all",
                    help="Comma-separated channel-selection groups to run "
                         "(default: all groups, e.g. all,frontal,frontal_left,...).")
 
@@ -158,7 +163,7 @@ def main() -> None:
         pairs, out_dir, worker, overwrite=args.overwrite, n_jobs=args.n_jobs,
     )
 
-    write_exp1_results(
+    exp1_write_results(
         out_dir=out_dir,
         dataset=DATASET,
         all_metrics=all_metrics,
