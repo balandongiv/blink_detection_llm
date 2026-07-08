@@ -1,4 +1,24 @@
+Note:
+  midline_or_outside:
+    - Fz
+    - FCz
+    - Cz
+    - CPz
+    - Pz
+    - Oz
+    - F7
+    - T3
+    - TP7
+    - F8
+    - T4
+    - TP8
 eeg_regions:
+  frontal_left:
+    - Fp1
+    - F3
+  frontal_right:
+    - Fp2
+    - F4
   central_left:
     - C3
     - FC3
@@ -7,27 +27,15 @@ eeg_regions:
     - C4
     - FC4
     - FT8
-  frontal_left:
-    - F3
-    - Fp1
-  frontal_right:
-    - F4
-    - F7
-    - F8
-    - Fp2
+  parietal_left:
+    - CP3
+  parietal_right:
+    - CP4
   occipital_left:
     - O1
+    - P3
     - T5
   occipital_right:
     - O2
-    - T6
-  parietal_left:
-    - CP3
-    - P3
-  parietal_right:
-    - CP4
     - P4
-  temporal_parietal_left:
-    - TP7
-  temporal_parietal_right:
-    - TP8
+    - T6
