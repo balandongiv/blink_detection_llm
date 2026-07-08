@@ -91,10 +91,10 @@ def _parse_args() -> argparse.Namespace:
                    help="Stage-B centres (default: median,mean).")
     p.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR,
                    help="Output directory (default from setup/exp1_channel_selection_paths.yaml: %(default)s).")
-    p.add_argument("--overwrite", action="store_true", default=False,
+    p.add_argument("--overwrite", action="store_true", default=True,
                    help="Re-run sessions that already have a cached result CSV "
                         "(default: skip them and resume).")
-    p.add_argument("--max-sessions", type=int, default=None,
+    p.add_argument("--max-sessions", type=int, default=1,
                    help="Limit to the first N discovered sessions (None = all).")
     p.add_argument("--n-jobs", type=int, default=10,
                    help="Worker processes for the session sweep (default: cpu_count - 1).")

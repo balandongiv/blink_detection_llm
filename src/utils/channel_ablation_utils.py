@@ -129,7 +129,8 @@ def selection_group_names(
     names = list(groups)
 
     # names = list(groups)
-
+    if groups_filter == {"all"}:
+        return names
     if groups_filter is not None:
         if isinstance(groups_filter, str):
             groups_filter = {groups_filter}
@@ -174,6 +175,8 @@ def _stage_a_metrics(
 # ---------------------------------------------------------------------------
 # Per-session driver
 # ---------------------------------------------------------------------------
+def build_condition(group_name, center, channel):
+    return f"{center}__{group_name}__{channel}"
 
 def run_one_session(
     pair: dict,
@@ -267,32 +270,30 @@ def run_one_session(
                 channel_results, gt_annotations, epoch_duration=epoch_duration_s
             )
         # lane_summary has one row per channel with channel/tp/fp/fn/precision/recall/f1.
-        # Rename to the schema expected by exp1_write_results()/exp1_step_b_get_best_region_channel.py
-        # (selection, channel_in_group, rule, det_*) before attaching per-call metadata.
-        lane = scored.lane_summary.rename(columns={
-            "channel": "channel_in_group",
-            "tp": "det_tp", "fp": "det_fp", "fn": "det_fn",
-            "precision": "det_precision", "recall": "det_recall", "f1": "det_f1",
-        }).assign(
+        # This is the schema used downstream by exp1_write_results()/
+        # exp1_step_b_get_best_region_channel.py — no renaming here.
+        lane = scored.lane_summary.assign(
             dataset=pair["dataset"],
             session=pair["name"],
             selection=group_name,
-            rule="any",
             center_method=center,
-            condition=[f"{group_name}|any|{center}|{ch}" for ch in scored.lane_summary["channel"]],
+            condition=scored.lane_summary["channel"].map(
+                lambda ch: build_condition(group_name, center, ch)
+            ),
             n_channels_used=n_channels,
             n_valid=len(valid_epoch_indices),
         )
+
         metric_records.extend(lane.to_dict("records"))
 
     if verbose:
         logger.info("done  %s  (%d conditions)", pair["name"], len(metric_records))
         logger.info(lane.to_dict("records"))
-        best = max(metric_records, key=lambda r: r["det_f1"])
+        best = max(metric_records, key=lambda r: r["f1"])
         logger.info(
             "best  %s  channel=%s center=%s f1=%.3f precision=%.3f recall=%.3f",
-            pair["name"], best["channel_in_group"], best["center_method"],
-            best["det_f1"], best["det_precision"], best["det_recall"],
+            pair["name"], best["channel"], best["center_method"],
+            best["f1"], best["precision"], best["recall"],
         )
     return metric_records
 

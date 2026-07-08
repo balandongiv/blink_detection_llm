@@ -24,7 +24,7 @@ from src.utils.channel_ablation_utils import run_one_session, selection_group_na
 
 NUMERIC_RESULT_KEYS = {
     "raw_candidate_count", "mapped_candidate_count", "n_channels_used", "n_valid",
-    "det_tp", "det_fp", "det_fn", "det_precision", "det_recall", "det_f1",
+    "tp", "fp", "fn", "precision", "recall", "f1",
 }
 
 
@@ -93,13 +93,12 @@ def exp1_write_results(
     summary_csv = out_dir / f"exp1_channel_selection_{dataset}_summary.csv"
     write_csv(results_csv, coerced)
 
-    grouped: dict[tuple[str, str, str, str, str], list[dict]] = defaultdict(list)
+    grouped: dict[tuple[str, str, str, str], list[dict]] = defaultdict(list)
     for row in coerced:
         key = (
             str(row.get("dataset", dataset)),
             str(row.get("selection", "")),
-            str(row.get("channel_in_group", "")),
-            str(row.get("rule", "")),
+            str(row.get("channel", "")),
             str(row.get("center_method", "")),
         )
         grouped[key].append(row)
@@ -113,27 +112,25 @@ def exp1_write_results(
 
     center_order = {"median": 0, "mean": 1}
     summary_rows: list[dict] = []
-    for (group_dataset, selection, channel_in_group, rule, center_method), rows in sorted(
+    for (group_dataset, selection, channel, center_method), rows in sorted(
         grouped.items(),
         key=lambda item: (
             item[0][0],
             item[0][1],
-            center_order.get(item[0][4], 99),
+            center_order.get(item[0][3], 99),
             item[0][2],
-            item[0][3],
         ),
     ):
         summary_rows.append({
             "dataset": group_dataset,
             "selection": selection,
-            "channel_in_group": channel_in_group,
-            "rule": rule,
+            "channel": channel,
             "center_method": center_method,
             "n_sessions": len(rows),
             "mean_n_channels": _mean([_num(r, "n_channels_used") for r in rows]),
-            "det_precision": _mean([_num(r, "det_precision") for r in rows]),
-            "det_recall": _mean([_num(r, "det_recall") for r in rows]),
-            "det_f1": _mean([_num(r, "det_f1") for r in rows]),
+            "precision": _mean([_num(r, "precision") for r in rows]),
+            "recall": _mean([_num(r, "recall") for r in rows]),
+            "f1": _mean([_num(r, "f1") for r in rows]),
         })
 
     write_csv(summary_csv, summary_rows)
