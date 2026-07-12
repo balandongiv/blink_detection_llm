@@ -17,14 +17,36 @@ identical way. This module holds that single shared implementation.
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from collections import defaultdict
 
 from src.utils.channel_ablation_utils import run_one_session, selection_group_names, write_csv
 
+logger = logging.getLogger(__name__)
+
 NUMERIC_RESULT_KEYS = {
     "raw_candidate_count", "mapped_candidate_count", "n_channels_used", "n_valid",
     "tp", "fp", "fn", "precision", "recall", "f1",
+    "n_flagged", "used_all_epochs",
+    "blink_region_threshold", "threshold_center", "threshold_dispersion",
+}
+
+# Grouping keys (dataset, selection, channel, center_method) plus columns that
+# are per-session identifiers, non-scalar, or handled specially and so are not
+# folded into the summary via SUM_KEYS/MEAN_KEYS below.
+_SUMMARY_GROUP_KEYS = ("dataset", "selection", "channel", "center_method")
+_SUMMARY_EXCLUDE_KEYS = {
+    *_SUMMARY_GROUP_KEYS,
+    "session", "condition", "flagged_valid_epoch_indices",
+    "precision", "recall", "f1", "used_all_epochs",
+}
+
+# Event/epoch counts are additive across sessions (pooled totals), so the
+# summary sums them rather than averaging.
+_SUMMARY_SUM_KEYS = {
+    "raw_candidate_count", "mapped_candidate_count",
+    "tp", "fp", "fn", "n_valid", "n_flagged",
 }
 
 
@@ -110,6 +132,26 @@ def exp1_write_results(
         val = row.get(key)
         return float(val) if isinstance(val, (int, float)) else float("nan")
 
+    # All remaining lane headers (blink_region_threshold, threshold_center,
+    # threshold_dispersion, n_channels_used, ...) get carried into the summary
+    # as per-group means, so the summary CSV mirrors whatever columns
+    # ``run_one_session`` currently produces. Event/epoch counts are pooled
+    # via SUM instead (see _SUMMARY_SUM_KEYS); precision/recall/f1 are
+    # replaced below by explicit micro/macro variants since a plain mean or
+    # sum of per-session ratios is not a meaningful aggregate.
+    all_row_keys: list[str] = []
+    seen_keys: set[str] = set()
+    for row in coerced:
+        for k in row.keys():
+            if k not in seen_keys:
+                all_row_keys.append(k)
+                seen_keys.add(k)
+    mean_keys = [
+        k for k in all_row_keys
+        if k not in _SUMMARY_EXCLUDE_KEYS and k not in _SUMMARY_SUM_KEYS
+    ]
+    sum_keys = [k for k in all_row_keys if k in _SUMMARY_SUM_KEYS]
+
     center_order = {"median": 0, "mean": 1}
     summary_rows: list[dict] = []
     for (group_dataset, selection, channel, center_method), rows in sorted(
@@ -121,17 +163,57 @@ def exp1_write_results(
             item[0][2],
         ),
     ):
-        summary_rows.append({
+        summary_row = {
             "dataset": group_dataset,
             "selection": selection,
             "channel": channel,
             "center_method": center_method,
             "n_sessions": len(rows),
-            "mean_n_channels": _mean([_num(r, "n_channels_used") for r in rows]),
-            "precision": _mean([_num(r, "precision") for r in rows]),
-            "recall": _mean([_num(r, "recall") for r in rows]),
-            "f1": _mean([_num(r, "f1") for r in rows]),
-        })
+        }
+        for k in sum_keys:
+            summary_row[k] = sum(_num(r, k) for r in rows)
+        for k in mean_keys:
+            summary_row[k] = _mean([_num(r, k) for r in rows])
+
+        # Macro: unweighted mean of each session's own precision/recall/f1 —
+        # every session counts equally regardless of how many blinks it has.
+        summary_row["precision_macro"] = _mean([_num(r, "precision") for r in rows])
+        summary_row["recall_macro"] = _mean([_num(r, "recall") for r in rows])
+        summary_row["f1_macro"] = _mean([_num(r, "f1") for r in rows])
+
+        # Micro: precision/recall/f1 recomputed from the pooled tp/fp/fn —
+        # sessions with more blink events dominate the pooled counts.
+        tp_sum = summary_row["tp"]
+        fp_sum = summary_row["fp"]
+        fn_sum = summary_row["fn"]
+        precision_micro = tp_sum / (tp_sum + fp_sum) if (tp_sum + fp_sum) else float("nan")
+        recall_micro = tp_sum / (tp_sum + fn_sum) if (tp_sum + fn_sum) else float("nan")
+        f1_micro = (
+            2 * precision_micro * recall_micro / (precision_micro + recall_micro)
+            if (precision_micro + recall_micro)
+            else float("nan")
+        )
+        summary_row["precision_micro"] = precision_micro
+        summary_row["recall_micro"] = recall_micro
+        summary_row["f1_micro"] = f1_micro
+
+        # used_all_epochs should be identical across every session in a group
+        # (it's a property of the Stage-B fallback rule, not the session
+        # itself); surface a loud "MIXED" marker if that invariant ever
+        # breaks instead of silently averaging booleans into a fraction.
+        used_all_epochs_values = {r.get("used_all_epochs") for r in rows}
+        if len(used_all_epochs_values) == 1:
+            summary_row["used_all_epochs"] = used_all_epochs_values.pop()
+        else:
+            logger.warning(
+                "used_all_epochs is not consistent across sessions for "
+                "%s/%s/%s/%s: %s",
+                group_dataset, selection, channel, center_method,
+                used_all_epochs_values,
+            )
+            summary_row["used_all_epochs"] = "MIXED"
+
+        summary_rows.append(summary_row)
 
     write_csv(summary_csv, summary_rows)
     (out_dir / "summary.json").write_text(json.dumps({
