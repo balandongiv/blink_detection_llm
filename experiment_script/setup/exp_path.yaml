@@ -3,7 +3,7 @@
 # The exp1 runners read their default --out-dir from this file, and the
 # post-Exp1 selector uses the same file for its default input/output locations.
 
-default_runs_dir: runs_third_iteration
+default_runs_dir: runs_publication
 selection_out_subdir: channel_selection
-raja_out_dir: runsX/exp1_channel_raja
-cao2018_out_dir: runsX/exp1_channel_cao
+raja_out_dir: runs0/exp1_channel_raja
+cao2018_out_dir: runs0/exp1_channel_cao

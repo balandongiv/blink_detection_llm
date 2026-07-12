@@ -98,7 +98,7 @@ def _parse_args() -> argparse.Namespace:
                         "(default: skip them and resume).")
     p.add_argument("--max-sessions", type=int, default=None,
                    help="Limit to the first N discovered sessions (None = all).")
-    p.add_argument("--n-jobs", type=int, default=10,
+    p.add_argument("--n-jobs", type=int, default=16,
                    help="Worker processes for the session sweep (default: cpu_count - 1).")
     p.add_argument("--groups", type=_csv_list, default="all",
                    help="Comma-separated channel-selection groups to run "
