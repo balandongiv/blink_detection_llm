@@ -271,7 +271,13 @@ def run_one_session(
             )
         # lane_summary has one row per channel with channel/tp/fp/fn/precision/recall/f1.
         # This is the schema used downstream by exp1_write_results()/
-        # exp1_step_b_get_best_region_channel.py — no renaming here.
+
+        # channel_results carries the double-thresholding diagnostics per channel
+        # (Stage A flagged epochs are shared across channels; Stage B threshold/
+        # center/dispersion are per-channel). Look these up by channel name since
+        # lane_summary is re-sorted by F1 and no longer aligned with channel_results.
+        diagnostics_by_channel = {cr["channel"]: cr for cr in channel_results}
+
         lane = scored.lane_summary.assign(
             dataset=pair["dataset"],
             session=pair["name"],
@@ -282,6 +288,24 @@ def run_one_session(
             ),
             n_channels_used=n_channels,
             n_valid=len(valid_epoch_indices),
+            flagged_valid_epoch_indices=scored.lane_summary["channel"].map(
+                lambda ch: diagnostics_by_channel[ch]["flagged_valid_epoch_indices"]
+            ),
+            n_flagged=scored.lane_summary["channel"].map(
+                lambda ch: diagnostics_by_channel[ch]["n_flagged"]
+            ),
+            used_all_epochs=scored.lane_summary["channel"].map(
+                lambda ch: diagnostics_by_channel[ch]["used_all_epochs"]
+            ),
+            blink_region_threshold=scored.lane_summary["channel"].map(
+                lambda ch: diagnostics_by_channel[ch]["blink_region_threshold"]
+            ),
+            threshold_center=scored.lane_summary["channel"].map(
+                lambda ch: diagnostics_by_channel[ch]["threshold_center"]
+            ),
+            threshold_dispersion=scored.lane_summary["channel"].map(
+                lambda ch: diagnostics_by_channel[ch]["threshold_dispersion"]
+            ),
         )
 
         metric_records.extend(lane.to_dict("records"))
