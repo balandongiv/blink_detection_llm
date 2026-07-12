@@ -68,18 +68,14 @@ def test_exp1_all_median_lane_summary_matches_fixture_cao() -> None:
         groups_filter={"frontal_left"},
         verbose=False,
     )
-    group_records = [r for r in records if r["condition"].startswith("frontal_left|")]
+    group_records = [r for r in records if r["condition"].startswith("median__frontal_left__")]
     assert group_records, "'frontal_left' group not found in exp1 records"
 
-    # records carry the renamed lane_summary columns (channel_in_group/det_tp/det_fp/
-    # det_fn/det_precision/det_recall/det_f1); map back to the fixture's plain names.
+    # records carry the raw lane_summary columns (channel/tp/fp/fn/precision/recall/f1)
+    # unchanged, matching the fixture's schema directly.
     actual = pd.DataFrame(group_records)[
-        ["channel_in_group", "det_tp", "det_fp", "det_fn", "det_precision", "det_recall", "det_f1"]
-    ].rename(columns={
-        "channel_in_group": "channel", "det_tp": "tp", "det_fp": "fp", "det_fn": "fn",
-        "det_precision": "precision", "det_recall": "recall", "det_f1": "f1",
-    })
-    actual = actual.reset_index(drop=True)
+        ["channel", "tp", "fp", "fn", "precision", "recall", "f1"]
+    ].reset_index(drop=True)
 
     expected = pd.read_csv(FIXTURE_CSV)[["channel", "tp", "fp", "fn", "precision", "recall", "f1"]]
 
