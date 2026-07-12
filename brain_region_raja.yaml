@@ -35,6 +35,13 @@ egi_pair:
   - o2: 84
 
 eeg_regions:
+  frontal:
+    - 3
+    - 9
+    - 22
+    - 23
+    - 24
+    - 124
   frontal_left:
     - 22
     - 23
@@ -43,6 +50,13 @@ eeg_regions:
     - 3
     - 9
     - 124
+  central:
+    - 13
+    - 26
+    - 28
+    - 104
+    - 112
+    - 117
   central_left:
     - 13
     - 26
@@ -51,12 +65,26 @@ eeg_regions:
     - 104
     - 117
     - 112
+  parietal:
+    - 37
+    - 47
+    - 87
+    - 98
   parietal_left:
     - 37
     - 47
   parietal_right:
     - 87
     - 98
+  occipital:
+    - 59
+    - 60
+    - 67
+    - 70
+    - 77
+    - 83
+    - 85
+    - 91
   occipital_left:
     - 59
     - 60
