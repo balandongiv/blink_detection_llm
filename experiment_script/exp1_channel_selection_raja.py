@@ -61,7 +61,7 @@ from src.utils.session_sweep import run_session_sweep
 logger = logging.getLogger(__name__)
 
 _EXP_YAML_PATH = EXP_SETUP_DIR / (Path(__file__).stem + ".yaml")
-_PATHS_YAML = EXP_SETUP_DIR / "exp1_channel_selection_paths.yaml"
+_PATHS_YAML = EXP_SETUP_DIR / "exp_path.yaml"
 print(f"[exp1_channel_selection_raja] loading exp config from: {_EXP_YAML_PATH}")
 _EXP_CFG  = load_exp_config(_EXP_YAML_PATH)
 print(f"[exp1_channel_selection_raja] exp config values: {_EXP_CFG}")

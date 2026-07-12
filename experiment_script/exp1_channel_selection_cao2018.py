@@ -94,12 +94,12 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--overwrite", action="store_true", default=True,
                    help="Re-run sessions that already have a cached result CSV "
                         "(default: skip them and resume).")
-    p.add_argument("--max-sessions", type=int, default=1,
+    p.add_argument("--max-sessions", type=int, default=3,
                    help="Limit to the first N discovered sessions (None = all).")
-    p.add_argument("--n-jobs", type=int, default=10,
+    p.add_argument("--n-jobs", type=int, default=1,
                    help="Worker processes for the session sweep (default: cpu_count - 1).")
 
-    p.add_argument("--groups", type=_csv_list, default="all",
+    p.add_argument("--groups", type=_csv_list, default="frontal_left",
                    help="Comma-separated channel-selection groups to run "
                         "(default: all groups, e.g. all,frontal,frontal_left,...).")
 
