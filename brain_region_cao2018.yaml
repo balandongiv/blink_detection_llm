@@ -61,3 +61,51 @@ eeg_regions:
     - O2
     - P4
     - T6
+  # Every real EEG channel in the recording (all 32), including the midline/
+  # outside sites and mastoid references A1/A2 that the regions above deliberately
+  # exclude. Not used as its own selection group — it exists so that "all"
+  # (build_selection_groups: union(*resolved.keys())) is the TRUE full montage
+  # rather than just the union of the curated regions above (18 channels).
+  # Added 2026-07-13 at user request for an unbiased, no-region-preference
+  # exp2 strategy comparison. Excludes the non-EEG "vehicle position" channel.
+  fp1_only:
+    - Fp1
+  fp2_only:
+    - Fp2
+  f3_only:
+    - F3
+  f4_only:
+    - F4
+  all_channel:
+    - Fp1
+    - Fp2
+    - F7
+    - F3
+    - Fz
+    - F4
+    - F8
+    - FT7
+    - FC3
+    - FCz
+    - FC4
+    - FT8
+    - T3
+    - C3
+    - Cz
+    - C4
+    - T4
+    - TP7
+    - CP3
+    - CPz
+    - CP4
+    - TP8
+    - A1
+    - T5
+    - P3
+    - Pz
+    - P4
+    - T6
+    - A2
+    - O1
+    - Oz
+    - O2

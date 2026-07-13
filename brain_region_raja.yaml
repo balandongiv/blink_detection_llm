@@ -1,40 +1,57 @@
 Note:
   midline_or_outside:
     - 11
+    - 129
     - 62
     - 75
-    - href
-    - F7
-    - T7
-    - T8
-    - F8
+
 egi_pair:
-  - fp1: 22
-  - af3: 23
-  - f3: 24
-  - fp2: 9
-  - af4: 3
-  - f4: 124
-  - fc5: 28
-  - c3: 26
-  - fc1: 13
-  - fc2: 112
-  - fc6: 117
-  - c4: 104
-  - cp5: 47
-  - cp1: 37
-  - cp2: 87
-  - cp6: 98
+  - cz: 129
   - p3: 60
-  - p7: 59
-  - po3: 67
   - o1: 70
+  - po3: 67
+  - pz: 62
+  - oz: 75
+  - o2: 84
   - po4: 77
+  - cp2: 87
   - p4: 85
   - p8: 91
-  - o2: 84
+  - cp6: 98
+  - c4: 104
+  - t8: 109
+  - fc6: 117
+  - f4: 124
+  - f8: 122
+  - fc2: 112
+  - af4: 3
+  - fp2: 9
+  - fz: 11
+  - fc1: 13
+  - af3: 23
+  - fp1: 22
+  - f3: 24
+  - f7: 33
+  - fc5: 28
+  - cp1: 37
+  - c3: 26
+  - t7: 40
+  - cp5: 47
+  - p7: 59
 
 eeg_regions:
+  fp1_only:
+    - 22
+  fp2_only:
+    - 9
+  f3_only:
+    - 24
+  f4_only:
+    - 124
+  af3_only:
+    - 23
+  af4_only:
+    - 3
   frontal:
     - 3
     - 9
@@ -95,3 +112,43 @@ eeg_regions:
     - 83
     - 85
     - 91
+  # The 32-channel standard 10-20-equivalent montage on the 128-channel EGI
+  # HydroCel net (user-provided mapping, includes Fz/Cz/Pz-equivalent + F7/T7/
+  # T8/F8 that the regions above deliberately exclude). Not used as its own
+  # selection group — it exists so that "all" (build_selection_groups:
+  # union(*resolved.keys())) is this 32-channel montage rather than just the
+  # union of the curated 24-channel regions above. Added 2026-07-13 at user
+  # request for an unbiased, no-region-preference exp2 strategy comparison.
+  all_channel:
+    - 129
+    - 60
+    - 70
+    - 67
+    - 62
+    - 75
+    - 84
+    - 77
+    - 87
+    - 85
+    - 91
+    - 98
+    - 104
+    - 109
+    - 117
+    - 124
+    - 122
+    - 112
+    - 3
+    - 9
+    - 11
+    - 13
+    - 23
+    - 22
+    - 24
+    - 33
+    - 28
+    - 37
+    - 26
+    - 40
+    - 47
+    - 59

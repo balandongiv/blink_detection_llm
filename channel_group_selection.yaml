@@ -7,21 +7,31 @@
 #
 # HARD-APPROVAL GATE
 # ------------------
-#   * Default is "all" (the full per-dataset brain-region montage). With "all",
-#     exp2..exp8 behave exactly as before — no winner has been chosen yet.
+#   * Default is "all_channel" (the full per-dataset brain-region montage). With
+#     "all_channel", exp2..exp8 behave exactly as before — no winner has been
+#     chosen yet.
 #   * To activate a specific group you MUST set the group AND fill `approved_by`
-#     (a human name or agent id) and `approved_date`. Selecting any non-"all"
-#     group while `approved_by` is empty is REJECTED at runtime (the experiments
-#     raise an error). This forces an explicit, reviewable human/agent decision.
+#     (a human name or agent id) and `approved_date`. Selecting any non-
+#     "all_channel" group while `approved_by` is empty is REJECTED at runtime
+#     (the experiments raise an error). This forces an explicit, reviewable
+#     human/agent decision.
 #
 # Allowed group values (see exp1 output / channel_ablation_utils.build_selection_groups):
-#   all, frontal, frontal_left, frontal_right, central, parietal, occipital,
-#   posterior, single:<CHANNEL_NAME>
+#   all_channel, frontal, frontal_left, frontal_right, central, parietal,
+#   occipital, posterior, single:<CHANNEL_NAME>
 
 stage_a_channel_group:
-  raja: all
-  cao2018: all
+  raja: all_channel
+  cao2018: all_channel
 
-approved_by: null      # e.g. "rpb" or an agent id — REQUIRED for any non-"all" group
-approved_date: null    # e.g. 2026-06-23
-notes: ""              # rationale: which criteria drove the choice (F1, #channels, FPR, ...)
+approved_by: rpb        # set via agent session at user's explicit request, 2026-07-13
+approved_date: 2026-07-13
+notes: >
+  Set to "all_channel" at user's explicit request 2026-07-13: use every EEG
+  channel for both datasets (32 for Cao2018, 32 for Raja — the standard 10-20-
+  equivalent montage on the 128-channel EGI net, per the user-provided
+  all_channel entry in brain_region_raja.yaml) so the strategy comparison isn't
+  biased toward any one region. This is the same channel set exp1's
+  "all_channel" selection uses (via load_cao_raw/load_raja_raw with
+  brain_region_yaml set), enabling a direct sanity-check comparison of exp1 vs
+  exp2 Proposed-Med numbers.
