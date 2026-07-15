@@ -53,7 +53,7 @@ DEFAULT_RULES = ("any",)
 def build_selection_groups(
     region_map: dict[str, list],
     available_ch_names: list[str],
-    # include_single_frontal: bool = True,
+    include_single_frontal: bool = True,
 ) -> dict[str, list[str]]:
     """Return ``{group_name: [actual_channel_name, ...]}`` selection groups."""
     resolved = {
@@ -79,7 +79,7 @@ def build_selection_groups(
     )
     occipital = union("occipital_left", "occipital_right")
 
-    groups: dict[str, list[str]] = {"all": union(*resolved.keys())}
+    groups: dict[str, list[str]] = {"all_channel": union(*resolved.keys())}
     for name, chs in (
         ("frontal", frontal),
         ("frontal_left", resolved.get("frontal_left", [])),
@@ -101,6 +101,14 @@ def build_selection_groups(
     ):
         if chs:
             groups[name] = chs
+
+    # Any region explicitly named "<label>_only" in the brain-region YAML (e.g.
+    # fp1_only, af3_only) becomes its own selection group, independent of the
+    # single:<ch> auto-generation above. "_only" is purely a YAML naming
+    # convention for single-channel regions; downstream plotting code strips it.
+    for name, chs in resolved.items():
+        if name.endswith("_only") and chs:
+            groups.setdefault(name, chs)
 
     return {name: chs for name, chs in groups.items() if chs}
 
@@ -124,7 +132,6 @@ def selection_group_names(
     available = resolve_channel_names(brain_channels, raw.ch_names)
     groups = build_selection_groups(
         region_map, available,
-        # include_single_frontal=include_single_frontal,
     )
     names = list(groups)
 
@@ -210,7 +217,6 @@ def run_one_session(
 
     groups = build_selection_groups(
         region_map, list(raw.ch_names),
-        # include_single_frontal=include_single_frontal,
     )
     if groups_filter is not None:
         groups = {name: chs for name, chs in groups.items() if name in groups_filter}
