@@ -28,6 +28,22 @@ Pairwise Wilcoxon signed-rank tests on matched session-level F1 scores.
 Proposed vs baselines: one-tailed (alternative="greater").
 Proposed-Mean vs Proposed-Med: two-tailed.
 Bonferroni correction: n_pairs = C(5, 2) = 10.
+
+Epoch-health filtering (USE_EPOCH_HEALTH / --use-epoch-health)
+----------------------------------------------------------------
+Defaults to OFF (every epoch is scored), matching exp1_channel_selection_*.py's
+default of ``use_epoch_health=False``. This was discovered and fixed 2026-07-13:
+exp2 previously called ``valid_epoch_indices_for_pair`` unconditionally, which
+for Cao2018 always drops "unhealthy" epochs (some sessions lose 80-92% of
+epochs, e.g. S04/051130m: 125 -> 10 valid) — this silently inflated Cao2018's
+Proposed-Med F1 to ~0.90 vs exp1's ~0.80 on the identical "frontal" channel
+group (Raja was barely affected, ~0-8% epoch loss either way, and matched
+exp1 within noise). Epoch-health on/off is meant to be a deliberate
+experimental variable studied by exp7 (health_on vs health_off), not a silent
+default baked into the exp2 baseline — so leave this off unless you are
+intentionally reproducing exp7's health_on condition, and re-run exp1 with
+--use-epoch-health too if you turn it on here, or the two experiments will no
+longer be comparable on the same channel group.
 """
 
 from __future__ import annotations
@@ -78,6 +94,18 @@ _CAO     = get_cao_paths()
 # ---------------------------------------------------------------------------
 USE_MULTITHREAD: bool = True
 VERBOSE: bool = True
+
+# Epoch-health filtering — OFF by default so exp2 stays comparable to exp1
+# (exp1_channel_selection_*.py defaults use_epoch_health=False: it scores every
+# epoch, not just "healthy" ones). Cao2018's health filter is aggressive — some
+# sessions drop 80-92% of epochs as "unhealthy" (e.g. S04/051130m: 125 -> 10
+# valid) — so leaving this True here silently evaluates on a much easier subset
+# and inflates F1 relative to exp1 (measured: Cao2018 Proposed-Med F1 0.899 vs
+# exp1's 0.796 on the same "frontal" channel group, while Raja — which loses
+# only ~0-8% of epochs either way — matched exp1 within noise). Epoch-health
+# on/off is meant to be a deliberate experimental variable (see exp7), not a
+# silent default baked into the exp2 baseline comparison.
+USE_EPOCH_HEALTH: bool = False
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -230,7 +258,10 @@ def run_one(pair: dict, condition: str) -> dict:
         resample_rate=RESAMPLE_RATE,
     )
     prepared = apply_stage_a_channel_group(prepared, pair["dataset"])
-    valid_epoch_indices = valid_epoch_indices_for_pair(pair, epochs, EPOCH_DURATION_S)
+    if USE_EPOCH_HEALTH:
+        valid_epoch_indices = valid_epoch_indices_for_pair(pair, epochs, EPOCH_DURATION_S)
+    else:
+        valid_epoch_indices = list(range(len(epochs)))
     channel_results = _CONDITION_RUNNERS[condition](prepared, valid_epoch_indices)
 
     gt_annotations = load_gt_annotations_for_pair(pair, EPOCH_DURATION_S, valid_epoch_indices)
@@ -434,6 +465,13 @@ def _parse_args() -> argparse.Namespace:
         help="Limit Cao2018 sessions after discovery.",
     )
     p.add_argument(
+        "--use-epoch-health",
+        action="store_true",
+        help="Exclude low-health epochs (epoch_health.csv) before scoring, matching "
+             "exp1's --use-epoch-health. OFF by default so exp2 tallies with exp1's "
+             "default (health filtering off) — see USE_EPOCH_HEALTH docstring above.",
+    )
+    p.add_argument(
         "--visible-conditions-only",
         action="store_true",
         help="Run the four visible conditions and exclude DBO.",
@@ -532,14 +570,23 @@ def _collect_tasks(all_pairs: list[dict]) -> list[tuple[dict, str]]:
 def main() -> None:
     args = _parse_args()
 
-    global USE_MULTITHREAD, VERBOSE, EPOCH_DURATION_S, N_EPOCHS, RUN_CONDITIONS
+    global USE_MULTITHREAD, VERBOSE, EPOCH_DURATION_S, N_EPOCHS, RUN_CONDITIONS, USE_EPOCH_HEALTH
     USE_MULTITHREAD = not args.no_multithread
     VERBOSE = not args.quiet
     EPOCH_DURATION_S = float(args.epoch_duration_s)
     N_EPOCHS = args.n_epochs
     RUN_CONDITIONS = VISIBLE_CONDITIONS if args.visible_conditions_only else CONDITIONS
+    USE_EPOCH_HEALTH = args.use_epoch_health
 
     setup_tutorial_logging()
+    if USE_EPOCH_HEALTH:
+        logger.warning(
+            "--use-epoch-health is ON: Cao2018 sessions will have low-health epochs "
+            "dropped before scoring (some sessions lose 80-92%% of epochs). This "
+            "diverges from exp1_channel_selection_*.py's default (health filtering "
+            "off) — exp2's Proposed-Med numbers will NOT be directly comparable to "
+            "exp1's unless exp1 is also re-run with --use-epoch-health."
+        )
     raja_pairs  = discover_raja_pairs(RAJA_ANNOTATION_BASE, RAJA_PROCESSED_BASE)
     cao_pairs = discover_cao_pairs(CAO_DATASET_ROOT)
     if args.max_cao_sessions is not None:
