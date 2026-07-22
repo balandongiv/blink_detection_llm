@@ -15,7 +15,8 @@ Channels come from the brain_region_yaml specified in paths.yaml.
 
 Config files:
   paths.yaml                               — machine-specific dataset paths
-  experiment_script/exp1_channel_selection_cao2018.yaml  — experiment parameters
+  experiment_script/setup/exp1_channel_selection.yaml  — experiment parameters
+                                              (shared with exp1_a_channel_selection_raja.py)
 
 Resume support
 --------------
@@ -57,7 +58,7 @@ from src.utils.experiment_utils import csv_list as _csv_list, log_run_config, se
 
 logger = logging.getLogger(__name__)
 
-_EXP_YAML_PATH = EXP_SETUP_DIR / (Path(__file__).stem + ".yaml")
+_EXP_YAML_PATH = EXP_SETUP_DIR / "exp1_channel_selection.yaml"
 _PATHS_YAML = EXP_SETUP_DIR / "exp_path.yaml"
 print(f"[exp1_channel_selection_cao2018] loading exp config from: {_EXP_YAML_PATH}")
 _EXP_CFG = load_exp_config(_EXP_YAML_PATH)
@@ -69,7 +70,7 @@ _CAO     = get_cao_paths()
 print(f"[exp1_channel_selection_cao2018] cao paths: {_CAO}")
 
 
-DATASET          = _EXP_CFG["dataset"]
+DATASET          = "cao2018"
 CAO_REGION_YAML  = _CAO["brain_region_yaml"]
 CAO_DATASET_ROOT = _CAO["dataset_root"]
 EPOCH_DURATION_S = float(_EXP_CFG["epoch_duration_s"])
@@ -122,7 +123,7 @@ def main() -> None:
         cao_dataset_root=CAO_DATASET_ROOT,
         filter_low=FILTER_LOW,
         filter_high=FILTER_HIGH,
-        exp_setup_yaml=EXP_SETUP_DIR / (Path(__file__).stem + ".yaml"),
+        exp_setup_yaml=EXP_SETUP_DIR / "exp1_channel_selection.yaml",
     )
 
     pairs = discover_cao_pairs(CAO_DATASET_ROOT)

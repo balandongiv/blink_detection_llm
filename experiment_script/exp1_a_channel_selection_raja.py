@@ -15,7 +15,8 @@ Channels come from the brain_region_yaml specified in paths.yaml.
 
 Config files:
   paths.yaml                              — machine-specific dataset paths
-  experiment_script/exp1_channel_selection_raja.yaml  — experiment parameters
+  experiment_script/setup/exp1_channel_selection.yaml  — experiment parameters
+                                             (shared with exp1_a_channel_selection_cao2018.py)
 
 Resume support
 --------------
@@ -58,7 +59,7 @@ from src.utils.experiment_utils import csv_list as _csv_list, log_run_config, se
 
 logger = logging.getLogger(__name__)
 
-_EXP_YAML_PATH = EXP_SETUP_DIR / (Path(__file__).stem + ".yaml")
+_EXP_YAML_PATH = EXP_SETUP_DIR / "exp1_channel_selection.yaml"
 _PATHS_YAML = EXP_SETUP_DIR / "exp_path.yaml"
 print(f"[exp1_channel_selection_raja] loading exp config from: {_EXP_YAML_PATH}")
 _EXP_CFG  = load_exp_config(_EXP_YAML_PATH)
@@ -70,7 +71,7 @@ _RAJA     = get_raja_paths()
 print(f"[exp1_channel_selection_raja] raja paths: {_RAJA}")
 
 
-DATASET              = _EXP_CFG["dataset"]
+DATASET              = "raja"
 RAJA_REGION_YAML     = _RAJA["brain_region_yaml"]
 RAJA_ANNOTATION_BASE = _RAJA["annotation_base"]
 RAJA_PROCESSED_BASE  = _RAJA["processed_base"]
@@ -126,7 +127,7 @@ def main() -> None:
         raja_processed_base=RAJA_PROCESSED_BASE,
         filter_low=FILTER_LOW,
         filter_high=FILTER_HIGH,
-        exp_setup_yaml=EXP_SETUP_DIR / (Path(__file__).stem + ".yaml"),
+        exp_setup_yaml=EXP_SETUP_DIR / "exp1_channel_selection.yaml",
     )
 
     pairs = discover_raja_pairs(RAJA_ANNOTATION_BASE, RAJA_PROCESSED_BASE)

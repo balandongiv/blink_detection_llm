@@ -4,3 +4,23 @@ filter_high: 20.0
 resample_rate: 100
 reference_epoch_duration_s: 30.0
 epoch_durations_s: [10, 20, 30, 40, 50, 60, 120]
+center_methods: [median, mean]
+autoreject_random_state: 42
+
+# Channel-selection groups to sweep, per dataset — the best channels/regions from
+# exp1 (frontal region + its per-hemisphere halves + the top single channels).
+groups:
+  raja:
+    - single:E22
+    - single:E9
+    - single:E3
+    - single:E23
+    - frontal
+    - frontal_left
+    - frontal_right
+  cao2018:
+    - single:FP1
+    - single:FP2
+    - frontal
+    - frontal_left
+    - frontal_right
