@@ -2,3 +2,15 @@ epoch_duration_s: 30.0
 std_threshold: 3.0
 filter_low: 1.0
 filter_high: 20.0
+resample_rate: 100
+use_epoch_health: false
+
+# Strategy nathanael_mne (MNE-annot) parameters
+mne_half_window_s: 0.10
+mne_low_freq: 1.0
+mne_high_freq: 20.0
+mne_thresh: null
+
+# Strategy Proposed-Med (double-thresholding) parameters
+autoreject_random_state: 42
+min_flagged_epochs: 1
