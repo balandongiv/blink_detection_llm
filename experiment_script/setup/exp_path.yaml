@@ -6,7 +6,7 @@
 # vs runs/ mismatch between a primary and its plot script previously made exp1's plots
 # silently fail to generate.
 
-out_dir: runs_publication
+out_dir: publication_results
 selection_out_subdir: channel_selection
 
 out_dirs:

@@ -80,7 +80,7 @@ STD_THRESHOLD        = float(_EXP_CFG["std_threshold"])
 FILTER_LOW           = float(_EXP_CFG.get("filter_low", 1.0))
 FILTER_HIGH          = float(_EXP_CFG.get("filter_high", 20.0))
 RESAMPLE_RATE        = float(_EXP_CFG.get("resample_rate", 100.0))
-DEFAULT_OUT_DIR      = REPO_ROOT / Path(_PATH_CFG["raja_out_dir"])
+DEFAULT_OUT_DIR      = REPO_ROOT / Path(_PATH_CFG["out_dirs"]["exp1"]["raja"])
 
 
 def _parse_args() -> argparse.Namespace:
