@@ -1,6 +1,30 @@
-epoch_duration_s: 60.0
+epoch_duration_s: 30.0
 std_threshold: 3.0
 center_method: median
 min_flagged_epochs: 1
 filter_low: 1.0
 filter_high: 20.0
+resample_rate: 100
+autoreject_random_state: 42
+
+# IoU matching thresholds to sweep — detection runs once per (session, group);
+# the same channel_results are re-scored at each threshold (cheap sweep).
+iou_thresholds: [0.0, 0.1, 0.2, 0.3, 0.5]
+
+# Channel-selection groups to sweep, per dataset — the best channels/regions from
+# exp1 (frontal region + its per-hemisphere halves + the top single channels).
+groups:
+  raja:
+    - single:E22
+    - single:E9
+    - single:E3
+    - single:E23
+    - frontal
+    - frontal_left
+    - frontal_right
+  cao2018:
+    - single:FP1
+    - single:FP2
+    - frontal
+    - frontal_left
+    - frontal_right
