@@ -1,5 +1,11 @@
 epoch_duration_s: 30.0
 std_threshold: 3.0
+
+conditions:
+  - BLINKER-concat
+  - MNE-annot
+  - Proposed-Mean
+  - Proposed-Med
 filter_low: 1.0
 filter_high: 20.0
 resample_rate: 100
@@ -14,3 +20,4 @@ mne_thresh: null
 # Strategy Proposed-Med (double-thresholding) parameters
 autoreject_random_state: 42
 min_flagged_epochs: 1
+verbose: true

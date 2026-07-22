@@ -1,6 +1,6 @@
 # Stage-A channel-selection group for the downstream experiments (exp2..exp8).
 #
-# Experiment 1 (channel selection) — experiment_script/exp1_channel_selection_*.py,
+# Experiment 1 (channel selection) — experiment_script/exp1_a_channel_selection_*.py,
 # designed per experiment_script/extende_experiment.md — compares Stage-A channel
 # groups and identifies the best one. The chosen winner is recorded HERE so that
 # exp2..exp8 run Stage A (and the proposed pipeline) on the SAME channel set.

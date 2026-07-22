@@ -63,6 +63,21 @@ FILTER_HIGH      = float(_EXP_CFG.get("filter_high", 20.0))
 RESAMPLE_RATE    = int(_EXP_CFG.get("resample_rate", 100))
 DEFAULT_OUT_DIR  = REPO_ROOT / "runs" / "exp2_raja"
 
+# This script is the authority for the detector conditions/parameters — the
+# condition runners in src/exp/exp2_strategy_conditions.py take these as a
+# ``settings`` dict rather than reading the yaml themselves.
+CONDITIONS = _EXP_CFG["conditions"]
+DETECTOR_SETTINGS = {
+    "mne_half_window_s":      float(_EXP_CFG["mne_half_window_s"]),
+    "mne_low_freq":           float(_EXP_CFG["mne_low_freq"]),
+    "mne_high_freq":          float(_EXP_CFG["mne_high_freq"]),
+    "mne_thresh":             _EXP_CFG["mne_thresh"],
+    "autoreject_random_state": int(_EXP_CFG["autoreject_random_state"]),
+    "std_threshold":          float(_EXP_CFG["std_threshold"]),
+    "min_flagged_epochs":     int(_EXP_CFG["min_flagged_epochs"]),
+    "verbose":                bool(_EXP_CFG["verbose"]),
+}
+
 # all_channel = every EEG channel (32 for Raja), matching channel_group_selection.yaml's
 # gate so exp2 stays on the same channel set as exp1/exp2's other scripts.
 DEFAULT_GROUPS = "all_channel"
@@ -109,6 +124,8 @@ def main() -> None:
         filter_low=FILTER_LOW,
         filter_high=FILTER_HIGH,
         resample_rate=RESAMPLE_RATE,
+        conditions=CONDITIONS,
+        detector_settings=DETECTOR_SETTINGS,
     )
     logger.info("groups_filter = %s", sorted(groups_filter) if groups_filter is not None else "all")
     logger.info("session_kwargs = %s", session_kwargs)
