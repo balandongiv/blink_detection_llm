@@ -5,5 +5,5 @@
 
 default_runs_dir: runs_publication
 selection_out_subdir: channel_selection
-raja_out_dir: runs0/exp1_channel_raja
-cao2018_out_dir: runs0/exp1_channel_cao
+raja_out_dir: runs_publication/exp1_channel_raja
+cao2018_out_dir: runs_publication/exp1_channel_cao
