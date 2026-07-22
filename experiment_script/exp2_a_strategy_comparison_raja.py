@@ -91,9 +91,9 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--overwrite", action="store_true",
                    help="Re-run sessions that already have a cached result CSV "
                         "(default: skip them and resume).")
-    p.add_argument("--max-sessions", type=int, default=5,
+    p.add_argument("--max-sessions", type=int, default=None,
                    help="Limit to the first N discovered sessions (None = all).")
-    p.add_argument("--n-jobs", type=int, default=5,
+    p.add_argument("--n-jobs", type=int, default=10,
                    help="Worker processes for the session sweep (default: %(default)s "
                         "— kept modest to avoid Windows handle exhaustion).")
     p.add_argument("--groups", type=_csv_list, default=DEFAULT_GROUPS,
