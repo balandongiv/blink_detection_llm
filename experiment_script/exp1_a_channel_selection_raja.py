@@ -1,4 +1,4 @@
-"""Experiment 1 (Cao2018): channel-selection ablation — full 3-stage pipeline per group.
+"""Experiment 1 (Raja): channel-selection ablation — full 3-stage pipeline per group.
 
 Run order:
   1. Run this script first to generate the exp1 per-session results.
@@ -14,8 +14,8 @@ evaluated on Stage-A epoch selection and downstream event detection.
 Channels come from the brain_region_yaml specified in paths.yaml.
 
 Config files:
-  paths.yaml                               — machine-specific dataset paths
-  experiment_script/exp1_channel_selection_cao2018.yaml  — experiment parameters
+  paths.yaml                              — machine-specific dataset paths
+  experiment_script/exp1_channel_selection_raja.yaml  — experiment parameters
 
 Resume support
 --------------
@@ -25,17 +25,16 @@ already have a cached CSV; pass ``--overwrite`` to force a full recompute.
 
 Full sweep::
 
-    python experiment_script/exp1_channel_selection_cao2018.py --out-dir runs/exp1_channel_cao
+    python experiment_script/exp1_a_channel_selection_raja.py --out-dir runs/exp1_channel_raja
 
 Quick smoke test::
 
-    python experiment_script/exp1_channel_selection_cao2018.py --max-sessions 1 --n-jobs 1
+    python experiment_script/exp1_a_channel_selection_raja.py --max-sessions 1 --n-jobs 1
 """
 
 from __future__ import annotations
 
 import argparse
-import functools
 import logging
 import os
 import sys
@@ -51,35 +50,36 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from src.exp.session_worker import exp1_write_results, process_one_session as _process_one_session
+from src.utils.channel_ablation_utils import DEFAULT_CENTER_METHODS
+from src.exp.session_worker import exp1_write_results, run_channel_selection_session_sweep
 from src.project_paths import EXP_SETUP_DIR, get_cao_paths, get_raja_paths, load_exp_config
-from src.utils.dataset_discovery import discover_cao_pairs
+from src.utils.dataset_discovery import discover_raja_pairs
 from src.utils.experiment_utils import csv_list as _csv_list, log_run_config, setup_tutorial_logging
-from src.utils.session_sweep import run_session_sweep
 
 logger = logging.getLogger(__name__)
 
 _EXP_YAML_PATH = EXP_SETUP_DIR / (Path(__file__).stem + ".yaml")
 _PATHS_YAML = EXP_SETUP_DIR / "exp_path.yaml"
-print(f"[exp1_channel_selection_cao2018] loading exp config from: {_EXP_YAML_PATH}")
-_EXP_CFG = load_exp_config(_EXP_YAML_PATH)
-print(f"[exp1_channel_selection_cao2018] exp config values: {_EXP_CFG}")
-print(f"[exp1_channel_selection_cao2018] loading path defaults from: {_PATHS_YAML}")
+print(f"[exp1_channel_selection_raja] loading exp config from: {_EXP_YAML_PATH}")
+_EXP_CFG  = load_exp_config(_EXP_YAML_PATH)
+print(f"[exp1_channel_selection_raja] exp config values: {_EXP_CFG}")
+print(f"[exp1_channel_selection_raja] loading path defaults from: {_PATHS_YAML}")
 _PATH_CFG = load_exp_config(_PATHS_YAML)
-print(f"[exp1_channel_selection_cao2018] path config values: {_PATH_CFG}")
-_CAO     = get_cao_paths()
-print(f"[exp1_channel_selection_cao2018] cao paths: {_CAO}")
+print(f"[exp1_channel_selection_raja] path config values: {_PATH_CFG}")
+_RAJA     = get_raja_paths()
+print(f"[exp1_channel_selection_raja] raja paths: {_RAJA}")
 
 
-DATASET          = _EXP_CFG["dataset"]
-CAO_REGION_YAML  = _CAO["brain_region_yaml"]
-CAO_DATASET_ROOT = _CAO["dataset_root"]
-EPOCH_DURATION_S = float(_EXP_CFG["epoch_duration_s"])
-STD_THRESHOLD    = float(_EXP_CFG["std_threshold"])
-FILTER_LOW       = float(_EXP_CFG.get("filter_low", 1.0))
-FILTER_HIGH      = float(_EXP_CFG.get("filter_high", 20.0))
-RESAMPLE_RATE    = float(_EXP_CFG.get("resample_rate", 100.0))
-DEFAULT_OUT_DIR  = REPO_ROOT / Path(_PATH_CFG["cao2018_out_dir"])
+DATASET              = _EXP_CFG["dataset"]
+RAJA_REGION_YAML     = _RAJA["brain_region_yaml"]
+RAJA_ANNOTATION_BASE = _RAJA["annotation_base"]
+RAJA_PROCESSED_BASE  = _RAJA["processed_base"]
+EPOCH_DURATION_S     = float(_EXP_CFG["epoch_duration_s"])
+STD_THRESHOLD        = float(_EXP_CFG["std_threshold"])
+FILTER_LOW           = float(_EXP_CFG.get("filter_low", 1.0))
+FILTER_HIGH          = float(_EXP_CFG.get("filter_high", 20.0))
+RESAMPLE_RATE        = float(_EXP_CFG.get("resample_rate", 100.0))
+DEFAULT_OUT_DIR      = REPO_ROOT / Path(_PATH_CFG["raja_out_dir"])
 
 
 def _parse_args() -> argparse.Namespace:
@@ -96,21 +96,22 @@ def _parse_args() -> argparse.Namespace:
                         "(default: skip them and resume).")
     p.add_argument("--max-sessions", type=int, default=None,
                    help="Limit to the first N discovered sessions (None = all).")
-    p.add_argument("--n-jobs", type=int, default=20,
+    p.add_argument("--n-jobs", type=int, default=16,
                    help="Worker processes for the session sweep (default: cpu_count - 1).")
-
     p.add_argument("--groups", type=_csv_list, default="all",
                    help="Comma-separated channel-selection groups to run "
                         "(default: all groups, e.g. all,frontal,frontal_left,...).")
 
     p.add_argument("--use-epoch-health", action="store_true", default=False,
                    help="Exclude low-health epochs (epoch_health.csv) before scoring.")
+
     p.add_argument(
         "--verbose",
         action="store_true",
         default=True,
         help="Enable extra per-session logging.",
     )
+
     return p.parse_args()
 
 
@@ -120,26 +121,27 @@ def main() -> None:
     log_run_config(
         logger, args,
         dataset=DATASET,
-        cao_region_yaml=CAO_REGION_YAML,
-        cao_dataset_root=CAO_DATASET_ROOT,
+        raja_region_yaml=RAJA_REGION_YAML,
+        raja_annotation_base=RAJA_ANNOTATION_BASE,
+        raja_processed_base=RAJA_PROCESSED_BASE,
         filter_low=FILTER_LOW,
         filter_high=FILTER_HIGH,
         exp_setup_yaml=EXP_SETUP_DIR / (Path(__file__).stem + ".yaml"),
     )
 
-    pairs = discover_cao_pairs(CAO_DATASET_ROOT)
+    pairs = discover_raja_pairs(RAJA_ANNOTATION_BASE, RAJA_PROCESSED_BASE)
     if not pairs:
-        print("No Cao2018 sessions found — check paths.yaml.")
+        print("No Raja sessions found — check paths.yaml.")
         return
 
-    logger.info("Cao2018 sessions discovered: %d", len(pairs))
+    logger.info("Raja sessions discovered: %d", len(pairs))
     if args.max_sessions is not None:
         pairs = pairs[:args.max_sessions]
         logger.info("--max-sessions=%d → limiting to %d session(s)", args.max_sessions, len(pairs))
 
     groups_filter = set(args.groups) if args.groups else None
     session_kwargs = dict(
-        region_yaml=CAO_REGION_YAML,
+        region_yaml=RAJA_REGION_YAML,
         epoch_duration_s=float(args.epoch_duration_s),
         std_threshold=float(args.std_threshold),
         center_methods=tuple(args.center_methods),
@@ -154,13 +156,11 @@ def main() -> None:
     logger.info("session_kwargs = %s", session_kwargs)
     logger.info("out_dir = %s  overwrite=%s  n_jobs=%s", args.out_dir, args.overwrite, args.n_jobs)
 
-    worker = functools.partial(
-        _process_one_session, groups_filter=groups_filter, session_kwargs=session_kwargs,
-    )
-
     out_dir: Path = args.out_dir
-    all_metrics, errors = run_session_sweep(
-        pairs, out_dir, worker, overwrite=args.overwrite, n_jobs=args.n_jobs,
+    all_metrics, errors = run_channel_selection_session_sweep(
+        pairs, out_dir,
+        overwrite=args.overwrite, n_jobs=args.n_jobs,
+        groups_filter=groups_filter, session_kwargs=session_kwargs,
     )
 
     exp1_write_results(

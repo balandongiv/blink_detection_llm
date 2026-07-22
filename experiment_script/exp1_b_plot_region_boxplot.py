@@ -11,7 +11,7 @@ Raja and Cao2018 are drawn side by side (hue) in a single figure.
 Source: runs0/exp1_channel_cao/exp1_channel_selection_cao2018_results.csv
         runs0/exp1_channel_raja/exp1_channel_selection_raja_results.csv
 
-Produces: writing/figures/fig_region_boxplot.pdf, .png
+Produces: writing/figures/fig_exp1_region_boxplot.pdf, .png
 
 Run inside conda env double_threshold_algo.
 """
@@ -154,9 +154,9 @@ else:
           f"(got {len(box_info)}); skipping channel annotation")
 
 fig.tight_layout()
-fig.savefig(FIGDIR / "fig_region_boxplot.pdf", bbox_inches="tight")
-fig.savefig(FIGDIR / "fig_region_boxplot.png", dpi=150, bbox_inches="tight")
-print("wrote fig_region_boxplot.pdf/.png")
+fig.savefig(FIGDIR / "fig_exp1_region_boxplot.pdf", bbox_inches="tight")
+fig.savefig(FIGDIR / "fig_exp1_region_boxplot.png", dpi=150, bbox_inches="tight")
+print("wrote fig_exp1_region_boxplot.pdf/.png")
 
 # console summary
 print("\nmedians:")

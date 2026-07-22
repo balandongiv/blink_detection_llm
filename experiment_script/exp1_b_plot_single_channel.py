@@ -1,6 +1,6 @@
 """Box plot of session-level macro F1 for the single-channel-only selection groups.
 
-Complements exp1_plot_region_boxplot.py: instead of whole-region / hemisphere
+Complements exp1_b_plot_region_boxplot.py: instead of whole-region / hemisphere
 groups, this isolates each "<label>_only" selection (fp1_only, fp2_only, f3_only,
 f4_only, and for Raja also af3_only, af4_only — see eeg_regions in
 brain_region_{cao2018,raja}.yaml) so the standalone contribution of a single
@@ -12,7 +12,7 @@ Raja and Cao2018 are drawn side by side (hue) in a single figure.
 Source: runs0/exp1_channel_cao/exp1_channel_selection_cao2018_results.csv
         runs0/exp1_channel_raja/exp1_channel_selection_raja_results.csv
 
-Produces: writing/figures/fig_single_channel_boxplot.pdf, .png
+Produces: writing/figures/fig_exp1_single_channel_boxplot.pdf, .png
 
 Run inside conda env double_threshold_algo.
 """
@@ -153,9 +153,9 @@ for cx, ds_name in box_info:
              rotation=0, color=color[ds_name])
 
 fig.tight_layout()
-fig.savefig(FIGDIR / "fig_single_channel_boxplot.pdf", bbox_inches="tight")
-fig.savefig(FIGDIR / "fig_single_channel_boxplot.png", dpi=150, bbox_inches="tight")
-print("wrote fig_single_channel_boxplot.pdf/.png")
+fig.savefig(FIGDIR / "fig_exp1_single_channel_boxplot.pdf", bbox_inches="tight")
+fig.savefig(FIGDIR / "fig_exp1_single_channel_boxplot.png", dpi=150, bbox_inches="tight")
+print("wrote fig_exp1_single_channel_boxplot.pdf/.png")
 
 # console summary
 print("\nmedians:")

@@ -1,7 +1,7 @@
 """Post-Exp1 channel selection.
 
 Run sequence:
-  1. exp1_channel_selection_raja.py and exp1_channel_selection_cao2018.py
+  1. exp1_a_channel_selection_raja.py and exp1_a_channel_selection_cao2018.py
      run first and call exp1_write_results(), which writes the exp1
      results CSVs and summary CSVs.
   2. exp1_step_b_get_best_region_channel.py runs after those summary CSVs exist.
@@ -142,8 +142,8 @@ def main() -> None:
     exp1_cao = runs_dir / "exp1_channel_cao" / "exp1_channel_selection_cao2018_summary.csv"
     out_dir = runs_dir / _PATH_CFG["selection_out_subdir"]
 
-    for tag, path, runner in [("Raja", exp1_raja, "exp1_channel_selection_raja.py"),
-                              ("Cao2018", exp1_cao, "exp1_channel_selection_cao2018.py")]:
+    for tag, path, runner in [("Raja", exp1_raja, "exp1_a_channel_selection_raja.py"),
+                              ("Cao2018", exp1_cao, "exp1_a_channel_selection_cao2018.py")]:
         if not path.exists():
             print(f"ERROR: Exp1 {tag} summary not found: {path}")
             print(f"Run experiment_script/{runner} first (writing into {runs_name}/).")
