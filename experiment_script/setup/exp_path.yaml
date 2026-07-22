@@ -1,9 +1,21 @@
-# Shared path defaults for the Exp1 channel-selection workflow.
+# Shared output-directory paths for the exp1/exp2/exp3 pipeline.
 #
-# The exp1 runners read their default --out-dir from this file, and the
-# post-Exp1 selector uses the same file for its default input/output locations.
+# Single source of truth: every exp<N>_a_* primary reads its --out-dir default from
+# out_dirs.exp<N>.<dataset> here, and every exp<N>_b_* plot/analysis script reads its
+# input directory from the SAME keys. Never hardcode these paths in Python — a runs0/
+# vs runs/ mismatch between a primary and its plot script previously made exp1's plots
+# silently fail to generate.
 
-default_runs_dir: runs_publication
+out_dir: runs_publication
 selection_out_subdir: channel_selection
-raja_out_dir: runs_publication/exp1_channel_raja
-cao2018_out_dir: runs_publication/exp1_channel_cao
+
+out_dirs:
+  exp1:
+    raja: ${out_dir}/exp1_channel_raja
+    cao2018: ${out_dir}/exp1_channel_cao
+  exp2:
+    raja: ${out_dir}/exp2_raja
+    cao2018: ${out_dir}/exp2_cao
+  exp3:
+    raja: ${out_dir}/exp3_raja
+    cao2018: ${out_dir}/exp3_cao
