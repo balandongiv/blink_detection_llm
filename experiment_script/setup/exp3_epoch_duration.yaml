@@ -8,7 +8,10 @@ center_methods: [median, mean]
 autoreject_random_state: 42
 
 # Channel-selection groups to sweep, per dataset — the best channels/regions from
-# exp1 (frontal region + its per-hemisphere halves + the top single channels).
+# exp1 (frontal region + its per-hemisphere halves + the top single channels), plus
+# all_channel (all 32 EEG channels) so the epoch-duration sweep also covers the same
+# all_channel/median gate used by exp1 and exp2 — needed to sanity-check the shared
+# all_channel/30s/median Proposed result across exp1, exp2, and exp3.
 groups:
   raja:
     - single:E22
@@ -18,9 +21,11 @@ groups:
     - frontal
     - frontal_left
     - frontal_right
+    - all_channel
   cao2018:
     - single:FP1
     - single:FP2
     - frontal
     - frontal_left
     - frontal_right
+    - all_channel
