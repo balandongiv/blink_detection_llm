@@ -52,6 +52,7 @@ from src.utils.experiment_utils import csv_list as _csv_list, setup_tutorial_log
 logger = logging.getLogger(__name__)
 
 _EXP_CFG = load_exp_config(EXP_SETUP_DIR / "exp2_strategy_comparison.yaml")
+_PATH_CFG = load_exp_config(EXP_SETUP_DIR / "exp_path.yaml")
 _CAO = get_cao_paths()
 
 CAO_REGION_YAML  = _CAO["brain_region_yaml"]
@@ -60,7 +61,7 @@ EPOCH_DURATION_S = float(_EXP_CFG.get("epoch_duration_s", 30.0))
 FILTER_LOW       = float(_EXP_CFG.get("filter_low", 1.0))
 FILTER_HIGH      = float(_EXP_CFG.get("filter_high", 20.0))
 RESAMPLE_RATE    = int(_EXP_CFG.get("resample_rate", 100))
-DEFAULT_OUT_DIR  = REPO_ROOT / "runs" / "exp2_cao"
+DEFAULT_OUT_DIR  = REPO_ROOT / Path(_PATH_CFG["out_dirs"]["exp2"]["cao2018"])
 
 # This script is the authority for the detector conditions/parameters — the
 # condition runners in src/exp/exp2_strategy_conditions.py take these as a
@@ -92,7 +93,7 @@ def _parse_args() -> argparse.Namespace:
                         "(default: skip them and resume).")
     p.add_argument("--max-sessions", type=int, default=None,
                    help="Limit to the first N discovered sessions (None = all).")
-    p.add_argument("--n-jobs", type=int, default=8,
+    p.add_argument("--n-jobs", type=int, default=16,
                    help="Worker processes for the session sweep (default: %(default)s "
                         "— kept modest to avoid Windows handle exhaustion).")
     p.add_argument("--groups", type=_csv_list, default=DEFAULT_GROUPS,
