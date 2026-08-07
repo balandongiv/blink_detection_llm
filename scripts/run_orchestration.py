@@ -17,7 +17,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 # Experiment scripts moved to experiment_script/ and renamed to the result-section
 # academic outline (exp1..exp6); see tutorial/channel_region_refactor_plan.md.
 SCRIPT_40 = REPO_ROOT / "experiment_script" / "exp3_epoch_duration.py"
-SCRIPT_41 = REPO_ROOT / "experiment_script" / "exp2_strategy_comparison.py"
+SCRIPT_41 = REPO_ROOT / "experiment_script" / "exp2_a_strategy_comparison.py"
 SCRIPT_42 = REPO_ROOT / "experiment_script" / "exp4_boundary_tolerance.py"
 SCRIPT_45 = REPO_ROOT / "experiment_script" / "exp6_morphological.py"
 ANALYZE_SCRIPT = REPO_ROOT / "scripts" / "analyze_and_update.py"
@@ -239,7 +239,7 @@ def main() -> None:
     artifact_map = [
         ("exp1_epoch_duration_results.csv",    exp40_dir / "exp1_epoch_duration_results.csv"),
         ("exp1_epoch_duration_results.json",   exp40_dir / "summary.json"),
-        ("strategy_comparison_results.csv",    exp_dirs.get("exp41", log_dir) / "exp41_strategy_comparison_results.csv"),
+        ("strategy_comparison_results.csv",    exp_dirs.get("exp41", log_dir) / "exp2_strategy_comparison_results.csv"),
         ("boundary_tolerance_results.csv",     exp_dirs.get("exp42", log_dir) / "exp42_boundary_tolerance_results.csv"),
         ("morphological_detailed_results.csv", exp_dirs.get("exp45", log_dir) / "exp45_morphological_event_counts.csv"),
     ]

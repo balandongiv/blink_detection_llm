@@ -1,0 +1,13 @@
+{
+  "experiment": "exp1_channel_selection_cao2018",
+  "epoch_duration_s": 30.0,
+  "resample_rate": 100.0,
+  "use_epoch_health": false,
+  "groups_run": [
+    "all"
+  ],
+  "metric_primary": "f1 per (selection, channel, centre)",
+  "n_sessions": 58,
+  "n_rows": 9280,
+  "n_errors": 0
+}

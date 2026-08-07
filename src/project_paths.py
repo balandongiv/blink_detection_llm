@@ -3,15 +3,40 @@
 Machine paths live in ``paths.yaml`` at the repo root (git-ignored).
 Copy ``paths.yaml.example`` to ``paths.yaml`` and edit for your machine.
 
-Per-experiment parameters live in companion YAML files next to each script,
-e.g. ``experiment_script/exp1_channel_selection_raja.yaml``.
+Per-experiment parameters live in companion YAML files under
+experiment_script/setup/, e.g. ``experiment_script/setup/exp1_channel_selection.yaml``.
 """
 
 from __future__ import annotations
 
+import os
+import re
 from pathlib import Path
 
 import yaml
+
+_VAR_PATTERN = re.compile(r"\$\{([^}]+)\}")
+
+
+def _resolve_vars(node, scope: dict):
+    """Recursively substitute ``${key}`` in string values with scope[key].
+
+    Lets a YAML file define one top-level scalar (e.g. ``out_dir``) and
+    reference it from nested values (e.g. ``${out_dir}/exp1_channel_raja``)
+    so there is a single place to change a shared path.
+    """
+    if isinstance(node, dict):
+        return {k: _resolve_vars(v, scope) for k, v in node.items()}
+    if isinstance(node, list):
+        return [_resolve_vars(v, scope) for v in node]
+    if isinstance(node, str):
+        def _sub(match: re.Match) -> str:
+            key = match.group(1)
+            if key not in scope:
+                raise KeyError(f"Unknown variable '${{{key}}}' referenced in YAML (no top-level '{key}' key)")
+            return str(scope[key])
+        return _VAR_PATTERN.sub(_sub, node)
+    return node
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 _PATHS_YAML = REPO_ROOT / "paths.yaml"
@@ -58,14 +83,28 @@ def get_cao_paths(paths: dict | None = None) -> dict[str, Path]:
 
 
 def load_exp_config(exp_yaml: Path) -> dict:
-    """Load per-experiment parameters from a companion YAML file."""
+    """Load per-experiment parameters from a companion YAML file.
+
+    If the ``BLINK_YAML_VARIANT`` environment variable is set (e.g. by
+    experiment_script/_run_all_experiments.py for a std=3.0 re-run) and a
+    sibling ``<stem>_<variant>.yaml`` exists next to *exp_yaml*, that variant
+    is loaded instead — letting the orchestrator swap configs for every
+    experiment script via one env var rather than patching script source.
+    """
+    variant = os.environ.get("BLINK_YAML_VARIANT")
+    if variant:
+        variant_yaml = exp_yaml.with_name(f"{exp_yaml.stem}_{variant}{exp_yaml.suffix}")
+        if variant_yaml.exists():
+            exp_yaml = variant_yaml
+
     if not exp_yaml.exists():
         raise FileNotFoundError(
             f"Experiment config not found: {exp_yaml}\n"
             "Each experiment script expects a companion .yaml file with the same stem."
         )
     with exp_yaml.open("r", encoding="utf-8") as fh:
-        return yaml.safe_load(fh) or {}
+        cfg = yaml.safe_load(fh) or {}
+    return _resolve_vars(cfg, cfg)
 
 
 __all__ = [

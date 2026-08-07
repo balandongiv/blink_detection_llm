@@ -1,0 +1,66 @@
+%! TeX program = pdflatex
+%! TeX options = -synctex=1 -interaction=nonstopmode -halt-on-error
+% IEEE Access submission root.  The manuscript prose remains modular under
+% ../a_abstract through ../g_conclusion; do not move section content here.
+\documentclass{ieeeaccess}
+
+% Packages used by the modular manuscript.
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+\usepackage[numbers,sort&compress]{natbib}
+
+% Paths are relative to this IEEE Access template folder.
+\graphicspath{{../e_result/figures/}{../figures/}}
+\makeatletter
+\def\input@path{{../}}
+\makeatother
+
+\begin{document}
+
+% Leave publication history and DOI unset: IEEE supplies these after acceptance.
+\history{}
+\doi{}
+\title{Toward Principled Threshold Selection for Blink Region Detection in
+Biological Signals: A Cross-Dataset Benchmark with LLM-Guided Candidate
+Derivation}
+
+% Replace this blinded byline with the final author, affiliation, and
+% corresponding-author details before submitting a non-anonymous manuscript.
+\author{Author names omitted for review}
+
+\markboth
+{Author names omitted for review: Threshold Selection for Blink Region Detection}
+{Author names omitted for review: Threshold Selection for Blink Region Detection}
+
+\input{../a_abstract/abstract}
+
+\begin{keywords}
+blink detection, electroencephalography, epoch-aware detection, naturalistic
+driving, threshold selection
+\end{keywords}
+
+\titlepgskip=-15pt
+\maketitle
+
+\input{../b_introduction}
+%\input{../c_literature_review/p001/paragraph}
+%\input{../c_literature_review/p002/paragraph}
+\input{../d_method/material_method}
+\input{../e_result/result}
+\input{../f_discussion/discussion}
+\input{../g_conclusion/conclusion}
+
+% If applicable, add \section*{Acknowledgment} here. Funding information
+% belongs in the IEEE Access first-page footnote of the final author version.
+
+\bibliographystyle{IEEEtran}
+\bibliography{../references_from_csv,../references_scopus_new}
+
+\EOD
+\end{document}

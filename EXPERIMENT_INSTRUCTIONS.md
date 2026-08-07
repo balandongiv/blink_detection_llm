@@ -92,8 +92,8 @@ The selected channels become the `GROUPS_TO_RUN` filter for Exp2–8. Edit each 
 
 **Scripts:**
 ```
-python experiment_script\run_exp2_raja.py
-python experiment_script\run_exp2_cao2018.py
+python experiment_script\exp2_a_strategy_comparison_raja.py
+python experiment_script\exp2_a_strategy_comparison_cao2018.py
 ```
 
 Compares: `Proposed-Med`, `Proposed-Mean`, `BLINKER-concat`, `MNE-annot`

@@ -1,0 +1,5 @@
+dataset,session,selection,condition,center_method,n_channels_used,best_channel,tp,fp,fn,precision,recall,f1
+raja,S1/S01_20170519_043933_3,all_channel,BLINKER-concat,n/a,32,E3,127,423,5,0.2309090909090909,0.9621212121212122,0.3724340175953079
+raja,S1/S01_20170519_043933_3,all_channel,MNE-annot,n/a,32,E59,0,2,132,0.0,0.0,0.0
+raja,S1/S01_20170519_043933_3,all_channel,Proposed-Mean,mean,32,E3,123,141,9,0.4659090909090909,0.9318181818181818,0.6212121212121211
+raja,S1/S01_20170519_043933_3,all_channel,Proposed-Med,median,32,E3,123,142,9,0.4641509433962264,0.9318181818181818,0.6196473551637279

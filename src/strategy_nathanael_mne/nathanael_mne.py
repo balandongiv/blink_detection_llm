@@ -73,7 +73,15 @@ def find_eog_candidate_regions(
     #     kwargs["thresh"] = float(thresh)
     #
 
-    events = mne.preprocessing.find_eog_events(raw, **kwargs)
+    try:
+        events = mne.preprocessing.find_eog_events(raw, **kwargs)
+    except TypeError as exc:
+        # MNE 1.11 has a corner-case in peak_finder: when a filtered signal is
+        # monotone and no peak is found, it attempts to multiply an empty list
+        # by a float.  For this detector that is simply an empty result.
+        if "can't multiply sequence by non-int of type 'float'" not in str(exc):
+            raise
+        return pd.DataFrame(columns=columns)
 
 
     # if len(events) == 0:

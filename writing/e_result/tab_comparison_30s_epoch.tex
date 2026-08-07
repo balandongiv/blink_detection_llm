@@ -1,26 +1,26 @@
-% Source: runs_second_iteration/ (std=3.0 validated re-run); script experiment_script/regen_paper_tables.py
+% Source: publication_results/; script experiment_script/tab4_tab5_strategy_comparison_30s.py
 \begin{table*}[ht]
   \centering
-  \caption{Strategy comparison on the Raja and Cao2018 driving-EEG corpora at 30\,s epochs. Each condition is summarised at its best-channel-per-session operating point (for every session the single channel or frontal sub-montage with the highest $F_1$ is selected, then averaged over sessions); the same rule is applied to all four conditions. Macro-averaged precision, recall and $F_1$ are reported per dataset and pooled over all 104 sessions. Best $F_1$ per block in \textbf{bold}. By paired Wilcoxon signed-rank tests on session-level $F_1$ (Bonferroni-corrected over six pairs), Proposed-Med significantly exceeds BLINKER-concat and MNE-annot ($p<10^{-9}$) but not Proposed-Mean ($p=0.23$).}
+  \caption{Strategy comparison on the Raja and Cao2018 driving-EEG corpora at 30\,s epochs. Each condition is summarised at its best-channel-per-session operating point (for every session the single channel or frontal sub-montage with the highest $F_1$ is selected, then averaged over sessions); the same rule is applied to all four conditions. Macro-averaged precision, recall and $F_1$ are reported per dataset and pooled over all 104 sessions. Best $F_1$ per block in \textbf{bold}. By paired Wilcoxon signed-rank tests on session-level $F_1$ (Bonferroni-corrected over six pairs), Proposed-Med significantly exceeds BLINKER-concat ($p<10^{-9}$) and MNE-annot ($p<0.001$) but not Proposed-Mean ($p=1.00$).}
   \label{tab:exp1_main}
   \begin{tabular}{llccc}
     \toprule
     Dataset & Condition & Precision & Recall & $F_1$ \\
     \midrule
-    Raja & BLINKER-concat & 0.6774 & 0.9531 & 0.7644 \\
-     & MNE-annot & 0.7122 & 0.6868 & 0.6526 \\
-     & Proposed-Mean & 0.8962 & 0.8691 & 0.8671 \\
-     & Proposed-Med & 0.8921 & 0.8856 & \textbf{0.8777} \\
+    Raja & BLINKER-concat & 0.6794 & 0.9518 & 0.7654 \\
+     & MNE-annot & 0.6944 & 0.7063 & 0.6664 \\
+     & Proposed-Mean & 0.8840 & 0.8876 & 0.8742 \\
+     & Proposed-Med & 0.8803 & 0.9014 & \textbf{0.8825} \\
     \midrule
-    Cao2018 & BLINKER-concat & 0.5660 & 0.9826 & 0.6924 \\
-     & MNE-annot & 0.5843 & 0.5550 & 0.5101 \\
-     & Proposed-Mean & 0.7875 & 0.8536 & 0.8041 \\
-     & Proposed-Med & 0.7751 & 0.8744 & \textbf{0.8087} \\
+    Cao2018 & BLINKER-concat & 0.5696 & 0.9715 & 0.6940 \\
+     & MNE-annot & 0.6013 & 0.6168 & 0.5627 \\
+     & Proposed-Mean & 0.7707 & 0.8720 & 0.8030 \\
+     & Proposed-Med & 0.7591 & 0.8909 & \textbf{0.8068} \\
     \midrule
-    Pooled & BLINKER-concat & 0.6153 & 0.9695 & 0.7242 \\
-     & MNE-annot & 0.6409 & 0.6133 & 0.5731 \\
-     & Proposed-Mean & 0.8356 & 0.8604 & 0.8320 \\
-     & Proposed-Med & 0.8268 & 0.8794 & \textbf{0.8392} \\
+    Pooled & BLINKER-concat & 0.6182 & 0.9627 & 0.7256 \\
+     & MNE-annot & 0.6425 & 0.6564 & 0.6086 \\
+     & Proposed-Mean & 0.8209 & 0.8789 & 0.8345 \\
+     & Proposed-Med & 0.8127 & 0.8956 & \textbf{0.8403} \\
     \bottomrule
   \end{tabular}
 \end{table*}

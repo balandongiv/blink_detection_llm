@@ -1,11 +1,15 @@
-"""Shared helpers for analyses that re-run the five exp2 detector conditions.
+"""Shared helpers for analyses that re-run the exp2 detector conditions.
 
 Both ``exp7_epoch_health_effect`` and ``exp8_long_blink_analysis`` need to run the
-same five conditions used in the main comparison — BLINKER-concat, MNE-annot, DBO,
-Proposed-Mean, Proposed-Med — on a session, but under different epoch sets or
-against different ground-truth subsets.  To guarantee identical detector
-configuration, the condition runners are imported directly from
-``exp2_strategy_comparison`` rather than re-declared.
+same conditions used in the main comparison — BLINKER-concat, MNE-annot,
+Proposed-Med — on a session, but under different epoch sets or against
+different ground-truth subsets.  The condition *runners* (the actual detector
+implementations) are imported from ``src.exp.exp2_strategy_conditions`` so the
+analyses reuse the exact same code, but this module is the authority for the
+active condition list and detector parameters — read once here from
+experiment_script/setup/exp2_strategy_comparison.yaml, the same yaml
+experiment_script/exp2_a_strategy_comparison_cao2018.py / _raja.py read for
+the main comparison.
 """
 
 from __future__ import annotations
@@ -22,11 +26,25 @@ from blink_evaluation import (
 from blink_evaluation.io import dataframe_to_annotations
 from src.common.epoch_input import prepare_epoch_detection_input
 from experiment_script.channel_group_config import apply_stage_a_channel_group
-from src.project_paths import get_cao_paths, get_raja_paths
+from src.project_paths import EXP_SETUP_DIR, get_cao_paths, get_raja_paths, load_exp_config
 from src.utils.experiment_utils import make_dataset_loaders
 
-# Reuse the exact condition runners + ordering from the main comparison.
-from experiment_script.exp2_strategy_comparison import CONDITIONS, _CONDITION_RUNNERS
+# Reuse the exact condition runner implementations from the main comparison.
+from src.exp.exp2_strategy_conditions import _CONDITION_RUNNERS
+
+_EXP_CFG = load_exp_config(EXP_SETUP_DIR / "exp2_strategy_comparison.yaml")
+
+CONDITIONS = _EXP_CFG["conditions"]
+_DETECTOR_SETTINGS = {
+    "mne_half_window_s":      float(_EXP_CFG["mne_half_window_s"]),
+    "mne_low_freq":           float(_EXP_CFG["mne_low_freq"]),
+    "mne_high_freq":          float(_EXP_CFG["mne_high_freq"]),
+    "mne_thresh":             _EXP_CFG["mne_thresh"],
+    "autoreject_random_state": int(_EXP_CFG["autoreject_random_state"]),
+    "std_threshold":          float(_EXP_CFG["std_threshold"]),
+    "min_flagged_epochs":     int(_EXP_CFG["min_flagged_epochs"]),
+    "verbose":                bool(_EXP_CFG["verbose"]),
+}
 
 __all__ = [
     "CONDITIONS",
@@ -80,7 +98,7 @@ def annotations_from_reference(ref_df, epoch_duration_s: float):
 
 def run_condition(prepared, valid_epoch_indices, gt_annotations, condition, epoch_duration_s):
     """Run one condition; evaluate against *gt_annotations*; return a metrics dict."""
-    channel_results = _CONDITION_RUNNERS[condition](prepared, valid_epoch_indices)
+    channel_results = _CONDITION_RUNNERS[condition](prepared, valid_epoch_indices, _DETECTOR_SETTINGS)
     scored = evaluate_channels(
         channel_results, gt_annotations, epoch_duration=epoch_duration_s
     )

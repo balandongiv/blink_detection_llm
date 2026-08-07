@@ -226,7 +226,7 @@ def run_one_session(
         raise ValueError(
             "run_one_session processes exactly ONE selection group/channel per call "
             f"(got {sorted(groups)}). Pass a single-group groups_filter and loop over "
-            "groups in the caller (see exp1_channel_selection_raja.py)."
+            "groups in the caller (see exp1_a_channel_selection_raja.py)."
         )
 
     # Pick only this group's channels — the whole pipeline runs on this subset only.

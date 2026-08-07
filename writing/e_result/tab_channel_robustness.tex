@@ -1,17 +1,17 @@
-% Source: runs_second_iteration/ (std=3.0 validated re-run); script experiment_script/regen_paper_tables.py
+% Source: publication_results/; script experiment_script/tab12_channel_robustness.py
 \begin{table}[ht]
   \centering
   \scriptsize
   \setlength{\tabcolsep}{3pt}
-  \caption{Channel-robustness ranking stability across sessions for the four conditions (best-channel-per-session). Full agreement is the fraction of sessions where all four conditions select the same best channel; per-condition agreement is the mean fraction of the other three conditions selecting the same best channel.}
+  \caption{Stability of the best-channel choice across the four conditions. Full agreement is the fraction of sessions where all four conditions select the same best channel; per-condition agreement is the mean fraction of the other three conditions selecting the same best channel.}
   \label{tab:channel-robustness}
   \begin{tabular}{lccccccc}
     \toprule
     Dataset & Sessions & Full agreement & Mean pairwise & BLINKER-concat & MNE-annot & Proposed-Mean & Proposed-Med \\
     \midrule
-    Raja & 46 & 10/46 (0.217) & 0.504 & 0.449 & 0.377 & 0.587 & 0.601 \\
-    Cao2018 & 58 & 10/58 (0.172) & 0.466 & 0.483 & 0.270 & 0.557 & 0.552 \\
-    Pooled & 104 & 20/104 (0.192) & 0.482 & 0.468 & 0.317 & 0.571 & 0.574 \\
+    Raja & 46 & 9/46 (0.196) & 0.489 & 0.442 & 0.326 & 0.587 & 0.601 \\
+    Cao2018 & 58 & 6/58 (0.103) & 0.408 & 0.397 & 0.218 & 0.506 & 0.511 \\
+    Pooled & 104 & 15/104 (0.144) & 0.444 & 0.417 & 0.266 & 0.542 & 0.551 \\
     \bottomrule
   \end{tabular}
 \end{table}

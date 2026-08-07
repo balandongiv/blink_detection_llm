@@ -1,27 +1,33 @@
 """Shared per-session worker and result-writing for the exp1 channel-selection scripts.
 
 Run order:
-  1. exp1_channel_selection_raja.py / exp1_channel_selection_cao2018.py
+  1. exp1_a_channel_selection_raja.py / exp1_a_channel_selection_cao2018.py
      collect per-session rows.
   2. exp1_write_results() writes the exp1 result artifacts.
   3. exp1_step_b_get_best_region_channel.py reads the summary CSVs and selects the
      top 4 single channels plus top 4 regional groups.
 
-Both exp1_channel_selection_cao2018.py and exp1_channel_selection_raja.py run
-every selected channel group for one session in a picklable, top-level
-function so it can be dispatched to a ProcessPoolExecutor, then coerce the
-collected rows and write a results CSV + summary CSV + summary.json in an
-identical way. This module holds that single shared implementation.
+Both exp1_a_channel_selection_cao2018.py and exp1_a_channel_selection_raja.py call
+run_channel_selection_session_sweep() (below), which dispatches process_one_session()
+— every selected channel group for one session — to a ProcessPoolExecutor (or runs it
+in-process when n_jobs=1), then coerce the collected rows and write a results CSV +
+summary CSV + summary.json in an identical way. This module holds that single shared
+implementation; process_one_session is called directly by name (never through a
+generic Callable parameter or functools.partial) so debugger step-into / IDE go-to-
+definition on that call lands here.
 """
 
 from __future__ import annotations
 
 import json
 import logging
+import os
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 from collections import defaultdict
 
 from src.utils.channel_ablation_utils import run_one_session, selection_group_names, write_csv
+from src.utils.session_sweep import resolve_n_jobs, split_cached_and_todo, store_session_result
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +82,61 @@ def process_one_session(
     return pair["name"], rows, errs
 
 
+def run_channel_selection_session_sweep(
+    pairs: list[dict],
+    out_dir: Path,
+    *,
+    overwrite: bool = False,
+    n_jobs: int | None = None,
+    **worker_kwargs,
+) -> tuple[list[dict], list[str]]:
+    """Run ``process_one_session`` (above) over *pairs*, resume-aware.
+
+    Calls ``process_one_session`` directly by name — defined in this same
+    module, right above — never through a generic ``Callable`` parameter,
+    ``functools.partial``, or any other indirection, so a debugger's "step
+    into" and an IDE's "go to definition" on the call below always land in
+    the real implementation.
+
+    Pass ``n_jobs=1`` to keep everything in this process while stepping
+    through the worker in a debugger; any ``n_jobs`` that resolves above 1
+    dispatches to ``ProcessPoolExecutor`` worker subprocesses that most
+    debuggers cannot attach to, so breakpoints inside the worker won't fire.
+
+    Sessions whose per-session CSV already exists under ``out_dir/sessions/``
+    are skipped (loaded from cache) unless ``overwrite`` is True.
+    """
+    all_metrics, todo = split_cached_and_todo(pairs, out_dir, overwrite)
+    errors: list[str] = []
+
+    if todo:
+        jobs = resolve_n_jobs(len(todo), n_jobs)
+        logger.info("Running %d session(s) with n_jobs=%d (of %d cpus)",
+                    len(todo), jobs, os.cpu_count() or 1)
+        if jobs == 1:
+            for pair in todo:
+                name, rows, errs = process_one_session(pair, **worker_kwargs)
+                store_session_result(out_dir, name, rows, errs,
+                                      all_metrics=all_metrics, errors=errors)
+        else:
+            with ProcessPoolExecutor(max_workers=jobs) as ex:
+                fut_map = {
+                    ex.submit(process_one_session, pair, **worker_kwargs): pair["name"]
+                    for pair in todo
+                }
+                for fut in as_completed(fut_map):
+                    name = fut_map[fut]
+                    try:
+                        _, rows, errs = fut.result()
+                        store_session_result(out_dir, name, rows, errs,
+                                              all_metrics=all_metrics, errors=errors)
+                    except Exception as exc:  # noqa: BLE001
+                        logger.error("ERROR  %s: %s", name, exc)
+                        errors.append(f"ERROR  {name}: {exc}")
+
+    return all_metrics, errors
+
+
 def exp1_write_results(
     *,
     out_dir: Path,
@@ -90,7 +151,7 @@ def exp1_write_results(
 ) -> None:
     """Coerce ``all_metrics``, then write the exp1 results CSV, summary CSV, and summary.json.
 
-    Shared by exp1_channel_selection_cao2018.py and exp1_channel_selection_raja.py
+    Shared by exp1_a_channel_selection_cao2018.py and exp1_a_channel_selection_raja.py
     so the two scripts produce identically-shaped outputs.
     """
     if not all_metrics:
@@ -236,4 +297,4 @@ def exp1_write_results(
     print(f"\nResults written to: {out_dir}")
 
 
-__all__ = ["process_one_session", "exp1_write_results"]
+__all__ = ["process_one_session", "run_channel_selection_session_sweep", "exp1_write_results"]

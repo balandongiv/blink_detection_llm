@@ -4,7 +4,7 @@ Source of truth: runs_second_iteration/ (validated std=3.0 re-run). Baseline: ru
 
 Headline aggregation (matches HANDOFF_std30_academic_writing.md sec.2/5.1e):
   best-channel-per-session = for each (session, condition) take the row with the
-  maximum det_f1 over all available selections, then average across sessions.
+  maximum f1 over all available selections, then average across sessions.
   Precision/recall reported are taken from that same argmax-F1 row.
 
 Outputs:
@@ -53,18 +53,18 @@ def load(run, exp, ds):
 
 # ---------- helpers ----------
 def best_per_session(df):
-    """Return one row per session: the argmax det_f1 row (keeps P,R,F1,fp,fn,tp,channel,selection)."""
-    idx = df.groupby("session")["det_f1"].idxmax()
+    """Return one row per session: the argmax f1 row (keeps P,R,F1,fp,fn,tp,channel,selection)."""
+    idx = df.groupby("session")["f1"].idxmax()
     return df.loc[idx].copy()
 
 def headline(df, cond_filter):
-    """best-channel-per-session: mean over sessions of per-session max det_f1, plus P/R from argmax row."""
+    """best-channel-per-session: mean over sessions of per-session max f1, plus P/R from argmax row."""
     d = cond_filter(df)
     bps = best_per_session(d)
     return dict(
-        f1=bps["det_f1"].mean(),
-        precision=bps["det_precision"].mean(),
-        recall=bps["det_recall"].mean(),
+        f1=bps["f1"].mean(),
+        precision=bps["precision"].mean(),
+        recall=bps["recall"].mean(),
         n=bps["session"].nunique(),
         bps=bps,
     )
@@ -125,9 +125,9 @@ for cond in CONDS:
     vals_f1, vals_p, vals_r = [], [], []
     for ds in ["raja", "cao"]:
         bps = exp2_head[("new", ds, cond)]["bps"]
-        vals_f1 += bps["det_f1"].tolist()
-        vals_p += bps["det_precision"].tolist()
-        vals_r += bps["det_recall"].tolist()
+        vals_f1 += bps["f1"].tolist()
+        vals_p += bps["precision"].tolist()
+        vals_r += bps["recall"].tolist()
     pooled[cond] = dict(f1=np.mean(vals_f1), p=np.mean(vals_p), r=np.mean(vals_r), n=len(vals_f1))
     P(f"    {cond:15s} F1={pooled[cond]['f1']:.4f}  P={pooled[cond]['p']:.4f}  R={pooled[cond]['r']:.4f}  n={pooled[cond]['n']}")
 
@@ -148,7 +148,7 @@ for ds in ["raja", "cao"]:
     per_cond_best = {}
     for cond in CONDS:
         bps = best_per_session(df[df["condition"] == cond])
-        per_cond_best[cond] = bps.set_index("session")["channel_in_group"]
+        per_cond_best[cond] = bps.set_index("session")["channel"]
     # frequency pooled over 4 methods
     allsel = pd.concat([per_cond_best[c] for c in CONDS])
     freq = allsel.value_counts()
@@ -174,7 +174,7 @@ for cond in CONDS:
     fps, fns = [], []
     for ds in ["raja", "cao"]:
         bps = exp2_head[("new", ds, cond)]["bps"]
-        fps += bps["det_fp"].tolist(); fns += bps["det_fn"].tolist()
+        fps += bps["fp"].tolist(); fns += bps["fn"].tolist()
     mfp, mfn = np.mean(fps), np.mean(fns)
     err[cond] = dict(fp=mfp, fn=mfn, ratio=mfp / mfn if mfn else np.inf)
     P(f"    {cond:15s} FP={mfp:.1f}  FN={mfn:.1f}  FP:FN={err[cond]['ratio']:.3f}  regime={'FP-heavy' if mfp>mfn else 'FN-heavy'}")
@@ -190,12 +190,12 @@ for ds in ["raja", "cao"]:
     pm_rows.append(bps)
 pm_all = pd.concat(pm_rows, ignore_index=True)
 pm_all["subject"] = pm_all["session"].str.split("/").str[0]
-pm_all_sorted = pm_all.sort_values("det_f1", ascending=False).reset_index(drop=True)
-P(f"    n sessions={len(pm_all)}  F1 range {pm_all['det_f1'].min():.4f}..{pm_all['det_f1'].max():.4f}  median={pm_all['det_f1'].median():.4f}")
+pm_all_sorted = pm_all.sort_values("f1", ascending=False).reset_index(drop=True)
+P(f"    n sessions={len(pm_all)}  F1 range {pm_all['f1'].min():.4f}..{pm_all['f1'].max():.4f}  median={pm_all['f1'].median():.4f}")
 best = pm_all_sorted.iloc[0]; worst = pm_all_sorted.iloc[-1]
-P(f"    best session: {DS_NICE[best['dataset']]} {best['session']} F1={best['det_f1']:.4f} (ch {best['channel_in_group']})")
-P(f"    worst session: {DS_NICE[worst['dataset']]} {worst['session']} F1={worst['det_f1']:.4f} (ch {worst['channel_in_group']}, tp={int(worst['det_tp'])} fp={int(worst['det_fp'])} fn={int(worst['det_fn'])})")
-subj = pm_all.groupby(["dataset", "subject"]).agg(n=("session", "nunique"), mean_f1=("det_f1", "mean")).reset_index().sort_values("mean_f1", ascending=False)
+P(f"    best session: {DS_NICE[best['dataset']]} {best['session']} F1={best['f1']:.4f} (ch {best['channel']})")
+P(f"    worst session: {DS_NICE[worst['dataset']]} {worst['session']} F1={worst['f1']:.4f} (ch {worst['channel']}, tp={int(worst['tp'])} fp={int(worst['fp'])} fn={int(worst['fn'])})")
+subj = pm_all.groupby(["dataset", "subject"]).agg(n=("session", "nunique"), mean_f1=("f1", "mean")).reset_index().sort_values("mean_f1", ascending=False)
 P(f"    n subjects={len(subj)}  subject mean-F1 median={subj['mean_f1'].median():.4f}")
 bs = subj.iloc[0]; ws = subj.iloc[-1]
 P(f"    best subject: {DS_NICE[bs['dataset']]} {bs['subject']} mean_f1={bs['mean_f1']:.4f} ({int(bs['n'])} sess)")
@@ -212,7 +212,7 @@ for ds in ["raja", "cao"]:
     row = {}
     for dur in sorted(df["epoch_duration_s"].unique()):
         sub = df[df["epoch_duration_s"] == dur]
-        row[dur] = best_per_session(sub)["det_f1"].mean()
+        row[dur] = best_per_session(sub)["f1"].mean()
     exp3[ds] = row
     P(f"    {DS_NICE[ds]}: " + ", ".join(f"{int(d)}s={v:.4f}" for d, v in row.items()))
 # pooled
@@ -224,7 +224,7 @@ for dur in durs:
     for ds in ["raja", "cao"]:
         df = median_filter(load(NEW, "exp3", ds))
         sub = df[df["epoch_duration_s"] == dur]
-        vals += best_per_session(sub)["det_f1"].tolist()
+        vals += best_per_session(sub)["f1"].tolist()
     exp3_pooled[dur] = np.mean(vals)
 P("      " + ", ".join(f"{int(d)}s={v:.4f}" for d, v in exp3_pooled.items()))
 
@@ -238,7 +238,7 @@ for ds in ["raja", "cao"]:
     row = {}
     for iou in sorted(df["iou_threshold"].unique()):
         sub = df[df["iou_threshold"] == iou]
-        row[iou] = best_per_session(sub)["det_f1"].mean()
+        row[iou] = best_per_session(sub)["f1"].mean()
     exp4[ds] = row
     P(f"    {DS_NICE[ds]}: " + ", ".join(f"iou{io}={v:.4f}" for io, v in row.items()))
 
@@ -252,7 +252,7 @@ for ds in ["raja", "cao"]:
     row = {}
     for nm in sorted(df["min_flagged_epochs"].unique()):
         sub = df[df["min_flagged_epochs"] == nm]
-        row[nm] = best_per_session(sub)["det_f1"].mean()
+        row[nm] = best_per_session(sub)["f1"].mean()
     exp5[ds] = row
     P(f"    {DS_NICE[ds]}: " + ", ".join(f"nmin{int(n)}={v:.4f}" for n, v in row.items()))
 
@@ -263,8 +263,8 @@ H("EXP7 epoch-health effect (Proposed-Med best-channel-per-session)")
 exp7 = {}
 for ds in ["raja", "cao"]:
     df = median_filter(load(NEW, "exp7", ds))
-    on = best_per_session(df[df["use_epoch_health"] == True])["det_f1"].mean()
-    off = best_per_session(df[df["use_epoch_health"] == False])["det_f1"].mean()
+    on = best_per_session(df[df["use_epoch_health"] == True])["f1"].mean()
+    off = best_per_session(df[df["use_epoch_health"] == False])["f1"].mean()
     exp7[ds] = dict(on=on, off=off, delta=on - off)
     P(f"    {DS_NICE[ds]}: health-on={on:.4f}  health-off={off:.4f}  delta={on-off:+.4f}")
 
@@ -279,7 +279,7 @@ for ds in ["raja", "cao"]:
     for cat in ["all", "normal", "long"]:
         sub = df[df["blink_category"] == cat]
         bps = best_per_session(sub)
-        cats[cat] = dict(recall=bps["det_recall"].mean(), f1=bps["det_f1"].mean(), prec=bps["det_precision"].mean())
+        cats[cat] = dict(recall=bps["recall"].mean(), f1=bps["f1"].mean(), prec=bps["precision"].mean())
     # GT counts: dedupe by session (n_gt_* identical across channels)
     gt = df.drop_duplicates("session")[["n_gt_total", "n_gt_normal", "n_gt_long"]].sum()
     exp8[ds] = dict(cats=cats, gt=gt)
@@ -296,7 +296,7 @@ for cat in ["normal", "long"]:
     vals = []
     for ds in ["raja", "cao"]:
         df = load(NEW, "exp8", ds)
-        vals += best_per_session(df[df["blink_category"] == cat])["det_recall"].tolist()
+        vals += best_per_session(df[df["blink_category"] == cat])["recall"].tolist()
     P(f"    POOLED {cat} recall={np.mean(vals):.4f}")
 
 # =====================================================================
@@ -307,8 +307,8 @@ exp1_chan = {}
 for ds in ["raja", "cao"]:
     df = median_filter(load(NEW, "exp1", ds))
     allsel = df[df["selection"] == "all"]
-    g = allsel.groupby("channel_in_group").agg(
-        f1=("det_f1", "mean"), p=("det_precision", "mean"), r=("det_recall", "mean"), n=("session", "nunique")
+    g = allsel.groupby("channel").agg(
+        f1=("f1", "mean"), p=("precision", "mean"), r=("recall", "mean"), n=("session", "nunique")
     ).sort_values("f1", ascending=False)
     ch2group = load_region_map(ds)
     g["group"] = [ch2group.get(c.upper(), "unknown") for c in g.index]
@@ -328,8 +328,8 @@ for ds in ["raja", "cao"]:
     d2 = load(NEW, "exp2", ds)
     pm = d2[d2["condition"] == "Proposed-Med"]
     # fixed single channel: mean across sessions per single: selection
-    singles = pm[pm["selection"].str.startswith("single:")].groupby("selection")["det_f1"].mean().sort_values(ascending=False)
-    groups = pm[~pm["selection"].str.startswith("single:")].groupby("selection")["det_f1"].mean().sort_values(ascending=False)
+    singles = pm[pm["selection"].str.startswith("single:")].groupby("selection")["f1"].mean().sort_values(ascending=False)
+    groups = pm[~pm["selection"].str.startswith("single:")].groupby("selection")["f1"].mean().sort_values(ascending=False)
     P(f"[{DS_NICE[ds]}] best fixed single: {singles.index[0]}={singles.iloc[0]:.4f} | best fixed group: {groups.index[0]}={groups.iloc[0]:.4f}")
     P(f"    all singles: " + ", ".join(f"{s.split(':')[1]}={v:.3f}" for s, v in singles.items()))
     P(f"    all groups:  " + ", ".join(f"{s}={v:.3f}" for s, v in groups.items()))
@@ -340,8 +340,8 @@ for ds in ["raja", "cao"]:
 H("WILCOXON: Proposed-Med vs BLINKER-concat (session-level best-channel F1, new run)")
 # We compare within exp2 (only experiment with all conditions), per dataset + pooled.
 def paired_best(df, condA, condB):
-    a = best_per_session(df[df["condition"] == condA]).set_index("session")["det_f1"]
-    b = best_per_session(df[df["condition"] == condB]).set_index("session")["det_f1"]
+    a = best_per_session(df[df["condition"] == condA]).set_index("session")["f1"]
+    b = best_per_session(df[df["condition"] == condB]).set_index("session")["f1"]
     common = a.index.intersection(b.index)
     return a.loc[common].values, b.loc[common].values
 
@@ -385,11 +385,11 @@ for ds, comp, a, b in comparisons:
 H("FAILURE ANALYSIS: bottom-5 sessions (Proposed-Med best-channel, new run)")
 for ds in ["raja", "cao"]:
     bps = exp2_head[("new", ds, "Proposed-Med")]["bps"].copy()
-    bps["gt"] = bps["det_tp"] + bps["det_fn"]
-    bps = bps.sort_values("det_f1")
+    bps["gt"] = bps["tp"] + bps["fn"]
+    bps = bps.sort_values("f1")
     P(f"[{DS_NICE[ds]}] median GT(tp+fn)={bps['gt'].median():.0f}")
     for _, rr in bps.head(5).iterrows():
-        P(f"    {rr['session']:30s} F1={rr['det_f1']:.3f} ch={rr['channel_in_group']:5s} tp={int(rr['det_tp'])} fp={int(rr['det_fp'])} fn={int(rr['det_fn'])} GT={int(rr['gt'])}")
+        P(f"    {rr['session']:30s} F1={rr['f1']:.3f} ch={rr['channel']:5s} tp={int(rr['tp'])} fp={int(rr['fp'])} fn={int(rr['fn'])} GT={int(rr['gt'])}")
 
 # write
 OUT_MD.parent.mkdir(parents=True, exist_ok=True)

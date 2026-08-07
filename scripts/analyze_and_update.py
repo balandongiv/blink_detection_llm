@@ -761,7 +761,7 @@ def main() -> None:
     print(f"\n[{_ts()}] Loading experiment CSVs …")
 
     exp40_rows = _load_csv(log_dir / "exp40" / "exp1_epoch_duration_results.csv")
-    exp41_rows = _load_csv(log_dir / "exp41" / "exp41_strategy_comparison_results.csv")
+    exp41_rows = _load_csv(log_dir / "exp41" / "exp2_strategy_comparison_results.csv")
     exp42_rows = _load_csv(log_dir / "exp42" / "exp42_boundary_tolerance_results.csv")
     exp45_rows = _load_csv(log_dir / "exp45" / "exp45_morphological_event_counts.csv")
 

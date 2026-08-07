@@ -1,18 +1,15 @@
-
 \section{Experiments and Results}
 \label{sec:results}
 
-% Source: runs/reports/TCAO4_stats.json; runs/reports/TCAO4_derived_stats.md; script runs/reports/TCAO4_derived_stats.md
-\input{e_result/tab_experiment_code_summary}
 \subsection{Experimental Setup}
 \label{sec:exp_setup}
 
-All experiments are evaluated on the driving corpus described in Section~\ref{sec:datasets}.
-Unless otherwise stated, each continuous session is divided into non-overlapping 30-second epochs (selected by Experiment~1), and the evaluation is conducted at the event level using the
+All experiments are evaluated on the driving corpora described in Section~\ref{sec:datasets}.
+Unless otherwise stated, each continuous session is divided into non-overlapping 30-second epochs, and the evaluation is conducted at the event level using the
 overlap-based matching criterion introduced in Section~\ref{sec:eval}.
 
 \paragraph{Conditions.}
-Four conditions are compared throughout the main experiments.
+Four conditions are compared throughout.
 
 \begin{description}
   \item[BLINKER-concat.]
@@ -22,13 +19,6 @@ Four conditions are compared throughout the main experiments.
     This condition represents the current practice of running a continuous-signal
     detector on epoch-structured data without any epoch-aware adaptation.
 
-% DBO condition intentionally commented out because DBO is reserved for a future paper.
-%  \item[DBO.]
-%    Direct Bayesian Optimisation of the sample-level amplitude threshold,
-%    applied to the concatenated signal without any preceding epoch-screening stage.
-%    This ablation isolates the value added by Stage A: if DBO alone recovers
-%    competitive performance, the epoch-screening step is unnecessary.
-
   \item[MNE-annot.]
     The MNE-Python \texttt{annotate\_amplitude} routine, which marks contiguous
     segments whose peak-to-peak amplitude exceeds a configurable threshold,
@@ -37,11 +27,17 @@ Four conditions are compared throughout the main experiments.
     community and provides a reference point grounded in community tooling.
 
   \item[Proposed-Mean.]
-    The full three-stage pipeline described in Section~\ref{sec:method}, with the sample-level threshold at Stage~B estimated from the arithmetic mean and  standard deviation of samples pooled from suspicious epochs.
+    The full three-stage pipeline described in Section~\ref{sec:method}, with the sample-level threshold at Stage~B estimated from the arithmetic mean and standard deviation of samples pooled from suspicious epochs.
 
   \item[Proposed-Med.]
     The three-stage pipeline with the sample-level threshold at Stage~B estimated from the median and median absolute deviation (MAD). This is the primary proposed configuration.
 \end{description}
+
+\paragraph{Aggregation.}
+Every condition is summarised at its \emph{best-channel-per-session} operating point: for
+each session the channel or channel group with the highest event-level $F_1$ is selected,
+and those per-session values are then averaged. The same rule is applied to all four
+conditions, so no condition is given a selection advantage the others do not receive.
 
 \subsection{Evaluation Metrics}
 \label{sec:metrics}
@@ -62,9 +58,7 @@ a detector that works reliably session by session, not one that merely accumulat
 favourable aggregate counts. Micro F1, which pools all true positives, false
 positives, and false negatives across sessions before computing a single ratio,
 is dominated by sessions with large blink counts and can mask consistent failure
-modes on sessions with atypically few blinks. Both metrics are reported, but all
-hypothesis tests are conducted on the vector of session-level F1 scores, for
-which each session contributes exactly one observation.
+modes on sessions with atypically few blinks.
 
 \paragraph{Wilcoxon signed-rank test.}
 Pairwise comparisons between conditions use the Wilcoxon signed-rank test on
@@ -77,327 +71,261 @@ Bonferroni correction is applied for the number of conditions compared within
 each experiment, and we report exact $p$-values alongside the matched-pairs
 rank-biserial correlation $r$ as an effect-size estimate.
 
-\subsection{Experiment 1: Compare different Strategy}
-\subsubsection{Strategy A: Naive Epoch Concatenation as a Proxy for Existing Practice}
-\label{sec:exp1}
-
-\paragraph{Motivation.}
-In driving and other epoch-structured paradigms, it is common to run a continuous-signal blink detector on the raw or minimally preprocessed recording
-and subsequently map detections back to the epoch grid.
-BLINKER-concat embodies this practice: its threshold is derived from a signal
-pool that mixes blink-heavy and blink-free epochs.
-The central claim of the proposed pipeline is that this mixing dilutes the amplitude statistics used for threshold estimation, which may distort threshold placement and shift the precision-recall trade-off.
-Experiment~1 tests this claim directly.
-
-\paragraph{Hypothesis.}
-Naive concatenation will produce systematically lower session-level F1 than the
-proposed epoch-aware pipeline through an unfavourable precision-recall
-trade-off.
-
-\paragraph{Design.}
-All four conditions are applied to every session under 30-second epochs.
-Per-session macro F1, precision, and recall are summarised in
-Table~\ref{tab:exp1_main}.
-
-
-\subsubsection{Strategy B: MNE-Based Annotation as a Community Baseline}
-\label{sec:exp3}
-
-\paragraph{Motivation.}
-MNE-Python is the most widely used open-source EEG analysis platform in
-neuroscience.
-Its \texttt{annotate\_amplitude} routine provides a threshold-based artifact
-marking mechanism that many practitioners reach for when a specialised blink
-detector is unavailable.
-Establishing its performance under an event-level blink criterion, for which it
-was not designed, characterises the gap that specialised methods must close.
-
-\paragraph{Design.}
-The MNE-annot condition is drawn from Table~\ref{tab:exp1_main}.
-As a secondary diagnostic, the detection timestamps produced by MNE-annot
-are aligned to those from Proposed-Med, and the distribution of temporal
-offsets at onset and offset boundaries is reported.
-Systematic offsets indicate whether MNE-annot consistently detects the right
-events but with shifted boundaries, or whether the discrepancies arise from
-entirely different detection triggers.
-
-% Strategy C (DBO) intentionally disabled because DBO is reserved for a future paper.
-\iffalse
-\subsubsection{Strategy C: Direct Bayesian Optimisation Without Epoch Screening}
-\label{sec:exp2}
-
-\paragraph{Motivation.}
-Bayesian optimisation (BO) has shown promise for threshold tuning in related
-biosignal detection problems.
-A natural question is whether applying BO directly to the concatenated signal,
-bypassing Stage~A entirely, is sufficient to achieve competitive performance.
-The DBO condition answers this question.
-
-\paragraph{Hypothesis.}
-DBO will outperform BLINKER-concat---because BO can adapt the threshold
-to each session---but will underperform Proposed-Med.
-The expected shortfall arises because DBO optimises the threshold over a
-distribution that mixes blink-containing and blink-free signal segments, whereas
-Stage~A concentrates Stage~B estimation on segments enriched for blink-like
-excursions.
-The magnitude of the gap should scale with the fraction of clean epochs in the
-session.
-
-\paragraph{Diagnostic.}
-For each session we record the fraction of epochs identified as suspicious
-by Stage~A, and plot this fraction against the session-level F1 gap between DBO
-and Proposed-Med.
-A positive association would be consistent with the possibility that Stage~A's filtering benefit scales
-with the proportion of clean epochs in the session---the more clean epochs,
-the more dilution DBO suffers, and the more beneficial the epoch-screening
-stage becomes.
-\fi
-\subsubsection{Strategy F}
-
-% Source: runs/exp2_raja/ + runs/exp2_cao/; script experiment_script/update_exp2_latex.py
-\input{e_result/tab_comparison_30s_epoch}
-
-% Channels where a baseline equals or exceeds Proposed-Med (E3, E23 on Raja only — low-recall single channels).
-\input{e_result/tab_exp2_inversions}
-
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=0.8\linewidth]{fig_condition_prf.pdf}
-  % Source: runs/exp41_cao_30s/exp41_strategy_comparison_summary.csv; script analysis/new_analysis/new_018_result_figures/make_figures.py
-  \caption{Macro-averaged precision, recall, and $F_1$ for the four conditions over all 104 sessions.}
-  \label{fig:condition_prf}
-\end{figure}
-
-% Re-enabled for TCAO6 after rewrite to Raja+Cao2018 30 s results.
-\input{e_result/p001/paragraph}
-
-% Re-enabled for TCAO6 after rewrite to Raja+Cao2018 30 s results.
-\input{e_result/p005/paragraph}
-
-\subsection{Experiment 2: Effect of Threshold Estimator at Stage B}
-\label{sec:exp4}
-
-\paragraph{Motivation.}
-For Strategy~F, Stage~B estimates the sample-level threshold from samples pooled across the
-suspicious epoch set $\mathcal{S}$.
-Because $\mathcal{S}$ is selected precisely because it contains high-amplitude
-excursions, the pooled distribution is not symmetric around a clean baseline:
-it is contaminated by the very peaks the threshold is meant to capture.
-The mean and standard deviation are sensitive to these extreme values; the median
-and MAD are not.
-
-\paragraph{Hypothesis.}
-Proposed-Med will outperform Proposed-Mean on precision---because the MAD-based
-threshold is less inflated by within-epoch peaks---while achieving comparable or
-superior recall, leading to a higher F1.
-The benefit of the robust estimator is expected to be larger for sessions whose
-suspicious-epoch pools contain extreme outlier amplitudes.
-
-\paragraph{Design.}
-Proposed-Mean and Proposed-Med are compared using the Wilcoxon signed-rank test
-on session-level F1 (Table~\ref{tab:exp1_main}).
-A supplementary scatter plot shows the per-session F1 difference against the
-95th-percentile amplitude in the suspicious-epoch pool,
-used here as a proxy for outlier severity.
-\subsection{Experiment 3: Stability Across Epoch Durations}
-\label{sec:exp5}
-
-\paragraph{Motivation.}
-Epoch duration is routinely chosen on paradigm-specific or theoretical grounds
-and is rarely optimised for the blink detector itself.
-In driving studies, epoch lengths ranging from 30 seconds to several minutes
-appear in the literature.
-A robust pipeline should produce stable event-level F1 across this range,
-because the underlying physiology of blinks does not change with the epoch
-grid imposed during analysis.
-
-\paragraph{Design.}
-Proposed-Med is evaluated under epoch durations of 30, 40, and 60 seconds.
-For each duration the full pipeline is re-run from scratch, since epoch-level
-peak-to-peak statistics change with epoch length.
-Primary outcomes are per-session macro F1; secondary outcomes are the number of
-suspicious epochs returned by Stage~A and the estimated sample-level threshold
-$\theta_c$.
-Table~\ref{tab:epoch_duration} reports results and two-tailed Wilcoxon $p$-values
-relative to the 30-second reference.
-
-% Source: runs/exp40_cao/exp1_epoch_duration_summary.csv; script tutorial/40_exp1_epoch_duration.py
-\input{e_result/tab_effect_different_epoch_size}
-
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=0.7\linewidth]{fig_f1_by_epoch.pdf}
-  % Source: runs/exp40_cao/exp1_epoch_duration_summary.csv; script analysis/new_analysis/new_018_result_figures/make_figures.py
-  \caption{Macro-averaged $F_1$ of Proposed-Med across epoch durations (all sessions).}
-  \label{fig:f1_by_epoch}
-\end{figure}
-
-% Re-enabled for TCAO6 after rewrite to Raja+Cao2018 30 s results.
-\input{e_result/p003/paragraph}
-
-
-
-\subsection{Experiment 4: Stability Across Peak-Side Boundary Tolerance}
-\label{sec:exp7}
-
-\paragraph{Motivation.}
-Event-level matching requires specifying how much temporal mismatch between a
-detected interval and a ground-truth interval is tolerable.
-Blink boundaries in annotation are inherently uncertain: different annotators and
-annotation tools locate onset and offset slightly differently.
-A detector whose F1 score is highly sensitive to the matching tolerance is
-fragile in practice, because its apparent performance depends on an arbitrary
-methodological choice rather than on true detection quality.
-
-\paragraph{Design.}
-Proposed-Med is evaluated under five event-matching strictness settings, expressed
-as intersection-over-union (IoU) thresholds $\{0.0, 0.1, 0.2, 0.3, 0.5\}$ for the overlap between each detected interval and a ground-truth interval.
-Lower IoU thresholds treat any overlap as a match; higher thresholds require a larger fraction of overlap and therefore penalise boundary mismatch more
-aggressively.
-We report macro-averaged precision, recall, and F1 at each IoU threshold, and the range of macro F1 across the five levels to quantify sensitivity to this
-evaluation choice.
-
-% Source: runs/exp42_cao_30s/exp42_boundary_tolerance_summary.csv; verified against runs/reports/TCAO4_derived_stats.md
-\input{e_result/tab_boundary_tolerance}
-
-\subsection{Experiment 5: Cross-Dataset Generalisation}
-\label{sec:exp_cross_dataset}
-
-\paragraph{Motivation.}
-A detector that is tuned and reported on a single corpus may not transfer to data
-collected under different acquisition conditions.
-Because our benchmark spans a closed corpus (Raja) and an open corpus
-(Cao2018), we can quantify the generalisation gap directly as the per-condition
-difference in macro-F1 between the two datasets.
-
-% Re-enabled for TCAO6 after rewrite to Raja+Cao2018 30 s results.
-\input{e_result/p002/paragraph}
-
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=0.8\linewidth]{fig_f1_by_dataset.pdf}
-  % Source: runs/exp41_cao_30s/exp41_strategy_comparison_summary.csv; script analysis/new_analysis/new_018_result_figures/make_figures.py
-  \caption{Macro-averaged $F_1$ per condition on Raja and Cao2018.}
-  \label{fig:f1_by_dataset}
-\end{figure}
-
-% Source: runs/exp41_cao_30s/exp41_strategy_comparison_summary.csv; script tutorial/41_exp1_exp2_strategy_comparison.py
-\input{e_result/tab_cross_dataset_gap}
-
-\subsection{Recall by Blink Duration}
-\label{sec:blink_duration_recall}
-
-\paragraph{Motivation.}
-Using Raja and Cao2018, this analysis asks whether event-level recall differs between normal-duration and long-duration blinks (Table~\ref{tab:blink_type_recall}).
-
-% Source: runs/extra_blink_type/recall_by_blink_type.csv; script tutorial/50_exp_blink_type_recall.py
-\input{e_result/p004/paragraph}
-
-% Stale blink-type figure disabled for TCAO5/TCAO6; awaits Cao2018 recompute.
-% \begin{figure}[ht]
-%   \centering
-%   \includegraphics[width=0.8\linewidth]{fig_recall_by_blinktype.pdf}
-%   % Source: UNKNOWN - manual verification
-%   \caption{Event-level recall for normal versus long blinks, per condition.}
-%   \label{fig:recall_by_blinktype}
-% \end{figure}
-
-% Source: runs/extra_blink_type/recall_by_blink_type.csv; script tutorial/50_exp_blink_type_recall.py
-\input{e_result/tab_blink_type_recall}
-
-\subsection{Error-Structure Decomposition}
-\label{sec:error_structure_decomposition}
-
-\paragraph{Motivation.}
-Using Raja and Cao2018, this analysis asks how each condition's event-level errors decompose into false-positive and false-negative regimes (Table~\ref{tab:error-structure}).
-
-\input{e_result/p006/paragraph}
-% Source: runs/exp_error_session/error_regime.csv; script tutorial/48_exp_error_structure_session.py
-\input{e_result/tab_error_structure}
-
-\subsection{Per-Session and Per-Subject Variability}
-\label{sec:session_subject_variability}
-
-\paragraph{Motivation.}
-Using Raja and Cao2018, this analysis asks how Proposed-Med performance varies across individual recordings and subjects (Table~\ref{tab:best-session}).
-
-\begingroup
-\catcode`\_=13
-\protected\def_{\ifmmode\sb\else\textunderscore\fi}
-\input{e\string_result/p007/paragraph}
-\endgroup
-% Source: runs/exp_error_session/session_ranking_proposed_med.csv; script tutorial/48_exp_error_structure_session.py
-\input{e_result/tab_best_session}
-
-\subsection{Channel-Selection Robustness Across Methods}
-\label{sec:channel_selection_robustness}
-
-\paragraph{Motivation.}
-Using Raja and Cao2018, this analysis asks whether the selected best channel is stable across the four visible detection methods (Table~\ref{tab:channel-robustness}).
-
-% Re-enabled for TCAO6 after rewrite to Raja+Cao2018 30 s results.
-\input{e_result/p008/paragraph}
-% Source: runs/exp41_cao_30s/exp41_strategy_comparison_results.csv; script runs/reports/TCAO4_derived_stats.md
-\input{e_result/tab_channel_robustness}
-
+% =====================================================================
+% EXPERIMENT 1 — channel selection
+% =====================================================================
 \subsection{Experiment 1: EEG Channel-Selection Ablation}
 \label{sec:exp1_channel}
 
 \paragraph{Motivation.}
-While EEG blink artefacts are known to be largest over frontal scalp sites, it is unclear how much performance degrades when only a subset of available channels is used. This experiment systematically ablates channel groups and individual channels to characterise the performance-versus-coverage trade-off and identify a compact, reliable channel set.
+EEG blink artefacts are largest over frontal scalp sites, but it is unclear how much
+performance degrades when only a subset of the available channels is used. This experiment
+ablates channel groups and individual electrodes to characterise the
+performance-versus-coverage trade-off and to identify a compact, reliable channel set.
 
 \paragraph{Design.}
-The full blink detection pipeline (30-second epochs, median centre) was applied to every session of both datasets, and detection was evaluated \emph{channel by channel}: each electrode's macro-averaged precision, recall, and $F_1$ were read directly from the per-channel rows of the Experiment~1 results (the \texttt{selection=all} rows), averaged over sessions, with no region-level pooling. Each entry therefore corresponds to the median-thresholded detector applied to one channel of a given region---the per-region, per-channel \texttt{proposed\_median} unit defined in the caption of Table~\ref{tab:exp1_channel_ablation}. For the Raja EGI-128 montage the native electrode labels are accompanied by their 10--20 equivalents through the channel map of Table~\ref{tab:egi_map}; the Cao2018 montage is already in 10--20 nomenclature.
+The full pipeline (30-second epochs, median centre) was applied to every session of both
+datasets and evaluated \emph{channel by channel}: each electrode's macro-averaged
+precision, recall and $F_1$ were read directly from the per-channel rows of the
+Experiment~1 results (the \texttt{selection=all\_channel} rows), averaged over sessions,
+with no region-level pooling. For the Raja EGI-128 montage the native electrode labels are
+accompanied by their 10--20 equivalents through the channel map of
+Table~\ref{tab:egi_map}; the Cao2018 montage is already in 10--20 nomenclature.
 
 \input{e_result/tab_egi_channel_map}
 \input{e_result/tab_exp1_channel_ablation}
+\input{e_result/r1_channel_ablation/paragraph}
 
-\paragraph{Findings.}
-The channel-by-channel breakdown shows that detection is concentrated at the frontopolar electrodes specifically, not across the frontal region as a whole. On Raja the two best electrodes were Fp2 (E9, $F_1 = 0.868$) and Fp1 (E22, $0.862$); on Cao2018 they were FP1 ($0.795$) and FP2 ($0.783$). Within the very same frontal regions the per-channel $F_1$ then fell steeply away from the pole---on Raja from Fp1 ($0.862$) through E3 ($0.801$) and E23 ($0.734$) to F3 (E24, $0.451$), F4 (E124, $0.446$) and F7 (E33, $0.073$), and on Cao2018 from FP1 ($0.795$) down to F4 ($0.574$). Outside the frontal regions performance collapsed: no central, parietal, or occipital channel exceeded $F_1 = 0.11$ on Raja, and on Cao2018 the strongest non-frontal channel (FC3, $0.438$) remained well below every frontal channel, with parietal and occipital electrodes at or below $0.19$. The two corpora localised the optimum to the same frontopolar site despite their different montages (E22/E9 are the EGI equivalents of Fp1/Fp2). A single frontopolar electrode (Raja E9, $0.868$) recovered essentially all of the whole-cap oracle performance ($0.882$, obtained by selecting the best channel per session over the full montage), so one well-placed electrode is sufficient and a dense montage is unnecessary for reliable blink detection.
+\subsubsection{Regional Profile and Single-Channel Operation}
+\label{sec:region_performance}
+\input{e_result/tab_region_performance}
 
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.9\linewidth]{fig_region_performance.pdf}
+  \caption{Single-channel detection $F_1$ for every electrode, coloured by scalp region.}
+  \label{fig:region_performance}
+\end{figure}
 
-\paragraph{Best-channel selection frequency.}
-Pooling the best-channel choices over the four detection methods quantifies how often each
-electrode was selected (Table~\ref{tab:channel_selection}).
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.9\linewidth]{fig_exp1_region_boxplot.pdf}
+  \caption{Session-level macro $F_1$ by channel-selection group (median centre), Raja versus Cao2018.}
+  \label{fig:exp1_region_boxplot}
+\end{figure}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.9\linewidth]{fig_exp1_single_channel_boxplot.pdf}
+  \caption{Session-level macro $F_1$ for the single-channel selection groups.}
+  \label{fig:exp1_single_channel}
+\end{figure}
+
+\input{e_result/r1_region_profile/paragraph}
+
+\subsubsection{Stability of the Channel Choice}
+\label{sec:channel_stability}
+
+\paragraph{Design.}
+Experiment~1 identifies the best channel on average; this analysis asks how concentrated
+that choice is in practice. The per-session best channel is pooled over the four detection
+conditions of Experiment~2, giving both a selection frequency
+(Table~\ref{tab:channel_selection}, Figure~\ref{fig:channel_selection}) and an agreement
+rate between conditions (Table~\ref{tab:channel-robustness}).
+
 \input{e_result/tab_channel_selection}
-\input{e_result/p009/paragraph}
 
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.9\linewidth]{fig_channel_selection.pdf}
+  \caption{Best-channel selection frequency, pooled over the four conditions.}
+  \label{fig:channel_selection}
+\end{figure}
+
+\input{e_result/tab_channel_robustness}
+\input{e_result/r1_channel_stability/paragraph}
+
+% =====================================================================
+% EXPERIMENT 2 — strategy comparison
+% =====================================================================
+\subsection{Experiment 2: Strategy Comparison}
+\label{sec:exp2_strategy}
+
+\paragraph{Motivation.}
+In driving and other epoch-structured paradigms it is common to run a continuous-signal
+blink detector on the raw or minimally preprocessed recording and map detections back onto
+the epoch grid. BLINKER-concat embodies this practice: its threshold is derived from a
+signal pool that mixes blink-heavy and blink-free epochs. The central claim of the proposed
+pipeline is that this mixing dilutes the amplitude statistics used for threshold
+estimation, distorting threshold placement and shifting the precision--recall trade-off.
+MNE-annot provides a second reference point grounded in community tooling: establishing its
+performance under an event-level blink criterion, for which it was not designed,
+characterises the gap that specialised methods must close.
+
+\paragraph{Hypothesis.}
+Naive concatenation will produce systematically lower session-level $F_1$ than the
+epoch-aware pipeline through an unfavourable precision--recall trade-off.
+
+\paragraph{Design.}
+All four conditions are applied to every session under 30-second epochs on the
+\texttt{all\_channel} gate. Per-session macro $F_1$, precision and recall are summarised in
+Table~\ref{tab:exp1_main}.
+
+\input{e_result/tab_comparison_30s_epoch}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.8\linewidth]{fig_condition_prf.pdf}
+  \caption{Macro-averaged precision, recall, and $F_1$ for the four conditions over all sessions.}
+  \label{fig:condition_prf}
+\end{figure}
+
+\input{e_result/tab_exp2_inversions}
+\input{e_result/r2_strategy_main/paragraph}
+
+\subsubsection{Effect of the Threshold Estimator at Stage B}
+\label{sec:exp2_estimator}
+
+\paragraph{Motivation.}
+Stage~B estimates the sample-level threshold from samples pooled across the suspicious
+epoch set $\mathcal{S}$. Because $\mathcal{S}$ is selected precisely because it contains
+high-amplitude excursions, the pooled distribution is not symmetric around a clean
+baseline: it is contaminated by the very peaks the threshold is meant to capture. The mean
+and standard deviation are sensitive to these extreme values; the median and MAD are not.
+
+\paragraph{Hypothesis.}
+Proposed-Med will outperform Proposed-Mean on precision---because the MAD-based threshold
+is less inflated by within-epoch peaks---while achieving comparable or superior recall.
+
+\input{e_result/r2_estimator/paragraph}
+
+\subsubsection{Cross-Dataset Generalisation}
+\label{sec:exp_cross_dataset}
+
+\paragraph{Motivation.}
+A detector tuned and reported on a single corpus may not transfer to data collected under
+different acquisition conditions. Because the benchmark spans a closed corpus (Raja) and an
+open corpus (Cao2018), the generalisation gap can be quantified directly as the
+per-condition difference in macro-$F_1$ between the two datasets.
+
+\input{e_result/tab_cross_dataset_gap}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.8\linewidth]{fig_f1_by_dataset.pdf}
+  \caption{Macro-averaged $F_1$ per condition on Raja and Cao2018.}
+  \label{fig:f1_by_dataset}
+\end{figure}
+
+\input{e_result/r2_cross_dataset/paragraph}
+
+\subsubsection{Operating Points}
+\label{sec:operating_points}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.9\linewidth]{fig_exp2_pr_scatter.pdf}
+  \caption{Per-session precision--recall operating points, Raja and Cao2018 shown separately.}
+  \label{fig:exp2_pr_scatter}
+\end{figure}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.8\linewidth]{fig_pr_scatter.pdf}
+  \caption{Per-session operating points pooled over both corpora, with condition means and iso-$F_1$ contours.}
+  \label{fig:pr_scatter}
+\end{figure}
+
+\input{e_result/r2_operating_points/paragraph}
+
+\subsubsection{Blink-Count Fidelity}
+\label{sec:count_fidelity}
+
+\paragraph{Motivation.}
+Event-level $F_1$ does not by itself establish that a detector can support blink-rate or
+PERCLOS estimation: that requires the predicted event count to track the true count. For
+each session the predicted count is $\mathrm{TP}+\mathrm{FP}$ and the true count is
+$\mathrm{TP}+\mathrm{FN}$.
+
+\input{e_result/tab_count_agreement}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.9\linewidth]{fig_count_agreement.pdf}
+  \caption{Predicted versus true blink count, and a Bland--Altman view for Proposed-Med.}
+  \label{fig:count_agreement}
+\end{figure}
+
+\input{e_result/r2_count_fidelity/paragraph}
+
+\subsubsection{Error-Structure Decomposition}
+\label{sec:error_structure_decomposition}
+
+\paragraph{Motivation.}
+Two detectors can reach the same $F_1$ by opposite routes: one floods the recording with
+false positives, the other misses blinks. Decomposing each condition's errors into
+false-positive and false-negative regimes distinguishes the two.
+
+\input{e_result/tab_error_structure}
+\input{e_result/r2_error_structure/paragraph}
+
+\subsubsection{Per-Session Variability and Failure Analysis}
+\label{sec:session_variability}
+
+\input{e_result/tab_best_session}
+\input{e_result/tab_failure_analysis}
+\input{e_result/r2_session_variability/paragraph}
+
+% =====================================================================
+% EXPERIMENT 3 — epoch duration
+% =====================================================================
+\subsection{Experiment 3: Stability Across Epoch Durations}
+\label{sec:exp3_epoch}
+
+\paragraph{Motivation.}
+Epoch duration is routinely chosen on paradigm-specific or theoretical grounds and is
+rarely optimised for the blink detector itself. In driving studies, epoch lengths ranging
+from a few seconds to several minutes appear in the literature. A robust pipeline should
+produce stable event-level $F_1$ across this range, because the underlying physiology of
+blinks does not change with the epoch grid imposed during analysis.
+
+\paragraph{Design.}
+Proposed-Med is evaluated under epoch durations of 10, 20, 30, 40, 50, 60 and 120 seconds.
+For each duration the full pipeline is re-run from scratch, since epoch-level
+peak-to-peak statistics change with epoch length.
+Table~\ref{tab:epoch_duration} reports results and two-tailed Wilcoxon $p$-values
+relative to the 30-second reference.
+
+\input{e_result/tab_effect_different_epoch_size}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.8\linewidth]{fig_exp3_epoch_duration.pdf}
+  \caption{Macro-averaged $F_1$ of Proposed-Med across epoch durations.}
+  \label{fig:f1_by_epoch}
+\end{figure}
+
+\input{e_result/r3_epoch_duration/paragraph}
+
+% =====================================================================
+% SUMMARY
+% =====================================================================
 \subsection{Summary Across Experiments}
 \label{sec:exp_summary}
-Table~\ref{tab:exp_summary} consolidates Proposed-Med performance across all ablation
+
+Table~\ref{tab:exp_summary} consolidates Proposed-Med performance across the three
 experiments, Figure~\ref{fig:exp_boxplot} shows the corresponding session-level
 distributions, and Table~\ref{tab:exp_stats} reports the paired comparison against the best
 competing method in every setting.
+
 \input{e_result/tab_exp_summary}
-\input{e_result/fig_exp_boxplot}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.9\linewidth]{fig_exp_boxplot.pdf}
+  \caption{Session-level $F_1$ distributions of Proposed-Med across the three experiments.}
+  \label{fig:exp_boxplot}
+\end{figure}
+
 \input{e_result/tab_exp_stats}
-
-\input{e_result/pe1/paragraph}
-\input{e_result/pe2/paragraph}
-\input{e_result/pe3/paragraph}
-\input{e_result/pe4/paragraph}
-\input{e_result/pe5/paragraph}
-\input{e_result/pe7/paragraph}
-\input{e_result/pe8/paragraph}
-
-\subsection{Performance by Region and Single-Channel Operation}
-\label{sec:region_performance}
-\input{e_result/fig_region_performance}
-\input{e_result/p011/paragraph}
-
-\subsection{Per-Session Failure Analysis}
-\label{sec:failure_analysis}
-\input{e_result/tab_failure_analysis}
-\input{e_result/p012/paragraph}
-
-\subsection{Operating Points and Count Fidelity}
-\label{sec:operating_points}
-Figure~\ref{fig:pr_scatter} locates each condition in precision--recall space, and
-Table~\ref{tab:count_agreement} with Figure~\ref{fig:count_agreement} quantifies how closely
-the predicted blink count tracks the true count---the property that determines whether a
-detector can support blink-rate estimation.
-\input{e_result/fig_pr_scatter}
-\input{e_result/p013/paragraph}
-\input{e_result/tab_count_agreement}
-\input{e_result/fig_count_agreement}
-\input{e_result/p014/paragraph}
+\input{e_result/r4_summary/paragraph}

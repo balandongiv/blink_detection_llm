@@ -1,134 +1,127 @@
 # `experiment_script/` — what each script does
 
-Two kinds of files live here:
-
-* **Primary experiments** `exp1_…` – `exp8_…` — run detection and produce the raw result
-  CSVs. Numbered to follow the reordered result-section outline
-  (see `tutorial/channel_region_refactor_plan.md` §5). **exp1 = channel selection**,
-  **exp2 = strategy comparison**, then exp3–exp8.
-* **Supporting / post-processing** `paper_…` — *consume* an experiment's CSV output and
-  emit the paper's tables and figures (they do not run detection themselves, except
-  `paper_blink_type_recall.py`). The `paper_` prefix keeps them visually distinct from the
-  `exp*` primaries.
-
-All scripts assume the conda env `pyblinker_worktree_epoch_blink` and resolve the repo root as
+All scripts assume the conda env `double_threshold_algo` and resolve the repo root as
 `Path(__file__).resolve().parents[1]`, so they work unchanged from `experiment_script/`.
 
-> **Sampling rate:** the pipeline now downsamples to **100 Hz** (`RESAMPLE_RATE = 100`
-> in each `exp*` primary; `resample_rate=100` in `condition_runner_utils.py` and
-> `channel_ablation_utils.py`), matching the documented methodology. This is
-> **results-affecting** — any cached results predating this change must be re-run.
+## The naming rule
+
+**A script is named for the artifact it produces.** Read the filename and you know which
+table or figure in the manuscript it is responsible for:
+
+```
+tab<N>_<slug>.py          -> writing/e_result/tab_<slug>.tex
+fig<N>_<slug>.py          -> writing/figures/fig_<slug>.{pdf,png}
+tab<N>_fig<M>_<slug>.py   -> both (one analysis, two renderings)
+exp<N>_a_<slug>.py        -> runs detection, emits the result CSVs (no manuscript artifact)
+```
+
+The numbers are the manuscript's figure/table numbers, defined in
+**`writing/FIGURE_TABLE_MAP.md`** — that file is the authority. If the manuscript is
+renumbered, rename the scripts to match.
+
+## Source of truth
+
+Every manuscript artifact is generated from **`publication_results/`** and nothing else.
+`runs/`, `runs0/` and `runs_second_iteration/` are working directories whose contents do
+**not** match the published manuscript; no generator may read them. Paths come from
+`experiment_script/setup/exp_path.yaml` (`out_dir: publication_results`) via
+`experiment_script/paper_data.py`.
+
+Only **three** experiments have published results:
+
+| Directory | Contents | Sessions |
+|---|---|---|
+| `publication_results/exp1_channel_{cao,raja}` | 18–20 channel groups × {median, mean} × 32 channels | 58 + 46 |
+| `publication_results/exp2_{cao,raja}` | 4 conditions, `all_channel` gate, `best_channel` recorded | 58 + 46 |
+| `publication_results/exp3_{cao,raja}` | 7 epoch durations (10–120 s) × 4 selections × {median, mean} | 58 + 46 |
+
+Experiments 4–8 (boundary tolerance, `n_min`, `std_threshold`, morphology, epoch health,
+long-blink recall) were **not** carried into the final result set. Their scripts, setup
+yamls and manuscript sections have been removed.
 
 ---
 
-## Primary experiments
+## Primary experiments — run detection, emit CSVs
 
-| Script | Purpose | Paper section(s) |
-|--------|---------|------------------|
-| `exp1_channel_selection_raja.py` | Channel-selection ablation (Raja). Runs the **complete 3-stage pipeline per channel group** (`all/frontal/central/parietal/occipital/posterior/…`) × {median, mean}; reports Stage-A epoch metrics + downstream event F1; writes a **butterfly HTML report** (per-subject + all-subject TP/FN/FP). Writes `exp1_channel_selection_raja_{results,summary}.csv` + butterfly HTML. | **II. Mechanism** — *Channel-selection & aggregation* |
-| `exp1_channel_selection_cao2018.py` | Same ablation for Cao2018 (10-20 montage; `epoch_health` filtering). Writes `exp1_channel_selection_cao2018_{results,summary}.csv`. | **II. Mechanism** |
-| `exp2_strategy_comparison.py` | Main comparison of BLINKER-concat, MNE-annot, **Proposed-Mean**, **Proposed-Med** (+ DBO, hidden) on Raja+Cao2018, 30 s. Also the median-vs-mean estimator contrast and the cross-dataset gap. Writes `runs/exp2_strategy_30s/exp41_strategy_comparison_{results,summary}.csv` (output basename kept as legacy `exp41_*`). | **I. Contribution** — *Strategy comparison*, *Estimator (median vs mean)*, *Cross-dataset generalisation* |
-| `exp3_epoch_duration.py` | Proposed-Med across epoch durations (e.g. 20/30/40/60/120 s) on Raja+Cao2018; Wilcoxon vs reference. Writes `runs/exp3_epoch/exp1_epoch_duration_{results,summary}.csv` + `summary.json` (`best_epoch_duration_s`). | **III. Robustness** — *Stability across epoch durations* |
-| `exp4_boundary_tolerance.py` | Proposed-Med across IoU matching thresholds {0,0.1,0.2,0.3,0.5}; F1 range = sensitivity. Writes `runs/exp4_tolerance/exp42_boundary_tolerance_{results,summary}.csv`. | **III. Robustness** — *Boundary-tolerance stability* |
-| `exp5_nmin_sensitivity.py` | Sensitivity to the Stage-B fallback count `n_min`: threshold-variance vs sub-sample size, and fallback frequency vs epoch duration. Console tables (no paper table yet). | **III. Robustness** — *Stage-B fallback / `n_min`* |
-| `exp6_morphological.py` | Detailed blink-region morphology: TP/FN/FP butterfly plots stratified by duration and amplitude, per-subject + all-subject, into one MNE HTML report. Writes `runs/exp6_morphology/`. | **IV. Characterization** — *Blink-region morphology* |
-| `exp7_epoch_health_effect.py` | Effect of **excluding low-health epochs** (`health_on` vs `health_off`) for **all five** conditions on Raja+Cao2018; reports per-condition ΔF1. Quantifies how much a preprocessing choice (not the detector) inflates/deflates the numbers, and whether it helps the proposed method more than the baselines. **Reuses exp2** (strategy comparison) for the `health_on` side via `--reuse-exp1-csv`. | **III. Robustness** — *Epoch-health exclusion sensitivity* |
-| `exp8_long_blink_analysis.py` | Recall for **normal (<0.5 s) vs long (≥0.5 s)** blinks, all five conditions on Raja+Cao2018; reports the per-detector recall gap. Long closures (microsleep/drowsiness) are the safety-critical events that shape-based detectors tend to miss. Extends the single-pipeline `tutorial/14` and the duration table in `paper_blink_type_recall.py` to all five conditions + per-session detail. | **IV. Characterization** — *Long-blink (drowsiness) recall* |
+| Script | Purpose |
+|--------|---------|
+| `exp1_a_channel_selection_{raja,cao2018}.py` | Channel-selection ablation. Runs the complete three-stage pipeline **per channel group** × {median, mean}; writes `exp1_channel_selection_{ds}_{results,summary}.csv` plus a butterfly HTML report. |
+| `exp2_a_strategy_comparison_{raja,cao2018}.py` | Per-dataset sweep on the `all_channel` gate × the four conditions defined in `src/exp/exp2_strategy_conditions.py`. Resume-safe via `src/utils/session_sweep.py`. Writes `exp2_strategy_comparison_{ds}_results.csv`. |
+| `exp3_a_epoch_duration_{raja,cao2018}.py` | Epoch-duration sweep: for every duration in `setup/exp3_epoch_duration.yaml`, re-runs the full pipeline on each channel group × {median, mean}. Writes `exp3_epoch_duration_{ds}_{results,summary}.csv`. |
+| `exp1_step_b_get_best_region_channel.py` | Reads exp1 summaries and reports the winning channel group, for recording in `channel_group_selection.yaml`. |
 
-### Shared engine / figure utilities (used by `exp1_channel_selection_*`)
+## Shared data layer
 
-| File | Purpose | Related experiment |
-|------|---------|--------------------|
-| `channel_ablation_utils.py` | The ablation engine: builds channel-selection groups from a region YAML and, **for each group, recomputes Stage A (autoreject) on that group's own channels** before Stage B/C — the straightforward `tutorial/10d` approach (no learn-once-then-reuse across groups). Computes Stage-A + downstream metrics and extracts TP/FN/FP windows. Resamples to 100 Hz. | **exp1** |
-| `butterfly_report.py` | Builds the MNE HTML butterfly report (per-group, per-subject + all-subject TP/FN/FP overlays). | **exp1** |
-| `condition_runner_utils.py` | Imports the five `exp2_strategy_comparison` condition runners + session-prep / GT helpers, so the analyses reuse the *exact* exp2 detector configuration instead of re-declaring it. Resamples to 100 Hz; applies the channel-group gate. | **exp7, exp8** |
-| `channel_group_config.py` | Reads the channel-group gate (`channel_group_selection.yaml`) and subsets a prepared session to the approved Stage-A group. No-op when the group is `all`. | **exp2–exp8** |
-| `__init__.py` | Marks `experiment_script` as a package so the `exp*` scripts can import the utils above. | — |
+| File | Purpose |
+|------|---------|
+| `paper_data.py` | **Every generator imports this.** Resolves `publication_results/` paths, loads the result CSVs, applies best-channel-per-session aggregation, maps channels to regions and 10–20 scalp locations, runs the paired Wilcoxon tests, and writes `.tex`/figure files with a provenance comment. Put shared logic here, not in a generator. |
+| `channel_ablation_utils.py` (in `src/utils/`) | The ablation engine used by `exp1`/`exp3`: builds channel groups from a region YAML and recomputes Stage A on each group's own channels before Stage B/C. |
+| `condition_runner_utils.py` (in `src/utils/`) | Imports the condition runners from `src/exp/exp2_strategy_conditions.py` so analyses reuse the exact exp2 detector configuration. |
+| `channel_group_config.py` | Reads the channel-group approval gate (`channel_group_selection.yaml`) and subsets a prepared session to the approved group. |
+| `butterfly_report.py` | Builds the MNE HTML butterfly report (per-group, per-subject TP/FN/FP overlays). |
 
-> `src/utils/experiment_utils.py`, `src/utils/dataset_discovery.py`, and
-> `src/utils/matching_event/` are **not** here on purpose — they are shared by ~20
-> non-experiment tutorials in addition to the `exp*` scripts.
+## Artifact generators
 
----
+Run after the primaries. Each reads `publication_results/` and writes the manuscript files.
 
-## Channel-group selection gate (`exp1` → `exp2`..`exp8`)
+### Experiment 1 — channel selection
 
-Experiment 1 (channel selection) decides which Stage-A channel group works best; that decision is
-carried into the downstream experiments through a **hard-approval gate** so the chosen montage is
-applied deliberately, never by accident:
+| Script | Produces |
+|--------|----------|
+| `tab1_egi_channel_map.py` | Table 1 — Raja EGI ↔ 10–20 mapping, from the `egi_pair` block of `brain_region_raja.yaml` |
+| `tab2_exp1_channel_ablation.py` | Table 2 — per-channel precision/recall/F1, both corpora |
+| `tab3_fig3_region_performance.py` | Table 3 + Figure 3 — region-level means and the whole-scalp electrode map |
+| `fig1_exp1_region_boxplot.py` | Figure 1 — session-level F1 by channel-selection group |
+| `fig2_exp1_single_channel_boxplot.py` | Figure 2 — session-level F1 for the single-channel groups |
 
-* **`channel_group_selection.yaml`** (repo root) — records the chosen Stage-A group per dataset
-  (`raja`, `cao2018`). Default is `all` (the full per-dataset region montage), so `exp2`..`exp8`
-  behave exactly as before. Selecting any non-`all` group **requires `approved_by` (and
-  `approved_date`) to be filled**, otherwise the experiments raise at runtime — forcing an
-  explicit, reviewable human/agent sign-off.
-* **`channel_group_config.py`** — `apply_stage_a_channel_group(prepared, dataset)` is called right
-  after a session is prepared in `exp2`–`exp6` and inside `condition_runner_utils.prepare_session`
-  (covering `exp7`/`exp8`); it subsets the montage to the approved group (no-op when `all`).
-  `exp1_channel_selection_*` deliberately does **not** call it — exp1 must see the full montage to
-  compare every group. The `paper_*` post-processors do not consume the gate yet.
-* **All-channels warning:** because `exp2`–`exp8` go through `apply_stage_a_channel_group`, they emit
-  a `logging.WARNING` (once per dataset) whenever the effective group is `all` — i.e. you are running
-  Stage A on every channel because no winner has been recorded yet. exp1 does not warn (it is the
-  experiment that *chooses* the group).
+### Experiment 2 — strategy comparison
 
-**Design doc — `experiment_script/extende_experiment.md`** (moved here from `tutorial/`) is the
-original specification for the *"Compare channel-selection strategies"* ablation: spatial channel
-groups × aggregation rules, Stage-A epoch-level ground truth, and downstream effects. A future
-human/agent choosing the winning group should read it together with the `exp1_channel_selection_*`
-outputs (weighing det-F1, Stage-A epoch F1, #channels, FP-epoch rate, recall, cross-dataset
-consistency, best-channel stability, median-vs-mean), then record the choice **and its rationale**
-in `channel_group_selection.yaml`.
+| Script | Produces |
+|--------|----------|
+| `tab4_tab5_strategy_comparison_30s.py` | Tables 4 and 5 — headline four-condition comparison, and baseline inversions |
+| `fig4_fig5_condition_prf.py` | Figures 4 and 5 — pooled precision/recall/F1, and F1 by dataset |
+| `tab6_cross_dataset_gap.py` | Table 6 — Raja − Cao2018 generalisation gap |
+| `fig6_exp2_pr_scatter.py` | Figure 6 — per-session PR scatter, corpora shown separately |
+| `fig7_pr_operating_points.py` | Figure 7 — pooled operating points with iso-F1 contours |
+| `tab7_fig8_count_agreement.py` | Table 7 + Figure 8 — predicted vs true blink count, Bland–Altman |
+| `tab8_error_structure.py` | Table 8 — FP:FN decomposition per condition |
+| `tab9_best_session.py` | Table 9 — best/worst/median session and subject |
+| `tab10_failure_analysis.py` | Table 10 — the five lowest-F1 sessions per corpus |
+| `tab11_fig9_channel_selection_frequency.py` | Table 11 + Figure 9 — how often each electrode wins |
+| `tab12_channel_robustness.py` | Table 12 — agreement between conditions on the best channel |
 
----
+### Experiment 3 and summary
 
-## Supporting / post-processing scripts
+| Script | Produces |
+|--------|----------|
+| `tab13_fig10_epoch_duration.py` | Table 13 + Figure 10 — macro-F1 across the seven epoch durations |
+| `tab14_tab15_fig11_exp_summary.py` | Tables 14/15 + Figure 11 — cross-experiment summary, paired stats, box plot |
+| `tab16_literature_comparison.py` | Table 16 — literature comparison (not experiment-backed) |
 
-These read an experiment's result CSV and write the paper artifacts. "Depends on" = which
-experiment must run first.
+### Orchestration and checks
 
-| Script | Purpose | Depends on | Paper section / artifact |
-|--------|---------|-----------|--------------------------|
-| `paper_channel_selection_frequency.py` | Frequency of best-channel selection by dataset/method/subject + method overlap. Writes `tab_channel_selection.tex`, `fig_channel_selection.pdf`. | **exp2** (reads `exp41_strategy_comparison_results.csv`) | *EEG Channel Selection* (Part IV) — complements exp1 |
-| `paper_error_structure_session.py` | Decomposes errors into FP/FN regimes and ranks best/worst sessions & subjects. Writes `tab_error_structure.tex`, `tab_best_session.tex`. | **exp2** | *Error-Structure Decomposition* + *Per-Session/Subject Variability* (Part IV) |
-| `paper_epoch_duration_figure.py` | Regenerates the epoch-duration F1 bar figure. Writes `fig_f1_by_epoch.pdf`. | **exp3** (reads its summary CSV) | *Stability across epoch durations* figure (Part III) |
-| `paper_blink_type_recall.py` | Event-level recall for Normal (<0.5 s) vs Long (≥0.5 s) blinks; **runs detection** by importing the four strategy runners from `exp2_strategy_comparison.py`. Writes `tab_blink_type_recall.tex`. | **exp2** (imports its runners) | *Recall by Blink Duration* (Part IV) |
-| `paper_result_figures.py` | Regenerates the main result figures. Writes `fig_condition_prf.pdf`, `fig_f1_by_dataset.pdf`. | **exp2** (reads its summary CSV) | *Strategy comparison* + *Cross-dataset* figures (Part I/IV) |
+| Script | Purpose |
+|--------|---------|
+| `_run_all_experiments.py`, `run_exp123_orchestrator.py`, `run_exp123_full_pipeline_orchestrator.py` | Run exp1–exp3 end to end, with Telegram progress reporting. |
+| `compute_paper_numbers.py` | Recomputes the headline numbers for auditing prose against the CSVs. |
+| `sanity_check_all_channel_30s.py`, `sanity_check_exp1_2_3_s01_051017m.py`, `smoke_test_exp_path.py` | Fast checks that the wiring and a known session still reproduce. |
+| `reproduce_manuscript.py` | Walks the artifact registry and verifies every manuscript file has a live generator. |
+| `init_replication.py`, `runs_dir.py` | Replication scaffolding (`BLINK_RUNS_DIR`) for re-running the pipeline into a fresh directory. |
+| `exp_tg_report.py` | Telegram reporting helper. |
 
 ---
 
-## Reuse of prior results (don't recompute from scratch)
+## Aggregation convention
 
-The suite is layered so that later analyses **consume earlier outputs** instead of re-running
-detection:
+Every four-condition comparison uses **best-channel-per-session**: for each session take the
+row with the highest event-level F1, then average across sessions. The same rule is applied
+to all four conditions, so no condition gets a selection advantage the others do not.
+See `writing/VALUE_AUDIT.md`.
 
-* `paper_channel_selection_frequency`, `paper_error_structure_session`,
-  `paper_blink_type_recall`(partial), `paper_result_figures` read **exp2**'s results CSV.
-* `paper_epoch_duration_figure` reads **exp3**'s summary CSV.
-* **exp7**'s `health_on` side *is* exp2 by construction → pass `--reuse-exp1-csv …` and only the
-  `health_off` side is computed (≈ half the work; the slow DBO/Proposed runs on kept epochs are
-  not repeated).
-* **exp8**'s detection on the standard valid-epoch set is the same pipeline exp2/`paper_blink_type_recall` run;
-  it adds the normal/long split and DBO. (Detections aren't persisted by exp2, so exp8 still runs detection
-  once per session×condition; if this becomes a bottleneck, add a detection cache to exp2.)
+## Channel-group approval gate
 
-Rule of thumb: if a number already exists in an upstream CSV under identical settings, read it —
-don't recompute it.
-
-## ⚠️ Wiring notes (input paths to reconcile before re-running)
-
-The supporting scripts still point at the **previous** run-directory names. After the rename, the
-primary experiments write to new `--out-dir`s (see plan §7). Either keep the old run-dir names when
-running the primaries, or update these input paths:
-
-| Script | Reads (current) | New primary output |
-|--------|-----------------|--------------------|
-| `paper_channel_selection_frequency`, `paper_error_structure_session`, `paper_result_figures` | `runs/exp41_cao_30s/exp41_strategy_comparison_*.csv` | `runs/exp2_strategy_30s/…` (basename stays `exp41_*`) |
-| `paper_epoch_duration_figure` | `runs/exp40_cao/exp1_epoch_duration_summary.csv` | `runs/exp3_epoch/…` |
-
-Also: `paper_channel_selection_frequency` reads the legacy `brain_region.yaml` (now bare HydroCel ints). To stay consistent with
-the per-dataset refactor it should be switched to `brain_region_raja.yaml` / `brain_region_cao2018.yaml`.
-These are **flagged, not changed** (this turn only moved + documented the files).
-
-Stale `% Source: … tutorial/4x_… / tutorial/5x_…` provenance comments in `writing/e_result/*.tex`
-likewise need updating to `experiment_script/paper_…` — left for the paper-edit step.
+`channel_group_selection.yaml` (repo root) records the chosen Stage-A group per dataset.
+Selecting any non-`all` group **requires `approved_by` and `approved_date`**, otherwise the
+experiments raise at runtime. `exp1` deliberately does not consult the gate — it is the
+experiment that chooses the group. `exp2`/`exp3` emit a warning when the effective group is
+still `all`.

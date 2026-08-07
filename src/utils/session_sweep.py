@@ -1,18 +1,24 @@
-"""Resume-aware, multiprocess sweep over sessions with atomic per-session CSV caching.
+"""Resume-aware, crash-safe session-sweep helpers shared by the concrete sweep runners.
 
-Shared by the exp1 channel-selection scripts (and any future sweep that needs
-crash-safe resume): each session's rows are cached to its own CSV under
-``out_dir/sessions/`` so an interrupted run can be restarted without redoing
-already-finished sessions or corrupting a partially written file.
+Each experiment family (exp1 channel-selection, exp2 strategy-comparison, ...) owns a
+concrete ``run_<family>_session_sweep()`` function, defined right next to its worker
+(``process_one_session``) — see ``src/exp/session_worker.py`` and
+``src/exp/exp2_channel_group_sweep.py``. Those runners call their worker directly by
+name (module-level function reference, never a generic ``Callable`` parameter,
+``functools.partial``, lambda, or dict/getattr-based lookup), so a debugger's "step
+into" and an IDE's "go to definition" on the worker call always land in the real
+implementation instead of some indirection layer.
+
+This module holds only the small, worker-agnostic pieces those concrete runners
+share: per-session CSV caching (crash-safe, atomic writes) and job-count resolution.
+It intentionally has no knowledge of any specific worker.
 """
 from __future__ import annotations
 
 import csv
 import logging
 import os
-from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
-from typing import Callable
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +59,13 @@ def write_session_csv(path: Path, rows: list[dict]) -> None:
 
 
 def resolve_n_jobs(n_tasks: int, n_jobs: int | None) -> int:
-    """Number of worker processes: n_jobs, or most cores when None, capped at n_tasks."""
+    """Number of worker processes: n_jobs, or most cores when None, capped at n_tasks.
+
+    Debugging note: pass ``n_jobs=1`` to keep a sweep entirely in the current
+    process (no ``ProcessPoolExecutor``) so breakpoints inside the worker
+    function actually fire — most debuggers cannot attach to the subprocess
+    pool used when this resolves above 1.
+    """
     if n_jobs is not None:
         n = max(1, int(n_jobs))
     else:
@@ -61,65 +73,51 @@ def resolve_n_jobs(n_tasks: int, n_jobs: int | None) -> int:
     return max(1, min(n, n_tasks))
 
 
-def run_session_sweep(
-    pairs: list[dict],
-    out_dir: Path,
-    process_one_session: Callable[[dict], tuple[str, list[dict], list[str]]],
-    *,
-    overwrite: bool = False,
-    n_jobs: int | None = None,
-) -> tuple[list[dict], list[str]]:
-    """Run *process_one_session* over *pairs* with resume + crash-safe caching.
+def split_cached_and_todo(
+    pairs: list[dict], out_dir: Path, overwrite: bool,
+) -> tuple[list[dict], list[dict]]:
+    """Return ``(cached_metric_rows, todo_pairs)``.
 
-    ``process_one_session`` must be a picklable top-level callable (or a
-    ``functools.partial`` wrapping one) — it is dispatched to a
-    ``ProcessPoolExecutor`` and must not depend on parent-process state that
-    isn't explicitly passed in.  It receives one *pair* and returns
-    ``(session_name, metric_rows, error_messages)``.
-
-    Sessions whose per-session CSV already exists under ``out_dir/sessions/``
-    are skipped (loaded from cache) unless ``overwrite`` is True.
+    A session whose per-session CSV already exists under ``out_dir/sessions/``
+    is treated as cached (its rows are loaded from disk) unless ``overwrite``
+    is True, in which case it's added to ``todo_pairs`` for a full recompute.
     """
     out_dir.mkdir(parents=True, exist_ok=True)
-
-    all_metrics: list[dict] = []
-    errors: list[str] = []
-
+    cached: list[dict] = []
     todo: list[dict] = []
     for pair in pairs:
         csv_path = session_csv_path(out_dir, pair["name"])
         if not overwrite and csv_path.is_file():
             logger.info("SKIP (cached): %s", pair["name"])
             with csv_path.open(encoding="utf-8") as fh:
-                all_metrics.extend(list(csv.DictReader(fh)))
+                cached.extend(list(csv.DictReader(fh)))
         else:
             todo.append(pair)
+    return cached, todo
 
-    def _store(name: str, rows: list[dict], errs: list[str]) -> None:
-        errors.extend(errs)
-        if rows:
-            write_session_csv(session_csv_path(out_dir, name), rows)
-            all_metrics.extend(rows)
-        logger.info("done %s -> %d rows%s", name, len(rows),
-                    f"  ({len(errs)} err)" if errs else "")
 
-    if todo:
-        jobs = resolve_n_jobs(len(todo), n_jobs)
-        logger.info("Running %d session(s) with n_jobs=%d (of %d cpus)",
-                    len(todo), jobs, os.cpu_count() or 1)
-        if jobs == 1:
-            for pair in todo:
-                _store(*process_one_session(pair))
-        else:
-            with ProcessPoolExecutor(max_workers=jobs) as ex:
-                fut_map = {ex.submit(process_one_session, pair): pair["name"]
-                           for pair in todo}
-                for fut in as_completed(fut_map):
-                    name = fut_map[fut]
-                    try:
-                        _store(*fut.result())
-                    except Exception as exc:  # noqa: BLE001
-                        logger.error("ERROR  %s: %s", name, exc)
-                        errors.append(f"ERROR  {name}: {exc}")
+def store_session_result(
+    out_dir: Path,
+    name: str,
+    rows: list[dict],
+    errs: list[str],
+    *,
+    all_metrics: list[dict],
+    errors: list[str],
+) -> None:
+    """Append *rows*/*errs* to the running accumulators and cache *rows* to disk."""
+    errors.extend(errs)
+    if rows:
+        write_session_csv(session_csv_path(out_dir, name), rows)
+        all_metrics.extend(rows)
+    logger.info("done %s -> %d rows%s", name, len(rows),
+                f"  ({len(errs)} err)" if errs else "")
 
-    return all_metrics, errors
+
+__all__ = [
+    "session_csv_path",
+    "write_session_csv",
+    "resolve_n_jobs",
+    "split_cached_and_todo",
+    "store_session_result",
+]
