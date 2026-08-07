@@ -9,13 +9,13 @@
         Segment into non-overlapping \texttt{EPOCH\_DURATION\_S}~$=30$~s epochs and
         drop low-health epochs\\[-1pt]
         $\downarrow$\\[-1pt]
-        \textbf{Stage A:} per-channel peak-to-peak autoreject screening flags
+        \textbf{Stage A: Selection of Candidate Epochs} \\ per-channel peak-to-peak autoreject screening flags
         suspicious epochs $\mathcal{B}$\\[-1pt]
         $\downarrow$\\[-1pt]
-        \textbf{Stage B:} estimate $\theta=\xi+k(1.4826\cdot\mathrm{MAD})$ from
+        \textbf{Stage B: Computation of Sample-level Blink-Region Threshold Candidates} \\ estimate $\theta=\xi+k(1.4826\cdot\mathrm{MAD})$ from
         flagged epochs (median or mean centre)\\[-1pt]
         $\downarrow$\\[-1pt]
-        \textbf{Stage C:} scan threshold crossings and map blink regions to
+        \textbf{Stage C: Extraction of Blink Region}\\ scan threshold crossings and map blink regions to
         epoch-relative timing\\[-1pt]
         $\downarrow$\\[-1pt]
         Event-level evaluation: precision, recall, macro-averaged $F_1$, and

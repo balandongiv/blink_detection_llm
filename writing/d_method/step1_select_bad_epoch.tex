@@ -1,92 +1,70 @@
-\subsection{Selection of Bad Epochs}
+\paragraph{Selection of Candidate Epochs}
+The first stage, Stage~A, of the proposed pipeline performs an initial epoch-level screening using an \emph{autoreject}-inspired threshold-selection procedure to identify epoch that are most likely to contain prominent blink-related activity.
+ Rather than relying on a single channel, the screening decision integrates channel-level information across multiple EOG/ EEG channels, allowing an epoch to be selected when abnormal amplitude excursions are detected in one or more channels.
+At this stage, the objective is not to localize individual blink samples, but to identify candidate epochs containing prominent amplitude activity.
+This multi-channel screening strategy therefore narrows the search space to potentially blink-related epochs for more detailed sample-level analysis in the subsequent detection stages.
 
-The first stage of the proposed pipeline performs epoch-level screening using an autoreject-inspired threshold selection procedure. Its purpose is not to estimate
-the onset or offset of a blink, but to identify epochs whose amplitudes are
-sufficiently abnormal to warrant subsequent sample-level localization. Let
-\(X \in \mathbb{R}^{N \times C \times T}\) denote the epoched multichannel
+
+
+Let \(X \in \mathbb{R}^{N \times C \times T}\) denote the epoched multichannel
 signal after preprocessing, where \(N\) is the number of valid epochs, \(C\) is
 the number of channels, and \(T\) is the number of samples per epoch. The sample
 at epoch \(i \in \mathcal{E}=\{1,\ldots,N\}\), channel
 \(c \in \mathcal{C}=\{1,\ldots,C\}\), and within-epoch time index
 \(t \in \{1,\ldots,T\}\) is denoted by \(x_{i,c,t}\).
 
-For each epoch and channel, an amplitude-range statistic is computed using the
-peak-to-peak value
+For each epoch and channel, an amplitude-range statistic is computed using the  peak-to-peak value
 \[
 a_{i,c}
 = \max_{1 \leq t \leq T} x_{i,c,t}
 - \min_{1 \leq t \leq T} x_{i,c,t}.
 \]
-Large values of \(a_{i,c}\) indicate that the corresponding epoch contains a
-high-amplitude excursion in channel \(c\), a pattern consistent with ocular or
-other transient artifacts. Rather than imposing a fixed rejection level, the
-pipeline estimates a channel-specific threshold \(\tau_c^\star\) from the data.
-Candidate thresholds are taken from the empirical range of peak-to-peak
-amplitudes for that channel, denoted
+Large values of \(a_{i,c}\) indicate that the corresponding epoch contains a high-amplitude excursion in channel \(c\), a pattern consistent with ocular or other transient artifacts.
+Because signal amplitudes may vary across channels, participants, and recording conditions, a fixed peak-to-peak threshold is not imposed.
+Instead, a channel-specific threshold \(\tau_c^\star\) is calculated from each of the channel's.
+Candidate thresholds are taken from the empirical range of peak-to-peak amplitudes for that channel, denoted
 \(\mathcal{Q}_c=\{a_{i,c}: i \in \mathcal{E}\}\), and are evaluated by a
-cross-validation criterion.
+cross-validation criterion that measures the discrepancy between retained training epochs and validation epochs.
+%
+%\input{writing/d_method/cross_validation_eq.tex}
+%While in practice, this objective may be searched by sequential Bayesian optimization or by a random search over candidate peak-to-peak thresholds, this study employ the Bayesian optimization which is the default setting.
+%; both choices  retain the same validation objective and rejection rule.
 
-Specifically, let \(\{(\mathcal{T}_k,\mathcal{V}_k)\}_{k=1}^{K}\) be
-cross-validation splits of the epoch indices into training sets
-\(\mathcal{T}_k\) and validation sets \(\mathcal{V}_k\). For a candidate
-threshold \(\tau \in \mathcal{Q}_c\), the training epochs retained for channel
-\(c\) in fold \(k\) are
-\[
-\mathcal{G}_{k,c}(\tau)
-= \{ i \in \mathcal{T}_k : a_{i,c} \leq \tau \}.
-\]
-These retained epochs define a threshold-dependent training template
-\[
-\bar{x}^{(\tau)}_{k,c}(t)
-= \frac{1}{|\mathcal{G}_{k,c}(\tau)|}
-\sum_{i \in \mathcal{G}_{k,c}(\tau)} x_{i,c,t},
-\]
-where candidates yielding an empty retained set are treated as inadmissible. The
-corresponding validation reference is computed as the pointwise median across
-the validation epochs,
-\[
-\tilde{x}_{k,c}(t)
-= \operatorname{median}_{i \in \mathcal{V}_k} x_{i,c,t}.
-\]
-The use of a median validation reference makes the criterion less sensitive to
-large validation-set artifacts. The validation loss for channel \(c\) is then
-defined as
-\[
-\mathcal{J}_{c}(\tau)
-= \frac{1}{K}\sum_{k=1}^{K}
-\left[
-\frac{1}{T}\sum_{t=1}^{T}
-\left\{\bar{x}^{(\tau)}_{k,c}(t)-\tilde{x}_{k,c}(t)\right\}^{2}
-\right]^{1/2}.
-\]
-The selected channel threshold is the candidate that minimizes the average
-validation discrepancy,
-\[
-\tau_c^\star
-= \arg\min_{\tau \in \mathcal{Q}_c} \mathcal{J}_{c}(\tau).
-\]
-In practice, this objective may be searched by sequential Bayesian optimization
-or by a random search over candidate peak-to-peak thresholds; both choices
-retain the same validation objective and rejection rule.
+%After the channel-specific thresholds \(\{\tau_c^\star\}_{c=1}^{C}\) have been estimated, each epoch receives a channel-level artifact indicator
+%\[
+%z_{i,c}
+%= \mathbf{1}\{a_{i,c} > \tau_c^\star\},
+%\]
+%where \(\mathbf{1}\{\cdot\}\) is the indicator function. The present pipeline
+%uses the union of the channel-level decisions to form the epoch-level screening
+%mask,
+%\[
+%b_i
+%= \mathbf{1}\left\{\sum_{c=1}^{C} z_{i,c} \geq 1\right\}
+%= \mathbf{1}\left\{\exists c \in \mathcal{C}: a_{i,c} > \tau_c^\star\right\}.
+%\]
+%The set of suspicious epochs is therefore
+%\[
+%\mathcal{B}=\{i \in \mathcal{E}: b_i=1\}.
+%\]
+%
+%These epochs are regarded as candidate high-amplitude epochs potentially containing blink-related activity or other artifacts.
+%. They provide the restricted data subset from which the next stage estimates sample-level blink-region thresholds.
+%
 
-After the thresholds \(\{\tau_c^\star\}_{c=1}^{C}\) have been estimated, each
-epoch receives a channel-level artifact indicator
-\[
-z_{i,c}
-= \mathbf{1}\{a_{i,c} > \tau_c^\star\},
-\]
-where \(\mathbf{1}\{\cdot\}\) is the indicator function. The present pipeline
-uses the union of the channel-level decisions to form the epoch-level screening
-mask,
-\[
-b_i
-= \mathbf{1}\left\{\sum_{c=1}^{C} z_{i,c} \geq 1\right\}
-= \mathbf{1}\left\{\exists c \in \mathcal{C}: a_{i,c} > \tau_c^\star\right\}.
-\]
+
+
+After the channel-specific thresholds, \(\tau_c^\star\), have been estimated, the peak-to-peak amplitude of each epoch is evaluated separately for each EEG channel against its corresponding threshold.
+An epoch is retained as a candidate when the amplitude in at least one channel exceeds the threshold \(\tau_c^\star\) defined for that channel. Thus, the epoch-level screening decision incorporates information across multiple channels using a union rule, rather than relying on a single predefined channel. The resulting set of candidate epochs is defined as
 The set of suspicious epochs is therefore
 \[
 \mathcal{B}=\{i \in \mathcal{E}: b_i=1\}.
 \]
-These epochs are interpreted as likely blink-contaminated or artifact-heavy
-segments. They provide the restricted data subset from which the next stage
-estimates sample-level blink-region thresholds.
+
+%[
+%\mathcal{B}={i \in \mathcal{E}: b_i=1},
+%]
+
+where  b\_i denotes the epoch-level screening outcome indicating that epoch (i) satisfies the selection criterion. These candidate epochs represent high-amplitude segments that may contain prominent blink-related activity and are retained for subsequent sample-level blink-region detection.
+
+

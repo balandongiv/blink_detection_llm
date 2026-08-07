@@ -1,53 +1,27 @@
 \paragraph{Processing pipeline overview.}
 \label{sec:pipeline_overview}
+
 The proposed pipeline is an epoch-aware, threshold-based pipeline that transforms a continuous multichannel EEG recording into a non-overlapping epoch through a
 fixed sequence of five operations.
 The Figure~\ref{fig:pipeline_flow} summarises this
-sequence as a flow chart, from the preprocessing, epoching, and the double thresholding which is the proposed method, through three detection stages (A, B, and C).
+sequence as a flow chart, from the preprocessing, epoching, and the double thresholding which is the proposed method, through three detection stages (A, B, and C) which we will discussed in detail in section.
 
 \input{d_method/flowchart_pipeline_proposed}
 
-\paragraph{Step-by-step description.}
-First, the continuous recording is downsampled to a common sampling grid of
-\(100\)~Hz (\texttt{RESAMPLE\_RATE}). Standardising the sampling rate makes the
-amplitude thresholds and the minimum-duration gate comparable across recordings
-acquired on different hardware, and reduces the per-sample computational cost of the
-downstream stages without discarding any information needed to resolve a blink, whose
-spectral content lies well below the new Nyquist frequency. Second, a zero-phase
-band-pass filter from \(1.0\)~Hz (\texttt{FILTER\_LOW}) to \(20.0\)~Hz
-(\texttt{FILTER\_HIGH}) is applied; this legacy BLINKER-style band removes slow drifts
-and DC offsets at the low end and high-frequency muscle and line noise at the high end,
-isolating the low-frequency, high-amplitude deflection that characterises an eye blink.
-Third, each filtered recording is split into non-overlapping, fixed-length epochs of
-\(30\)~s (\texttt{EPOCH\_DURATION\_S}); epochs whose health metric falls below the
-acceptance criterion are dropped so that grossly corrupted segments do not distort the
-data-driven thresholds estimated later. Epoching is what makes the thresholds
-\emph{adaptive}: rather than deriving a single level for the entire session, the pipeline
-treats each short epoch as a local statistical context.
+\paragraph{Preprocessing}
+First, the continuous recording is downsampled to a common sampling grid of \(100\)~Hz. Standardising the sampling rate makes the
+amplitude thresholds and the minimum-duration gate comparable across recordings acquired on different hardware, and reduces the per-sample computational cost of the downstream stages without discarding any information needed to resolve a blink, whose
+spectral content lies well below the new Nyquist frequency.
 
-In Stage~A, a per-channel peak-to-peak (PTP) amplitude statistic is computed for every
-epoch, and an \emph{autoreject}-based procedure estimates a channel-specific PTP
-threshold from the data. An aggregation rule over a chosen channel-selection group, by
-default flagging an epoch whenever \emph{any} channel in the group exceeds its threshold,
-marks the epoch as ``suspicious'' (blink-heavy). The output of Stage~A is therefore a set
-\(\mathcal{B}\) of epochs that are enriched for blink-related activity, which restricts
-the subsequent amplitude analysis to the segments where blinks are most likely to occur.
-In Stage~B, a robust sample-level amplitude threshold is estimated using only the samples
-pooled from the flagged epochs, as
-\(\theta = \xi + k\,(1.4826 \cdot \mathrm{MAD})\), where the centre \(\xi\) is the
-\emph{median} in the primary configuration (or the \emph{mean} in the contrast
-configuration), \(\mathrm{MAD}\) is the median absolute deviation, the factor
-\(1.4826\) rescales the MAD to a standard-deviation-consistent dispersion, and \(k\) is
-the sensitivity multiplier. Estimating the threshold from the flagged epochs concentrates
-the calculation on blink-enriched signal, while the median-plus-MAD construction keeps the
-estimate stable in the presence of isolated extreme samples. If too few epochs are flagged,
-the estimate falls back to the full valid-epoch set so that the threshold is never derived
-from an unreliably small sample. In Stage~C, the threshold is scanned across the signal in
-the manner of the Kleifges crossing detector: maximal contiguous runs of supra-threshold
-samples define candidate blink regions, brief crossings shorter than a minimum-duration gate
-are discarded, and the accepted regions are mapped from their concatenated coordinates back
-to epoch-relative onset and offset times. Finally, the detected regions are compared with the
-ground-truth annotations at the \emph{event} level using overlap-based matching, yielding
-precision, recall, and \(F_1\); these are macro-averaged across sessions and compared between
-configurations with Wilcoxon signed-rank tests, as detailed in
-Section~\ref{sec:eval}.
+Second, a zero-phase band-pass filter from \(1.0\)~Hz  to \(20.0\)~Hz
+is applied which is removes slow drifts and DC offsets at the low end and high-frequency muscle and line noise at the high end, isolating the low-frequency, high-amplitude deflection that characterises an eye blink.
+
+Third, each filtered recording is split into non-overlapping, fixed-length epochs. Epoching is what makes the thresholds
+\emph{adaptive}, rather than deriving a single level for the entire session, the pipeline treats each short epoch as a local statistical context.
+
+
+%Finally, the detected regions are compared with the
+%ground-truth annotations at the \emph{event} level using overlap-based matching, yielding
+%precision, recall, and \(F_1\); these are macro-averaged across sessions and compared between
+%configurations with Wilcoxon signed-rank tests, as detailed in
+%Section~\ref{sec:eval}.

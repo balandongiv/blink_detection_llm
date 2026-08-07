@@ -1,30 +1,48 @@
-\subsection{Computation of Sample-Level Blink-Region Threshold Candidates}
+\paragraph{Computation of Sample-Level Blink-Region Threshold Candidates}
 
-The second stage converts the epoch-level artifact decision into a
-sample-level thresholding problem. The autoreject-style screening in the
-previous stage identifies a set of suspicious epochs \(\mathcal{B}\), but its
-thresholds \(\tau_c^\star\) are defined on peak-to-peak amplitudes over whole
-epochs. Such thresholds are therefore appropriate for deciding whether an epoch
-is abnormal, but they are not directly interpretable as sample-wise blink
-crossing levels. Stage B estimates a separate channel-specific threshold in
-the amplitude domain of the time series itself.
+Stage~B estimates channel-specific sample-level amplitude thresholds using signal samples drawn from the candidate epochs \(\mathcal{B}\) identified in Stage~A.
+The estimation combines a measure of central tendency with a robust measure of dispersion and a sensitivity parameter, allowing the threshold to adapt to the amplitude characteristics of each channel while limiting the influence of isolated extreme samples.
+
+%In Stage~B, a robust sample-level amplitude threshold is estimated using only the samples
+%pooled from the flagged epochs \[\mathcal{B}\], as discussed in previous subsection., as
+%\(\theta = \xi + k\,(1.4826 \cdot \mathrm{MAD})\), where the centre \(\xi\) is the
+%\emph{median} in the primary configuration (or the \emph{mean} in the contrast
+%configuration), \(\mathrm{MAD}\) is the median absolute deviation, the factor
+%\(1.4826\) rescales the MAD to a standard-deviation-consistent dispersion, and \(k\) is
+%the sensitivity multiplier. Estimating the threshold from the flagged epochs concentrates
+%the calculation on blink-enriched signal, while the median-plus-MAD construction keeps the
+%estimate stable in the presence of isolated extreme samples. If too few epochs are flagged,
+%the estimate falls back to the full valid-epoch set so that the threshold is never derived
+%from an unreliably small sample.
+%
+%
+%The second stage converts the epoch-level artifact decision into a
+%sample-level thresholding problem. The autoreject-style screening in the
+%previous stage identifies a set of suspicious epochs \(\mathcal{B}\), but its
+%thresholds \(\tau_c^\star\) are defined on peak-to-peak amplitudes over whole
+%epochs. Such thresholds are therefore appropriate for deciding whether an epoch
+%is abnormal, but they are not directly interpretable as sample-wise blink
+%crossing levels. Stage B estimates a separate channel-specific threshold in
+%the amplitude domain of the time series itself.
 
 Let \(\mathcal{S}\) denote the set of epochs used for estimating the
 sample-level threshold. In the primary analysis,
 \(\mathcal{S}=\mathcal{B}\), so that the estimate is driven by epochs already
-identified as likely to contain blink-related activity. If too few suspicious
-epochs are available, the method falls back to the full valid epoch set
-\(\mathcal{E}\) to avoid estimating a threshold from an insufficient sample:
-\[
-\mathcal{S}
-=
-\begin{cases}
-\mathcal{B}, & |\mathcal{B}| \geq n_{\min},\\
-\mathcal{E}, & |\mathcal{B}| < n_{\min},
-\end{cases}
-\]
-where \(n_{\min}\) is the minimum number of screened epochs required for a
-stable estimate.
+identified as likely to contain blink-related activity.
+
+%If too few suspicious
+%epochs are available, the method falls back to the full valid epoch set
+%\(\mathcal{E}\) to avoid estimating a threshold from an insufficient sample:
+%\[
+%\mathcal{S}
+%=
+%\begin{cases}
+%\mathcal{B}, & |\mathcal{B}| \geq n_{\min},\\
+%\mathcal{E}, & |\mathcal{B}| < n_{\min},
+%\end{cases}
+%\]
+%where \(n_{\min}\) is the minimum number of screened epochs required for a
+%stable estimate.
 
 For each channel \(c\), all samples from the selected epochs are pooled into a
 one-dimensional empirical sample set
@@ -32,19 +50,20 @@ one-dimensional empirical sample set
 \mathcal{Y}_c
 = \{x_{i,c,t}: i \in \mathcal{S},\; 1 \leq t \leq T\}.
 \]
-This pooling step marks the methodological transition from epoch-level
-rejection to sample-level localization: the quantities used in Stage B are no
-longer peak-to-peak ranges \(a_{i,c}\), but the individual signal amplitudes
-\(x_{i,c,t}\) that will later be thresholded to form candidate blink regions.
+%This pooling step marks the methodological transition from epoch-level rejection to sample-level localization: the quantities used in Stage B are no
+%longer peak-to-peak ranges \(a_{i,c}\), but the individual signal amplitudes
+%\(x_{i,c,t}\) that will later be thresholded to form candidate blink regions.
 
-The sample-level threshold is estimated using a robust location-plus-dispersion
-form. Let \(\xi_c\) be the channel-specific center of the sample distribution.
+The sample-level threshold is estimated using a robust location-plus-dispersion form. Let \(\xi_c\) be the channel-specific center of the sample distribution.
 The default choice is the median,
 \[
 \xi_c = \operatorname{median}_{y \in \mathcal{Y}_c} y,
 \]
-although the arithmetic mean may be substituted when a mean-centered threshold
-is required for comparison. Dispersion is estimated by the median absolute
+
+It should be note that, the arithmetic mean may be substituted when a mean-centered threshold
+is required for comparison.
+
+The dispersion is estimated by the median absolute
 deviation (MAD),
 \[
 \operatorname{MAD}_c
@@ -55,8 +74,9 @@ and is rescaled to a standard-deviation-compatible quantity by
 \[
 \sigma^{\mathrm{rob}}_c = 1.4826\,\operatorname{MAD}_c .
 \]
-The constant \(1.4826\) is the usual normal-consistency factor for the MAD. For
-a sensitivity parameter \(k>0\), the resulting sample-level blink-region
+The constant \(1.4826\) is the usual normal-consistency factor for the MAD.
+
+For a sensitivity parameter \(k>0\), the resulting sample-level blink-region
 threshold candidate for channel \(c\) is
 \[
 \theta_c = \xi_c + k\sigma^{\mathrm{rob}}_c .
@@ -65,14 +85,9 @@ The set
 \[
 \Theta = \{\theta_c: c \in \mathcal{C}\}
 \]
-constitutes the channel-wise threshold candidates passed to the blink-region
-extraction stage.
+constitutes the channel-wise threshold candidates passed to the blink-region extraction stage.
 
-This construction deliberately separates the statistical role of the two
-thresholds in the pipeline. The quantities \(\tau_c^\star\) from Stage A are
-epoch-rejection thresholds defined on peak-to-peak amplitudes, whereas
-\(\theta_c\) is a sample-level amplitude threshold defined on the time-series
-samples themselves. Estimating \(\theta_c\) from \(\mathcal{S}\) concentrates
-the calculation on signal segments enriched for blink-like excursions, while
-the robust center and MAD-scaled dispersion reduce the influence of isolated
-extreme peaks within those same segments.
+%This construction deliberately separates the statistical role of the two thresholds in the pipeline. The quantities \(\tau_c^\star\) from Stage A are  epoch-rejection thresholds defined on peak-to-peak amplitudes,
+%whereas
+%\(\theta_c\) is a sample-level amplitude threshold defined on the time-series  samples themselves.
+%Estimating \(\theta_c\) from \(\mathcal{S}\) concentrates  the calculation on signal segments enriched for blink-like excursions, while  the robust center and MAD-scaled dispersion reduce the influence of isolated  extreme peaks within those same segments.
