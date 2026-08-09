@@ -1,10 +1,4 @@
 \subsection{Extraction of Blink Regions}
-In Stage~C, the channel-wise threshold candidates are scanned across the signal in
-the manner of the Kleifges crossing detector. Maximal contiguous runs of supra-threshold
-samples define candidate blink regions, brief crossings shorter than a minimum-duration gate
-are discarded, and the accepted regions are reported as epoch-relative onset and offset
-times.
-
 The final stage applies the sample-level thresholds
 \(\Theta=\{\theta_c\}_{c=1}^{C}\) obtained in Stage~B to obtain channel-wise
 blink regions. Specifically, blink regions are searched for within each valid
@@ -12,28 +6,5 @@ epoch \(i \in \mathcal{E}=\{1,\ldots,N\}\) and each channel
 \(c \in \mathcal{C}\), by comparing the samples \(x_{i,c,t}\) of that epoch and
 channel against the threshold candidate \(\theta_c\) of the same channel.
 
-Candidate blink samples are defined by a threshold-crossing indicator
-\[
-h_{i,c}[t] = \mathbf{1}\{x_{i,c,t} > \theta_c\},
-\qquad t=1,\ldots,T .
-\]
-After any required polarity normalization, \(h_{i,c}[t]=1\) indicates that the
-sample amplitude exceeds the channel-specific blink-region threshold. Blink
-regions are then defined as maximal contiguous runs of supra-threshold samples.
-The \(j\)-th candidate interval in epoch \(i\) of channel \(c\) is written as the
-half-open index range \([s_{i,c,j},e_{i,c,j})\), where
-\[
-h_{i,c}[t]=1 \quad \text{for all } t=s_{i,c,j},\ldots,e_{i,c,j}-1,
-\]
-with either \(s_{i,c,j}=1\) or \(h_{i,c}[s_{i,c,j}-1]=0\), and either
-\(e_{i,c,j}=T+1\) or \(h_{i,c}[e_{i,c,j}]=0\). Equivalently, the onset
-\(s_{i,c,j}\) is the first sample in a run that crosses above \(\theta_c\), and
-the offset \(e_{i,c,j}\) is the first subsequent sample at which the signal has
-returned to the sub-threshold state.
+The final output of this stage is therefore a channel-indexed collection of blink regions, each represented by an epoch identifier, a channel label, an onset time, and duration.
 
-The final output of this stage is therefore a channel-indexed collection of blink regions, each represented by an epoch identifier, a channel label, an onset index or time, and an offset or duration.
-
-%The extraction remains
-%channel-wise throughout: the threshold \(\theta_c\) estimated for channel \(c\)
-%is applied only to that channel's signal, and the resulting regions
-%\(\mathcal{R}_c\) are retained as channel-specific blink candidates.
