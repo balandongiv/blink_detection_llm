@@ -1,83 +1,37 @@
 \subsection{Extraction of Blink Regions}
-In Stage~C, the threshold is scanned across the signal in
-the manner of the Kleifges crossing detector: maximal contiguous runs of supra-threshold
+In Stage~C, the channel-wise threshold candidates are scanned across the signal in
+the manner of the Kleifges crossing detector. Maximal contiguous runs of supra-threshold
 samples define candidate blink regions, brief crossings shorter than a minimum-duration gate
-are discarded, and the accepted regions are mapped from their concatenated coordinates back
-to epoch-relative onset and offset times.
+are discarded, and the accepted regions are reported as epoch-relative onset and offset
+times.
 
 The final stage applies the sample-level thresholds
-\(\Theta=\{\theta_c\}_{c=1}^{C}\) to obtain channel-wise blink regions. For
-each channel \(c\), the epochs selected for localization are ordered as
-\(\mathcal{S}=\{i_1,\ldots,i_R\}\), where \(R=|\mathcal{S}|\). Their samples
-are concatenated into a one-dimensional signal
-\[
-u_c[n] = x_{i_r,c,t},
-\qquad
-n=(r-1)T+t,\quad
-r \in \{1,\ldots,R\},\quad
-t \in \{1,\ldots,T\}.
-\]
-Thus \(u_c \in \mathbb{R}^{RT}\) is the channel-specific signal on which blink
-onsets and offsets are estimated.
-
-%If the analysis is run in the fallback mode  described above, \(\mathcal{S}\) is the full valid epoch set; otherwise it is the set of epochs identified as suspicious in Stage A.
+\(\Theta=\{\theta_c\}_{c=1}^{C}\) obtained in Stage~B to obtain channel-wise
+blink regions. Specifically, blink regions are searched for within each valid
+epoch \(i \in \mathcal{E}=\{1,\ldots,N\}\) and each channel
+\(c \in \mathcal{C}\), by comparing the samples \(x_{i,c,t}\) of that epoch and
+channel against the threshold candidate \(\theta_c\) of the same channel.
 
 Candidate blink samples are defined by a threshold-crossing indicator
 \[
-h_c[n] = \mathbf{1}\{u_c[n] > \theta_c\},
-\qquad n=1,\ldots,RT .
+h_{i,c}[t] = \mathbf{1}\{x_{i,c,t} > \theta_c\},
+\qquad t=1,\ldots,T .
 \]
-After any required polarity normalization, \(h_c[n]=1\) indicates that the
+After any required polarity normalization, \(h_{i,c}[t]=1\) indicates that the
 sample amplitude exceeds the channel-specific blink-region threshold. Blink
 regions are then defined as maximal contiguous runs of supra-threshold samples.
-A candidate interval for channel \(c\) is written as the half-open index range
-\([s_{c,r},e_{c,r})\), where
+The \(j\)-th candidate interval in epoch \(i\) of channel \(c\) is written as the
+half-open index range \([s_{i,c,j},e_{i,c,j})\), where
 \[
-h_c[n]=1 \quad \text{for all } n=s_{c,r},\ldots,e_{c,r}-1,
+h_{i,c}[t]=1 \quad \text{for all } t=s_{i,c,j},\ldots,e_{i,c,j}-1,
 \]
-with either \(s_{c,r}=1\) or \(h_c[s_{c,r}-1]=0\), and either
-\(e_{c,r}=RT+1\) or \(h_c[e_{c,r}]=0\). Equivalently, the onset
-\(s_{c,r}\) is the first sample in a run that crosses above \(\theta_c\), and
-the offset \(e_{c,r}\) is the first subsequent sample at which the signal has
+with either \(s_{i,c,j}=1\) or \(h_{i,c}[s_{i,c,j}-1]=0\), and either
+\(e_{i,c,j}=T+1\) or \(h_{i,c}[e_{i,c,j}]=0\). Equivalently, the onset
+\(s_{i,c,j}\) is the first sample in a run that crosses above \(\theta_c\), and
+the offset \(e_{i,c,j}\) is the first subsequent sample at which the signal has
 returned to the sub-threshold state.
 
-%To suppress brief threshold crossings that are unlikely to represent complete
-%blinks, each candidate interval is required to exceed a minimum duration. Let
-%\(f_s\) be the sampling frequency and let \(\ell_{\min}\) be the minimum blink
-%duration in seconds. The corresponding sample length is
-%\[
-%L_{\min}=\ell_{\min} f_s .
-%\]
-%The accepted blink-region set for channel \(c\) is
-%\[
-%\mathcal{R}_c
-%=
-%\left\{
-%(s_{c,r},e_{c,r}) :
-%e_{c,r}-s_{c,r} > L_{\min}
-%\right\}.
-%\]
-%This duration gate is applied independently for each channel. Consecutive
-%supra-threshold samples are merged into the same region by construction, while
-%two runs separated by at least one sub-threshold sample are treated as distinct
-%candidate blink regions.
-
-Finally, the accepted intervals are mapped from concatenated coordinates back to epoch-local coordinates using the known epoch boundaries.
-
-%If an accepted
-%onset \(s_{c,r}\) lies in the concatenated segment corresponding to epoch
-%\(i_q\), its within-epoch onset sample is
-%\[
-%\hat{s}_{c,r}=s_{c,r}-(q-1)T,
-%\]
-%and its onset time is \((\hat{s}_{c,r}-1)/f_s\) seconds relative to the
-%beginning of that epoch. The interval duration is
-%\[
-%\hat{d}_{c,r}=\frac{e_{c,r}-s_{c,r}}{f_s}.
-%\]
-The final output of this stage is therefore a channel-indexed collection of
-blink regions, each represented by an epoch identifier, a channel label, an
-onset index or time, and an offset or duration.
+The final output of this stage is therefore a channel-indexed collection of blink regions, each represented by an epoch identifier, a channel label, an onset index or time, and an offset or duration.
 
 %The extraction remains
 %channel-wise throughout: the threshold \(\theta_c\) estimated for channel \(c\)
