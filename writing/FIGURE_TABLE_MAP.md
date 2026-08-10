@@ -36,15 +36,39 @@ CSVs, not manuscript artifacts.
 
 ---
 
-## Experiment 1 — EEG channel selection (`publication_results/exp1_channel_*`)
+## Experiment 1 — EEG channel-subset analysis (`publication_results/exp1_channel_*`)
 
 | # | Artifact | LaTeX file | Generator script |
 |---|---|---|---|
 | Table 1 | EGI-128 → 10–20 channel map | `e_result/tab_egi_channel_map.tex` | `tab1_egi_channel_map.py` |
-| Table 2 | Per-channel ablation, both datasets | `e_result/tab_exp1_channel_ablation.tex` | `tab2_exp1_channel_ablation.py` |
+| Table 2 | Per-electrode performance under the full montage, both datasets | `e_result/tab_exp1_channel_ablation.tex` | `tab2_exp1_channel_ablation.py` |
 | Table 3 + Figure 3 | Region-level performance | `e_result/tab_region_performance.tex`, `figures/fig_region_performance.*` | `tab3_fig3_region_performance.py` |
+| Table 17 | Channel subsets vs the full montage, with Wilcoxon/Bonferroni/rank-biserial | `e_result/tab_exp1_subset_summary.tex` | `tab17_exp1_subset_summary.py` |
+| Table 18 | Single electrode vs the same electrode inside the full montage | `e_result/tab_exp1_solo_vs_montage.tex` | `tab18_exp1_solo_vs_montage.py` |
 | Figure 1 | Region / hemisphere box plot | `figures/fig_exp1_region_boxplot.*` | `fig1_exp1_region_boxplot.py` |
 | Figure 2 | Single-channel box plot | `figures/fig_exp1_single_channel_boxplot.*` | `fig2_exp1_single_channel_boxplot.py` |
+| Figure 12 | $F_1$ against number of electrodes given to the pipeline | `figures/fig_exp1_coverage_curve.*` | `fig12_exp1_coverage_curve.py` |
+
+Shared analysis layer for the three subset artifacts: `exp1_subset_data.py` (subset vs
+reference stats, solo-vs-montage contrast, oracle cost, Stage-B thresholds).
+
+**Terminology.** Experiment 1 restricts the channel set and re-runs the complete
+Stage A→B→C pipeline on each subset, so it measures whether a subset is *sufficient*.
+It is **not** a leave-one-region-out ablation and does not establish that any region is
+*necessary* to the full system. The one exception is Table 18, which removes the other
+31 electrodes from detection on a named electrode.
+
+**Per-electrode vs single-electrode.** Table 2, Table 3 and Figure 3 report electrodes
+scored *inside* the 32-channel run, where Stage A screens epochs using every electrode.
+The genuine single-electrode condition is the `*_only` selection groups, reported in
+Table 18 and Figure 2. Do not describe the former as "single-channel" results.
+
+### Prose pipeline
+
+| Artifact | Path | Generator |
+|---|---|---|
+| Evidence packets (one per paragraph) | `e_result/exp1/_packets/*.txt` | `exp1_prose_packets.py` |
+| Paragraph drafts + transcripts | `e_result/exp1/p*/paragraph.tex`, `e_result/exp1/_transcripts/` | `exp1_draft_prose.py` |
 
 ## Experiment 2 — Strategy comparison (`publication_results/exp2_*`)
 

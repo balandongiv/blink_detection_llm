@@ -1,0 +1,9 @@
+Next, we are interested to know how what happen if only subset channel only being supply, does sensetive to region.
+In this analysis, only subset channel will supply into the whole pipeline.
+Several subset including, the central left, central right, frontal left, frontal right, midline, occipital left, occipital right, parietal left,parietal right.
+
+%TODO: CAN WE
+At the anatomical-subset level, Proposed-Med retained performance comparable to the full montage only for frontal configurations, whereas central and more posterior subsets performed substantially worse (Table~\ref{tab:exp1_subset_summary}; Figure~\ref{fig:exp1_region_boxplot}). The frontal subset matched the full montage on both corpora, with $F_1=0.8676$, a paired difference of $-0.0149$, and $p=1.000$ on Raja, and $F_1=0.7961$, a paired difference of $-0.0106$, and $p=1.000$ on Cao2018.
+After Bonferroni correction, Frontal, Frontal-L and Frontal-R were not significantly different from the full montage on Raja, with $p=1.000$, $p=0.070$ and $p=0.113$, respectively. Wheras, on Cao2018, only Frontal and Frontal-L were not significantly different, with $p=1.000$ and $p=0.123$, whereas Frontal-R differed significantly with $p=0.001$.
+
+As expected, performance then fell steeply for every central, parietal, occipital and posterior subset. For example, Raja yielded $F_1=0.5859$ for Central, $F_1=0.0264$ for Parietal, $F_1=0.0406$ for Occipital and $F_1=0.0426$ for Posterior, while Cao2018 yielded $F_1=0.4668$, $F_1=0.1668$, $F_1=0.1197$ and $F_1=0.1736$ for the corresponding subsets. All differences for these central, parietal, occipital and posterior subsets were significant after correction with large matched-pairs rank-biserial effect sizes ($p<0.001$ in every case; for Central, $r=-1.000$ on Raja and $r=-0.994$ on Cao2018).

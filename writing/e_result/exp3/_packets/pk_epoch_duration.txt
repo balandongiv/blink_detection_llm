@@ -1,0 +1,47 @@
+EPOCH-DURATION SWEEP (Proposed-Med, median centre, full-montage all_channel gate)
+Best-channel-per-session macro F1 at each epoch duration, with two-tailed Wilcoxon
+p-values against the 30-second reference, Bonferroni-corrected over
+6 non-reference durations.
+
+Raja (46 sessions):
+  10 s: F1 = 0.8771  p = 1.000
+  20 s: F1 = 0.8821  p = 1.000
+  30 s: F1 = 0.8825  [reference]
+  40 s: F1 = 0.8814  p = 0.610
+  50 s: F1 = 0.8793  p < 0.001
+  60 s: F1 = 0.8773  p = 0.002
+  120 s: F1 = 0.8688  p < 0.001
+  spread across the seven durations = 0.0137 (lowest 0.8688, highest 0.8825)
+  best duration = 30 s
+  durations differing significantly from 30 s after correction: 50 s, 60 s, 120 s
+
+Cao2018 (58 sessions):
+  10 s: F1 = 0.8077  p = 1.000
+  20 s: F1 = 0.8076  p = 1.000
+  30 s: F1 = 0.8068  [reference]
+  40 s: F1 = 0.8066  p = 1.000
+  50 s: F1 = 0.8074  p = 1.000
+  60 s: F1 = 0.8105  p = 0.402
+  120 s: F1 = 0.8112  p = 0.659
+  spread across the seven durations = 0.0046 (lowest 0.8066, highest 0.8112)
+  best duration = 120 s
+  durations differing significantly from 30 s after correction: none
+
+Pooled (104 sessions):
+  10 s: F1 = 0.8384  p = 1.000
+  20 s: F1 = 0.8406  p = 1.000
+  30 s: F1 = 0.8403  [reference]
+  40 s: F1 = 0.8397  p = 0.933
+  50 s: F1 = 0.8392  p = 0.523
+  60 s: F1 = 0.8401  p = 1.000
+  120 s: F1 = 0.8367  p = 0.067
+  spread across the seven durations = 0.0039 (lowest 0.8367, highest 0.8406)
+  best duration = 20 s
+  durations differing significantly from 30 s after correction: none
+
+NOTE FOR THE WRITER:
+  The 30-second row equals the Experiment 1 full-montage condition and
+  the Experiment 2 Proposed-Med condition exactly (0.8825 Raja, 0.8068 Cao2018).
+  Pooled performance does not differ significantly from the reference at any
+  duration. Raja does: state which durations, and do not describe 10-60 s as a
+  uniformly safe range if the numbers above do not support it.

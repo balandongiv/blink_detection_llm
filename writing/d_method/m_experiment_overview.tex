@@ -22,8 +22,11 @@ spatial group may screen blinks more cleanly.
 \textit{Objective:} run the complete Stage~A$\to$B$\to$C pipeline on each candidate
 channel group and select the best group by weighing multiple criteria rather than a single
 metric. The decision criteria are:
-\begin{description}
-  \item[(i) Downstream event $F_1$.] The end-to-end event-level $F_1$ of the full pipeline
+
+\begin{itemize}
+  \item[(i) Downstream event $F_1$.]
+
+  The end-to-end event-level $F_1$ of the full pipeline
     when restricted to the group; this is the ultimate quantity the detector is optimised
     for and is therefore the primary criterion.
   \item[(ii) Stage-A epoch-selection $F_1$.] The precision and recall of the
@@ -34,20 +37,24 @@ metric. The decision criteria are:
     as a measure of montage cost, simplicity, and portability; a group that performs
     comparably with fewer channels is preferred because it is cheaper to acquire and easier
     to deploy.
+
   \item[(iv) False-positive epoch rate / \% epochs flagged.] The fraction of non-blink
     epochs erroneously flagged and the overall proportion of epochs flagged; a low value
     indicates robustness to artefacts and avoids over-flagging that would dilute the
     Stage-B threshold estimate.
+
   \item[(v) Cross-dataset consistency.] The agreement of the chosen group's behaviour
     between Raja and Cao2018; a group that is best on one dataset but poor on the other does
     not generalise.
+
   \item[(vi) Best-channel stability.] The stability of which channel (or channels) drives
     detection across sessions and subjects; an unstable best channel signals an
     overfitted, fragile selection.
+  \item
   \item[(vii) Estimator robustness.] The consistency of the group's ranking under the
     median versus mean centre at Stage~B; a group whose advantage survives both estimators
     is more trustworthy than one that depends on a particular centre.
-\end{description}
+\end{itemize}
 The configuration that best balances these criteria is designated the ideal configuration
 and is carried forward unchanged into Experiments~2 and~3.
 

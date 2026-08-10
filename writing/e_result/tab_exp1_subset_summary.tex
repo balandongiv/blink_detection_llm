@@ -1,0 +1,45 @@
+% Source: publication_results/; script experiment_script/tab17_exp1_subset_summary.py
+\begin{table}[htbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{Experiment~1 channel-subset performance of Proposed-Med (median centre) against the full-montage reference. Each subset is a self-contained detector: Stage~A, Stage~B and Stage~C were all re-run on that channel subset alone. Precision, recall and $F_1$ are macro-averaged over sessions at the best-channel-per-session operating point; $\Delta F_1$ is the paired difference from the full montage, tested with a two-tailed Wilcoxon signed-rank test and Bonferroni-corrected over the 13 subsets compared within each dataset, with the matched-pairs rank-biserial correlation $r$ as effect size. $n$ is the number of electrodes in the subset; the frontal subset contains AF3 and AF4 on Raja but not on Cao2018, whose montage lacks them.}
+\label{tab:exp1_subset_summary}
+\begin{tabular}{lrrrrrrr}
+\toprule
+Subset & $n$ & Precision & Recall & $F_1$ & $\Delta F_1$ & $p$ & $r$ \\
+\midrule
+\multicolumn{8}{l}{\textit{Raja (EGI 128, 46 sessions)}} \\[2pt]
+\textbf{All (full montage)} & 32 & 0.8803 & 0.9014 & 0.8825 & $+0.0000$ & -- & -- \\
+Frontal & 6 & 0.8886 & 0.8741 & 0.8676 & $-0.0149$ & $1.000$ & $-0.069$ \\
+Frontal-L & 3 & 0.8815 & 0.8569 & 0.8518 & $-0.0307$ & $0.070$ & $-0.493$ \\
+Frontal-R & 3 & 0.8856 & 0.8475 & 0.8459 & $-0.0366$ & $0.113$ & $-0.449$ \\
+Central & 6 & 0.6928 & 0.5642 & 0.5859 & $-0.2966$ & $<0.001$ & $-1.000$ \\
+Central-L & 3 & 0.6943 & 0.5467 & 0.5767 & $-0.3058$ & $<0.001$ & $-1.000$ \\
+Central-R & 3 & 0.4112 & 0.0429 & 0.0714 & $-0.8111$ & $<0.001$ & $-1.000$ \\
+Parietal & 4 & 0.1952 & 0.0147 & 0.0264 & $-0.8561$ & $<0.001$ & $-1.000$ \\
+Parietal-L & 2 & 0.1669 & 0.0119 & 0.0217 & $-0.8609$ & $<0.001$ & $-1.000$ \\
+Parietal-R & 2 & 0.2131 & 0.0119 & 0.0212 & $-0.8613$ & $<0.001$ & $-1.000$ \\
+Occipital & 8 & 0.1638 & 0.0262 & 0.0406 & $-0.8419$ & $<0.001$ & $-1.000$ \\
+Occipital-L & 4 & 0.1534 & 0.0211 & 0.0343 & $-0.8482$ & $<0.001$ & $-1.000$ \\
+Occipital-R & 4 & 0.1521 & 0.0188 & 0.0304 & $-0.8521$ & $<0.001$ & $-1.000$ \\
+Posterior & 12 & 0.1810 & 0.0275 & 0.0426 & $-0.8399$ & $<0.001$ & $-1.000$ \\
+\midrule
+\multicolumn{8}{l}{\textit{Cao2018 (10--20, 58 sessions)}} \\[2pt]
+\textbf{All (full montage)} & 32 & 0.7591 & 0.8909 & 0.8068 & $+0.0000$ & -- & -- \\
+Frontal & 4 & 0.7732 & 0.8578 & 0.7961 & $-0.0106$ & $1.000$ & $-0.200$ \\
+Frontal-L & 2 & 0.7689 & 0.8423 & 0.7841 & $-0.0227$ & $0.123$ & $-0.398$ \\
+Frontal-R & 2 & 0.7668 & 0.8132 & 0.7677 & $-0.0390$ & $0.001$ & $-0.589$ \\
+Central & 6 & 0.6992 & 0.3894 & 0.4668 & $-0.3399$ & $<0.001$ & $-0.994$ \\
+Central-L & 3 & 0.6797 & 0.3358 & 0.4142 & $-0.3926$ & $<0.001$ & $-0.998$ \\
+Central-R & 3 & 0.6800 & 0.3376 & 0.4101 & $-0.3967$ & $<0.001$ & $-0.995$ \\
+Parietal & 2 & 0.4944 & 0.1168 & 0.1668 & $-0.6400$ & $<0.001$ & $-1.000$ \\
+Parietal-L & 1 & 0.4542 & 0.1033 & 0.1480 & $-0.6588$ & $<0.001$ & $-1.000$ \\
+Parietal-R & 1 & 0.4824 & 0.1151 & 0.1622 & $-0.6446$ & $<0.001$ & $-1.000$ \\
+Occipital & 6 & 0.4361 & 0.0770 & 0.1197 & $-0.6871$ & $<0.001$ & $-1.000$ \\
+Occipital-L & 3 & 0.4051 & 0.0630 & 0.0992 & $-0.7075$ & $<0.001$ & $-1.000$ \\
+Occipital-R & 3 & 0.4131 & 0.0622 & 0.0968 & $-0.7099$ & $<0.001$ & $-1.000$ \\
+Posterior & 8 & 0.5048 & 0.1194 & 0.1736 & $-0.6331$ & $<0.001$ & $-1.000$ \\
+\bottomrule
+\end{tabular}
+\end{table}

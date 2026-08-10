@@ -1,0 +1,103 @@
+You are drafting ONE paragraph of a submitted academic journal article.
+
+REGISTER:
+- Plain declarative academic prose. Past tense for what was done and measured.
+- NOT Nature/Science house style: no "Here we show", no "strikingly", "remarkably",
+  "crucially", "sheds light on"; no rhetorical questions; no opening hook; no closing
+  flourish about impact.
+- LaTeX body text only. Use \ref{...} for cross-references and ~ before \ref and \cite.
+
+PARAGRAPH STRUCTURE (mandatory):
+- Begin the paragraph with a clear topic sentence that states its main idea.
+- Every remaining sentence must directly explain, support, or develop that topic sentence.
+- Do NOT begin with an isolated detail, a citation, an example, a bare cross-reference
+  ("X is shown in Figure 3"), or background information laid down before the main point is
+  established. A cross-reference may appear in the topic sentence only as a parenthetical
+  attached to a claim, never as the claim itself.
+- Where this paragraph follows another, carry a transition in the topic sentence that
+  connects the two logically.
+
+HARD RULES ON EVIDENCE:
+- Use ONLY numbers that appear literally in the DATA PACKET below. Do not round, re-scale,
+  recompute, or derive any number. A difference or ratio must already be in the packet.
+- Cite ONLY keys from the CITEABLE KEYS list. Never invent a citation key. If no listed key
+  supports a claim, make the claim without a citation or omit it.
+- Do not claim anything the packet does not support. Where the task says a result is
+  negative or contradicts a hypothesis, say so plainly; do not soften it.
+
+OUTPUT CONTRACT:
+- Output ONLY the LaTeX paragraph, between the lines BEGIN_TEX and END_TEX.
+- No preamble, no explanation, no markdown fences, no headings, no commentary.
+
+===== TASK =====
+Write British spelling, plain declarative academic prose, past tense. Refer to the two
+corpora as Raja and Cao2018 and to the detector as Proposed-Med. Write F1 as $F_1$ and
+p-values as $p=0.002$; for a p-value below 0.001 write $p<0.001$ and never $p=0.000$.
+Available cross-references (use only these): Table~\ref{tab:epoch_duration},
+Figure~\ref{fig:f1_by_epoch}.
+
+Write the RESULTS paragraph reporting the epoch-duration sweep.
+
+Content it must carry:
+- Pooled performance was stable: give the pooled spread across the seven durations and
+  state that no duration differed significantly from the 30-second reference after
+  correction, giving the smallest corrected p-value to support it.
+- Cao2018 was likewise stable with no significant difference at any duration; give its
+  spread.
+- Raja was NOT uniformly stable: it differed significantly from the reference at 50, 60
+  and 120 seconds. Give those values and corrected p-values. Do not soften this and do
+  not describe 10--60 seconds as a uniformly safe range - the 50 and 60 second results
+  contradict that.
+- On Raja the 30-second reference was the best of the seven durations; on Cao2018 the
+  longest duration was nominally best but not significantly so.
+- Reference Table~\ref{tab:epoch_duration} and Figure~\ref{fig:f1_by_epoch}.
+- This is a Results paragraph: report, do not interpret.
+
+===== DATA PACKET (the only numbers you may use) =====
+EPOCH-DURATION SWEEP (Proposed-Med, median centre, full-montage all_channel gate)
+Best-channel-per-session macro F1 at each epoch duration, with two-tailed Wilcoxon
+p-values against the 30-second reference, Bonferroni-corrected over
+6 non-reference durations.
+
+Raja (46 sessions):
+  10 s: F1 = 0.8771  p = 1.000
+  20 s: F1 = 0.8821  p = 1.000
+  30 s: F1 = 0.8825  [reference]
+  40 s: F1 = 0.8814  p = 0.610
+  50 s: F1 = 0.8793  p < 0.001
+  60 s: F1 = 0.8773  p = 0.002
+  120 s: F1 = 0.8688  p < 0.001
+  spread across the seven durations = 0.0137 (lowest 0.8688, highest 0.8825)
+  best duration = 30 s
+  durations differing significantly from 30 s after correction: 50 s, 60 s, 120 s
+
+Cao2018 (58 sessions):
+  10 s: F1 = 0.8077  p = 1.000
+  20 s: F1 = 0.8076  p = 1.000
+  30 s: F1 = 0.8068  [reference]
+  40 s: F1 = 0.8066  p = 1.000
+  50 s: F1 = 0.8074  p = 1.000
+  60 s: F1 = 0.8105  p = 0.402
+  120 s: F1 = 0.8112  p = 0.659
+  spread across the seven durations = 0.0046 (lowest 0.8066, highest 0.8112)
+  best duration = 120 s
+  durations differing significantly from 30 s after correction: none
+
+Pooled (104 sessions):
+  10 s: F1 = 0.8384  p = 1.000
+  20 s: F1 = 0.8406  p = 1.000
+  30 s: F1 = 0.8403  [reference]
+  40 s: F1 = 0.8397  p = 0.933
+  50 s: F1 = 0.8392  p = 0.523
+  60 s: F1 = 0.8401  p = 1.000
+  120 s: F1 = 0.8367  p = 0.067
+  spread across the seven durations = 0.0039 (lowest 0.8367, highest 0.8406)
+  best duration = 20 s
+  durations differing significantly from 30 s after correction: none
+
+NOTE FOR THE WRITER:
+  The 30-second row equals the Experiment 1 full-montage condition and
+  the Experiment 2 Proposed-Med condition exactly (0.8825 Raja, 0.8068 Cao2018).
+  Pooled performance does not differ significantly from the reference at any
+  duration. Raja does: state which durations, and do not describe 10-60 s as a
+  uniformly safe range if the numbers above do not support it.

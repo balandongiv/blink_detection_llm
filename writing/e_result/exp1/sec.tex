@@ -1,0 +1,97 @@
+
+
+
+\input{e_result/exp1/p01_motivation/paragraph}
+
+\input{e_result/exp1/p02_design/paragraph}
+
+\input{e_result/tab_egi_channel_map}
+
+% ---------------------------------------------------------------------------
+\subsubsection{Full-Montage Reference}
+\label{sec:exp1_reference}
+
+\input{e_result/exp1/p03_reference/paragraph}
+
+\input{e_result/exp1/p04_per_electrode/paragraph}
+
+\input{e_result/tab_exp1_channel_ablation}
+\input{e_result/tab_region_performance}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\linewidth]{fig_region_performance.pdf}
+    \caption{Per-electrode detection $F_1$ under the full montage, for every electrode,
+        coloured by scalp region. Each bar is one electrode scored inside the 32-channel run,
+        not a single-electrode pipeline.}
+    \label{fig:region_performance}
+\end{figure}
+% ---------------------------------------------------------------------------
+\subsubsection{Regional Channel Subsets}
+\label{sec:exp1_regional}
+
+\input{e_result/exp1/p05_regional/paragraph}
+
+\input{e_result/exp1/p06_failure_mode/paragraph}
+
+
+\input{e_result/tab_exp1_subset_summary}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\linewidth]{fig_exp1_region_boxplot.pdf}
+    \caption{Session-level macro $F_1$ by channel-selection group (median centre),
+    Raja versus Cao2018.}
+    \label{fig:exp1_region_boxplot}
+\end{figure}
+
+
+
+% ---------------------------------------------------------------------------
+\subsubsection{Single-Channel Operation}
+\label{sec:exp1_single_channel}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\linewidth]{fig_exp1_single_channel_boxplot.pdf}
+    \caption{Session-level macro $F_1$ for the single-electrode selection groups, in
+    which the complete pipeline was run on one electrode alone.}
+    \label{fig:exp1_single_channel}
+\end{figure}
+
+\input{e_result/exp1/p07_single_channel/paragraph}
+
+\input{e_result/tab_exp1_solo_vs_montage}
+
+\input{e_result/exp1/p08_montage_contribution/paragraph}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\linewidth]{fig_exp1_coverage_curve.pdf}
+    \caption{Detection $F_1$ against the number of electrodes given to the pipeline.
+    Each point is one channel subset; the dashed line marks the full-montage reference.}
+    \label{fig:exp1_coverage_curve}
+\end{figure}
+
+\input{e_result/exp1/p09_position_vs_count/paragraph}
+
+% ---------------------------------------------------------------------------
+\subsubsection{Stability of the Channel Choice}
+\label{sec:channel_stability}
+
+\input{e_result/tab_channel_selection}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\linewidth]{fig_channel_selection.pdf}
+    \caption{Best-channel selection frequency, pooled over the four conditions.}
+    \label{fig:channel_selection}
+\end{figure}
+
+\input{e_result/exp1/p10_selection_frequency/paragraph}
+
+\input{e_result/exp1/p11_oracle_cost/paragraph}
+
+\input{e_result/tab_channel_robustness}
+
+\input{e_result/exp1/p12_agreement/paragraph}

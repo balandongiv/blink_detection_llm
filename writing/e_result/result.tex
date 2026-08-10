@@ -6,7 +6,7 @@
 
 All experiments are evaluated on the driving corpora described in Section~\ref{sec:datasets}.
 Unless otherwise stated, each continuous session is divided into non-overlapping 30-second epochs, and the evaluation is conducted at the event level using the
-overlap-based matching criterion introduced in Section~\ref{sec:eval}.
+overlap-based matching criterion defined in Section~\ref{sec:metrics}.
 
 \paragraph{Conditions.}
 Four conditions are compared throughout.
@@ -71,79 +71,13 @@ Bonferroni correction is applied for the number of conditions compared within
 each experiment, and we report exact $p$-values alongside the matched-pairs
 rank-biserial correlation $r$ as an effect-size estimate.
 
+
 % =====================================================================
 % EXPERIMENT 1 — channel selection
 % =====================================================================
-\subsection{Experiment 1: EEG Channel-Selection Ablation}
+\subsection{Experiment 1: EEG Channel-Subset Analysis}
 \label{sec:exp1_channel}
-
-\paragraph{Motivation.}
-EEG blink artefacts are largest over frontal scalp sites, but it is unclear how much
-performance degrades when only a subset of the available channels is used. This experiment
-ablates channel groups and individual electrodes to characterise the
-performance-versus-coverage trade-off and to identify a compact, reliable channel set.
-
-\paragraph{Design.}
-The full pipeline (30-second epochs, median centre) was applied to every session of both
-datasets and evaluated \emph{channel by channel}: each electrode's macro-averaged
-precision, recall and $F_1$ were read directly from the per-channel rows of the
-Experiment~1 results (the \texttt{selection=all\_channel} rows), averaged over sessions,
-with no region-level pooling. For the Raja EGI-128 montage the native electrode labels are
-accompanied by their 10--20 equivalents through the channel map of
-Table~\ref{tab:egi_map}; the Cao2018 montage is already in 10--20 nomenclature.
-
-\input{e_result/tab_egi_channel_map}
-\input{e_result/tab_exp1_channel_ablation}
-\input{e_result/r1_channel_ablation/paragraph}
-
-\subsubsection{Regional Profile and Single-Channel Operation}
-\label{sec:region_performance}
-\input{e_result/tab_region_performance}
-
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=0.9\linewidth]{fig_region_performance.pdf}
-  \caption{Single-channel detection $F_1$ for every electrode, coloured by scalp region.}
-  \label{fig:region_performance}
-\end{figure}
-
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=0.9\linewidth]{fig_exp1_region_boxplot.pdf}
-  \caption{Session-level macro $F_1$ by channel-selection group (median centre), Raja versus Cao2018.}
-  \label{fig:exp1_region_boxplot}
-\end{figure}
-
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=0.9\linewidth]{fig_exp1_single_channel_boxplot.pdf}
-  \caption{Session-level macro $F_1$ for the single-channel selection groups.}
-  \label{fig:exp1_single_channel}
-\end{figure}
-
-\input{e_result/r1_region_profile/paragraph}
-
-\subsubsection{Stability of the Channel Choice}
-\label{sec:channel_stability}
-
-\paragraph{Design.}
-Experiment~1 identifies the best channel on average; this analysis asks how concentrated
-that choice is in practice. The per-session best channel is pooled over the four detection
-conditions of Experiment~2, giving both a selection frequency
-(Table~\ref{tab:channel_selection}, Figure~\ref{fig:channel_selection}) and an agreement
-rate between conditions (Table~\ref{tab:channel-robustness}).
-
-\input{e_result/tab_channel_selection}
-
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=0.9\linewidth]{fig_channel_selection.pdf}
-  \caption{Best-channel selection frequency, pooled over the four conditions.}
-  \label{fig:channel_selection}
-\end{figure}
-
-\input{e_result/tab_channel_robustness}
-\input{e_result/r1_channel_stability/paragraph}
+\input{e_result/exp1/sec}
 
 % =====================================================================
 % EXPERIMENT 2 — strategy comparison
@@ -151,25 +85,9 @@ rate between conditions (Table~\ref{tab:channel-robustness}).
 \subsection{Experiment 2: Strategy Comparison}
 \label{sec:exp2_strategy}
 
-\paragraph{Motivation.}
-In driving and other epoch-structured paradigms it is common to run a continuous-signal
-blink detector on the raw or minimally preprocessed recording and map detections back onto
-the epoch grid. BLINKER-concat embodies this practice: its threshold is derived from a
-signal pool that mixes blink-heavy and blink-free epochs. The central claim of the proposed
-pipeline is that this mixing dilutes the amplitude statistics used for threshold
-estimation, distorting threshold placement and shifting the precision--recall trade-off.
-MNE-annot provides a second reference point grounded in community tooling: establishing its
-performance under an event-level blink criterion, for which it was not designed,
-characterises the gap that specialised methods must close.
 
-\paragraph{Hypothesis.}
-Naive concatenation will produce systematically lower session-level $F_1$ than the
-epoch-aware pipeline through an unfavourable precision--recall trade-off.
+\input{e_result/r2_strategy_main/paragraph}
 
-\paragraph{Design.}
-All four conditions are applied to every session under 30-second epochs on the
-\texttt{all\_channel} gate. Per-session macro $F_1$, precision and recall are summarised in
-Table~\ref{tab:exp1_main}.
 
 \input{e_result/tab_comparison_30s_epoch}
 
@@ -181,7 +99,9 @@ Table~\ref{tab:exp1_main}.
 \end{figure}
 
 \input{e_result/tab_exp2_inversions}
-\input{e_result/r2_strategy_main/paragraph}
+
+
+
 
 \subsubsection{Effect of the Threshold Estimator at Stage B}
 \label{sec:exp2_estimator}
@@ -190,12 +110,7 @@ Table~\ref{tab:exp1_main}.
 Stage~B estimates the sample-level threshold from samples pooled across the suspicious
 epoch set $\mathcal{S}$. Because $\mathcal{S}$ is selected precisely because it contains
 high-amplitude excursions, the pooled distribution is not symmetric around a clean
-baseline: it is contaminated by the very peaks the threshold is meant to capture. The mean
-and standard deviation are sensitive to these extreme values; the median and MAD are not.
-
-\paragraph{Hypothesis.}
-Proposed-Med will outperform Proposed-Mean on precision---because the MAD-based threshold
-is less inflated by within-epoch peaks---while achieving comparable or superior recall.
+baseline: it is contaminated by the very peaks the threshold is meant to capture. The mean and standard deviation are sensitive to these extreme values; the median and MAD are not. The hypothesis is that the proposed-Med will outperform Proposed-Mean on precision---because the MAD-based threshold is less inflated by within-epoch peaks---while achieving comparable or superior recall.
 
 \input{e_result/r2_estimator/paragraph}
 
@@ -204,8 +119,7 @@ is less inflated by within-epoch peaks---while achieving comparable or superior 
 
 \paragraph{Motivation.}
 A detector tuned and reported on a single corpus may not transfer to data collected under
-different acquisition conditions. Because the benchmark spans a closed corpus (Raja) and an
-open corpus (Cao2018), the generalisation gap can be quantified directly as the
+different acquisition conditions. Because the benchmark spans a closed corpus (Raja) and an open corpus (Cao2018), the generalisation gap can be quantified directly as the
 per-condition difference in macro-$F_1$ between the two datasets.
 
 \input{e_result/tab_cross_dataset_gap}

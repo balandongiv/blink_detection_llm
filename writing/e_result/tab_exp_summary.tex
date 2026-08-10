@@ -1,15 +1,15 @@
 % Source: publication_results/; script experiment_script/tab14_tab15_fig11_exp_summary.py
 \begin{table*}[ht]
   \centering
-  \caption{Proposed-Med detection performance across the three experiments on the Raja and Cao2018 driving-EEG corpora. Macro-averaged $F_1$ over all sessions (best-channel-per-session). The best competing method is BLINKER-concat from the strategy comparison; $\Delta$ is the pooled Proposed-Med advantage over BLINKER-concat (pooled macro-$F_1$ 0.7256).}
+  \caption{Proposed-Med detection performance across the three experiments on the Raja and Cao2018 driving-EEG corpora. Macro-averaged $F_1$ over all sessions (best-channel-per-session). The three rows are identical because the primary configuration of all three experiments is the same one: the full montage at 30-second epochs with the median centre. The rows are reported separately to show that each experiment reproduced it exactly. The best competing method is BLINKER-concat from the strategy comparison; $\Delta$ is the pooled Proposed-Med advantage over BLINKER-concat (pooled macro-$F_1$ 0.7256).}
   \label{tab:exp_summary}
   \begin{tabular}{llccll}
     \toprule
     Exp. & Description & PM $F_1$ (Raja) & PM $F_1$ (Cao2018) & Best competitor & $\Delta$ vs competitor \\
     \midrule
-    exp1 & Channel selection (whole-cap oracle) & 0.8894 & 0.8175 & BLINKER-concat & $+0.1237$ \\
+    exp1 & Channel subsets (full montage) & 0.8825 & 0.8068 & BLINKER-concat & $+0.1147$ \\
     exp2 & Strategy comparison & 0.8825 & 0.8068 & BLINKER-concat & $+0.1147$ \\
-    exp3 & Epoch duration (30\,s) & 0.8882 & 0.8153 & BLINKER-concat & $+0.1220$ \\
+    exp3 & Epoch duration (30\,s) & 0.8825 & 0.8068 & BLINKER-concat & $+0.1147$ \\
     \bottomrule
   \end{tabular}
 \end{table*}
