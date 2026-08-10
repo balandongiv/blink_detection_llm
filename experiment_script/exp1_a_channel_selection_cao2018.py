@@ -8,9 +8,7 @@ Run order:
      channels and top 4 region groups from those summary CSVs.
 
 For each channel-selection group (all / frontal / central / parietal / occipital /
-posterior / frontal hemispheres / single frontal channels) the complete Stage A->B->C
-pipeline is run on that subset, for both the median and mean Stage-B centre, and
-evaluated on Stage-A epoch selection and downstream event detection.
+posterior / frontal hemispheres / single frontal channels) the complete Stage A->B->C pipeline is run on that subset, for both the median and mean Stage-B centre, and evaluated on Stage-A epoch selection and downstream event detection.
 Channels come from the brain_region_yaml specified in paths.yaml.
 
 Config files:
