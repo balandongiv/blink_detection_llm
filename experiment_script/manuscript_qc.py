@@ -31,8 +31,8 @@ SCRIPTS = REPO / "experiment_script"
 STALE_SOURCES = ("runs_second_iteration/", "runs0/", "runs/exp")
 
 #: Prose lives in these paragraph directories; tables are generated and already escaped.
-PROSE_GLOBS = ("e_result/*/paragraph.tex", "f_discussion/*/paragraph.tex",
-               "b_intro/*/paragraph.tex", "c_literature_review/*/paragraph.tex",
+PROSE_GLOBS = ("e_result/*/par3.tex", "f_discussion/*/par3.tex",
+               "b_intro/*/par3.tex", "c_literature_review/*/par3.tex",
                "a_abstract/abstract.tex", "g_conclusion/*.tex")
 
 
