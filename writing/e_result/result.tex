@@ -89,63 +89,28 @@ rank-biserial correlation $r$ as an effect-size estimate.
 \input{e_result/exp2/sec}
 
 
-
-
-% =====================================================================
-% EXPERIMENT 3 — strategy comparison
-% =====================================================================
-\subsection{Experiment 2: Strategy Comparison}
-\label{sec:exp2_strategy}
-
-
-\input{e_result/r2_strategy_main/paragraph}
-
-
-\input{e_result/tab_comparison_30s_epoch}
-
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=0.8\linewidth]{fig_condition_prf.pdf}
-  \caption{Macro-averaged precision, recall, and $F_1$ for the four conditions over all sessions.}
-  \label{fig:condition_prf}
-\end{figure}
-
+% What table is this??
 \input{e_result/tab_exp2_inversions}
 
 
 
 
-\subsubsection{Effect of the Threshold Estimator at Stage B}
-\label{sec:exp2_estimator}
+\subsection{Experiment 3: Effect of the Threshold Estimator at Stage B}
+\label{sec:exp3_estimator}
+\input{e_result/exp3/sec}
 
-\paragraph{Motivation.}
-Stage~B estimates the sample-level threshold from samples pooled across the suspicious
-epoch set $\mathcal{S}$. Because $\mathcal{S}$ is selected precisely because it contains
-high-amplitude excursions, the pooled distribution is not symmetric around a clean
-baseline: it is contaminated by the very peaks the threshold is meant to capture. The mean and standard deviation are sensitive to these extreme values; the median and MAD are not. The hypothesis is that the proposed-Med will outperform Proposed-Mean on precision---because the MAD-based threshold is less inflated by within-epoch peaks---while achieving comparable or superior recall.
 
-\input{e_result/r2_estimator/paragraph}
 
-\subsubsection{Cross-Dataset Generalisation}
+\subsection{Experiment 4: Cross-Dataset Generalisation}
 \label{sec:exp_cross_dataset}
 
-\paragraph{Motivation.}
-A detector tuned and reported on a single corpus may not transfer to data collected under
-different acquisition conditions. Because the benchmark spans a closed corpus (Raja) and an open corpus (Cao2018), the generalisation gap can be quantified directly as the
-per-condition difference in macro-$F_1$ between the two datasets.
+\input{e_result/exp4/sec}
 
-\input{e_result/tab_cross_dataset_gap}
 
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=0.8\linewidth]{fig_f1_by_dataset.pdf}
-  \caption{Macro-averaged $F_1$ per condition on Raja and Cao2018.}
-  \label{fig:f1_by_dataset}
-\end{figure}
 
-\input{e_result/r2_cross_dataset/paragraph}
 
-\subsubsection{Operating Points}
+
+\subsection{Operating Points}
 \label{sec:operating_points}
 
 \begin{figure}[ht]
@@ -201,6 +166,15 @@ false-positive and false-negative regimes distinguishes the two.
 \input{e_result/tab_best_session}
 \input{e_result/tab_failure_analysis}
 \input{e_result/r2_session_variability/paragraph}
+
+% =====================================================================
+% EXPERIMENT 5 — strategy comparison
+% =====================================================================
+\subsection{Experiment 5: Strategy Comparison}
+\label{sec:exp5_strategy}
+\input{e_result/exp5/sec}
+
+
 
 %
 % =====================================================================
