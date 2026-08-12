@@ -1,10 +1,4 @@
 
-Every condition is summarised at its \emph{best-channel-per-session} operating point: for
-each session the channel or channel group with the highest event-level $F_1$ is selected,
-and those per-session values are then averaged. The same rule is applied to all four
-conditions, so no condition is given a selection advantage the others do not receive.
-
-
 
 
 \paragraph{Event-level precision, recall, and F1.}
@@ -13,7 +7,7 @@ unmatched ground-truth blink region; unmatched detections are false positives,
 and unmatched ground-truth regions are false negatives.
 Per-session precision, recall, and F1 are computed from these event-level counts.
 
-\paragraph{Macro versus micro F1.}
+
 We adopt \textbf{macro-averaged F1} as the primary reporting metric.
 Macro F1 computes precision, recall, and F1 independently for each session and
 then reports the unweighted mean of the session-level F1 scores.
@@ -27,3 +21,9 @@ modes on sessions with atypically few blinks.
 
 
 Detection was scored at the event level: a detected interval that overlapped an unmatched ground-truth interval was counted as a true positive, unmatched detections were counted as false positives, and unmatched ground-truth intervals were counted as false negatives. Event-level precision, recall, and $F_1$ were macro-averaged across sessions, and event-level $F_1$ was preferred over accuracy because blink events were sparse relative to non-blink samples. A detection was matched to a ground-truth interval at an intersection-over-union tolerance of 0.1. Methods were compared using paired two-tailed Wilcoxon signed-rank tests on session-level $F_1$, with Bonferroni correction applied to the six comparisons among the four methods and to the six non-reference durations of the epoch sweep against the 30 s reference; rank-biserial effect sizes were also reported.
+
+
+Every condition is summarised at its \emph{best-channel-per-session} operating point: for
+each session the channel or channel group with the highest event-level $F_1$ is selected,
+and those per-session values are then averaged. The same rule is applied to all four
+conditions, so no condition is given a selection advantage the others do not receive.
