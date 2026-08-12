@@ -101,9 +101,12 @@ rank-biserial correlation $r$ as an effect-size estimate.
 
 
 
-\subsection{Experiment 4: Cross-Dataset Generalisation}
-\label{sec:exp_cross_dataset}
 
+% =====================================================================
+% EXPERIMENT 4 — strategy comparison
+% =====================================================================
+\subsection{Experiment 4: Strategy Comparison}
+\label{sec:exp4_strategy}
 \input{e_result/exp4/sec}
 
 
@@ -129,73 +132,3 @@ rank-biserial correlation $r$ as an effect-size estimate.
 
 \input{e_result/r2_operating_points/paragraph}
 
-\subsubsection{Blink-Count Fidelity}
-\label{sec:count_fidelity}
-
-
-Event-level $F_1$ does not by itself establish that a detector can support blink-rate or
-PERCLOS estimation: that requires the predicted event count to track the true count. For
-each session the predicted count is $\mathrm{TP}+\mathrm{FP}$ and the true count is
-$\mathrm{TP}+\mathrm{FN}$.
-
-\input{e_result/tab_count_agreement}
-
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=0.9\linewidth]{fig_count_agreement.pdf}
-  \caption{Predicted versus true blink count, and a Bland--Altman view for Proposed-Med.}
-  \label{fig:count_agreement}
-\end{figure}
-
-\input{e_result/r2_count_fidelity/paragraph}
-
-\subsubsection{Error-Structure Decomposition}
-\label{sec:error_structure_decomposition}
-
-
-Two detectors can reach the same $F_1$ by opposite routes: one floods the recording with
-false positives, the other misses blinks. Decomposing each condition's errors into
-false-positive and false-negative regimes distinguishes the two.
-
-\input{e_result/tab_error_structure}
-\input{e_result/r2_error_structure/paragraph}
-
-\subsubsection{Per-Session Variability and Failure Analysis}
-\label{sec:session_variability}
-
-\input{e_result/tab_best_session}
-\input{e_result/tab_failure_analysis}
-\input{e_result/r2_session_variability/paragraph}
-
-% =====================================================================
-% EXPERIMENT 5 — strategy comparison
-% =====================================================================
-\subsection{Experiment 5: Strategy Comparison}
-\label{sec:exp5_strategy}
-\input{e_result/exp5/sec}
-
-
-
-%
-% =====================================================================
-% SUMMARY
-% =====================================================================
-\subsection{Summary Across Experiments}
-\label{sec:exp_summary}
-
-Table~\ref{tab:exp_summary} consolidates Proposed-Med performance across the three
-experiments, Figure~\ref{fig:exp_boxplot} shows the corresponding session-level
-distributions, and Table~\ref{tab:exp_stats} reports the paired comparison against the best
-competing method in every setting.
-
-\input{e_result/tab_exp_summary}
-
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=0.9\linewidth]{fig_exp_boxplot.pdf}
-  \caption{Session-level $F_1$ distributions of Proposed-Med across the three experiments.}
-  \label{fig:exp_boxplot}
-\end{figure}
-
-\input{e_result/tab_exp_stats}
-\input{e_result/r4_summary/paragraph}
