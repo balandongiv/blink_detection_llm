@@ -1,29 +1,55 @@
 
 
 
-\paragraph{Event-level precision, recall, and F1.}
-A detected interval is counted as a true positive if it overlaps at least one
-unmatched ground-truth blink region; unmatched detections are false positives,
-and unmatched ground-truth regions are false negatives.
-Per-session precision, recall, and F1 are computed from these event-level counts.
+\paragraph{Event matching.}
+Performance was evaluated at the blink-event level rather than at the sample
+level. For a predicted interval $P$ and a reference interval $G$, temporal
+overlap was quantified using intersection over union (IoU):
+\begin{equation}
+    \operatorname{IoU}(P,G)
+    = \frac{|P \cap G|}{|P \cup G|}.
+\end{equation}
+Here, $|\cdot|$ denotes interval duration.
+A predicted interval was eligible for a match when its IoU with an unmatched
+reference interval was at least 0.1. Matching was one-to-one, so a predicted or
+reference interval could contribute to at most one match. Matched predictions
+were counted as true positives (TP), remaining predictions as false positives
+(FP), and remaining reference intervals as false negatives (FN).
 
+\paragraph{Session-level measures.}
+Precision, recall, and $F_1$ were calculated independently for each session $s$
+from the event counts:
+\begin{align}
+    \operatorname{Precision}_s
+        &= \frac{\mathrm{TP}_s}{\mathrm{TP}_s+\mathrm{FP}_s}, \\
+    \operatorname{Recall}_s
+        &= \frac{\mathrm{TP}_s}{\mathrm{TP}_s+\mathrm{FN}_s}, \\
+    F_{1,s}
+        &= \frac{2\,\operatorname{Precision}_s\operatorname{Recall}_s}
+        {\operatorname{Precision}_s+\operatorname{Recall}_s}.
+\end{align}
+Event-level $F_1$ was the primary outcome because blink events were sparse;
+sample-level accuracy would be dominated by non-blink samples and would
+therefore provide limited information about event-detection performance.
 
-We adopt \textbf{macro-averaged F1} as the primary reporting metric.
-Macro F1 computes precision, recall, and F1 independently for each session and
-then reports the unweighted mean of the session-level F1 scores.
-This gives every session equal weight regardless of how many blink events it
-contains. The goal of epoch-based blink detection in driving studies is to produce
-a detector that works reliably session by session, not one that merely accumulates
-favourable aggregate counts. Micro F1, which pools all true positives, false
-positives, and false negatives across sessions before computing a single ratio,
-is dominated by sessions with large blink counts and can mask consistent failure
-modes on sessions with atypically few blinks.
+\paragraph{Macro-averaging.}
+For a measure $M\in\{\operatorname{Precision},\operatorname{Recall},F_1\}$,
+the reported macro-average over $S$ sessions was
+\begin{equation}
+    \overline{M}=\frac{1}{S}\sum_{s=1}^{S}M_s.
+\end{equation}
+Thus, each session contributed equally, irrespective of its number of annotated
+blinks. Pooled results across the two corpora used the same unweighted average
+over all 104 sessions; event counts were not pooled before computing the
+measures. This approach prevents sessions with many blinks from dominating the
+headline result, as would occur with micro-averaging.
 
-
-Detection was scored at the event level: a detected interval that overlapped an unmatched ground-truth interval was counted as a true positive, unmatched detections were counted as false positives, and unmatched ground-truth intervals were counted as false negatives. Event-level precision, recall, and $F_1$ were macro-averaged across sessions, and event-level $F_1$ was preferred over accuracy because blink events were sparse relative to non-blink samples. A detection was matched to a ground-truth interval at an intersection-over-union tolerance of 0.1. Methods were compared using paired two-tailed Wilcoxon signed-rank tests on session-level $F_1$, with Bonferroni correction applied to the six comparisons among the four methods and to the six non-reference durations of the epoch sweep against the 30 s reference; rank-biserial effect sizes were also reported.
-
-
-Every condition is summarised at its \emph{best-channel-per-session} operating point: for
-each session the channel or channel group with the highest event-level $F_1$ is selected,
-and those per-session values are then averaged. The same rule is applied to all four
-conditions, so no condition is given a selection advantage the others do not receive.
+\paragraph{Operating-point selection.}
+Unless an analysis explicitly considered a fixed single electrode, each tested
+channel configuration was summarised at a retrospective
+\emph{best-channel-per-session} operating point. Within each session, the output
+electrode with the highest event-level $F_1$ was selected, and its associated
+precision, recall, and $F_1$ were retained for macro-averaging. The same rule was
+applied to every detector condition in a comparison. Because this selection used
+the reference annotations, it represents an oracle operating point and should
+not be interpreted as prospective, label-free channel selection.

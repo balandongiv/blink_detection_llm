@@ -1,9 +1,36 @@
 
 
-Two naturalistic driving-EEG corpora were evaluated: Raja and Cao2018. The Raja corpus comprised 46 complete sessions recorded with a 128-channel EGI system (ANT Neuro), referenced to CPz under a modified international 10-20 layout, during a simulated lane-keeping driving task; ground-truth blink annotations were derived from human EAR/EOG labelling. The channel scope was dataset specific: for Raja, the analysis was restricted to a 32 channels as. Specifically, we only retain the channel
+Two EEG corpora acquired during sustained simulated-driving tasks were used,
+providing 104 complete recording sessions in total. The corpora differed in
+their acquisition montages and data provenance, allowing the detector to be
+evaluated under both high-density and conventional electrode configurations.
+
+\paragraph{Raja corpus.}
+The Raja corpus comprised 46 complete sessions recorded during a simulated
+lane-keeping task. EEG was acquired with a 128-channel EGI HydroCel system,
+with CPz as the reference. Reference blink intervals were obtained from human
+annotations informed by eye aspect ratio (EAR) and electrooculographic (EOG)
+signals. Although the original recordings used a high-density montage, the
+present analyses retained a predefined subset of 32 electrodes corresponding
+to conventional 10--20 scalp locations. These electrodes are reported by their
+10--20-equivalent names; Table~\ref{tab:egi_map} provides the corresponding
+native EGI indices.
 
 
 
 
 
-The Cao2018 corpus was the sustained-attention driving corpus reported by \citep{cao2019multichannel}, in which 32-channel EEG was recorded during an approximately 90-minute lane-keeping task; 58 complete sessions were used, and 4 non-complete sessions were excluded. For Cao2018, all 32 EEG channels were provided to the pipeline.
+\paragraph{Cao2018 corpus.}
+The public Cao2018 corpus contains 62 sessions from 27 participants who
+performed an approximately 90-minute lane-keeping task in an immersive driving
+simulator~\citep{cao2019multichannel}. The present study included the 58
+sessions marked as complete and excluded the remaining four incomplete
+sessions. Because ocular activity had been removed from the released
+preprocessed data, the raw recordings were used and paired with the available
+blink-interval annotations. All 32 recorded electrophysiological channels (30
+scalp electrodes and the A1/A2 mastoid reference channels) were supplied to the
+pipeline; the concurrently recorded vehicle-position channel was excluded.
+
+Within each corpus, all detector conditions were evaluated using the same
+recordings, channel scope, valid-epoch masks, and reference annotations. This
+common data scope enabled paired, session-level comparisons between conditions.

@@ -1,11 +1,22 @@
 
-\paragraph{Wilcoxon signed-rank test.}
-Pairwise comparisons between conditions use the Wilcoxon signed-rank test on
-matched pairs of session-level F1 scores.
-The test is preferred over a paired $t$-test because session-level F1
-distributions are bounded and often skewed.
-For comparisons in which the proposed method is hypothesised to outperform a
-baseline, a one-tailed test is used; stability analyses use two-tailed tests.
-Bonferroni correction is applied for the number of conditions compared within
-each experiment, and we report exact $p$-values alongside the matched-pairs
-rank-biserial correlation $r$ as an effect-size estimate.
+\paragraph{Paired comparisons.}
+The recording session was the unit of analysis. Differences between detector
+conditions were assessed using the Wilcoxon signed-rank test applied to matched
+pairs of session-level $F_1$ scores. This non-parametric paired test was selected
+because $F_1$ is bounded and no normality assumption was imposed on the paired
+differences. All inferential tests reported in the main analyses were
+two-sided, and zero-valued paired differences were omitted according to the
+Wilcoxon convention.
+
+\paragraph{Multiplicity and effect size.}
+The family-wise significance level was set to $\alpha=0.05$. Bonferroni
+adjustment was applied separately within each prespecified family of related
+comparisons. The four-condition strategy analysis comprised six pairwise tests,
+whereas the epoch-duration analysis comprised six comparisons between the
+non-reference durations and the 30\,s reference. Channel-subset comparisons were
+corrected separately within each corpus over the 13 subsets tested against the
+full 32-electrode montage. Analysis-specific family sizes for any additional
+comparisons are stated with the corresponding results. Bonferroni-adjusted
+$p$-values are reported together with the matched-pairs rank-biserial
+correlation $r$ as an effect-size measure; the sign of $r$ indicates the
+direction of the paired difference in the stated comparison.
