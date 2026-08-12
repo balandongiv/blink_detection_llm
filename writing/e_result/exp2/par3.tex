@@ -1,5 +1,5 @@
-Across the epoch-duration sweep, Proposed-Med showed stable pooled performance and stable performance on Cao2018, whereas Raja differed significantly from the 30-second reference at several durations (Table~\ref{tab:epoch_duration}, Figure~\ref{fig:f1_by_epoch}).
-Pooled $F_1$ had a spread of 0.0039 across the seven durations, and no duration differed significantly from the 30-second reference after correction, with the smallest corrected p-value at 120~s ($p=0.067$).
-Cao2018 likewise had no significant difference at any duration and showed a spread of 0.0046; the 120-second duration had the highest $F_1$ of 0.8112 but did not differ significantly from the 30-second reference ($p=0.659$).
-Raja was not uniformly stable where all the epoch evaluated relative to the 30-second reference, $F_1$ was 0.8793 at 50~s ($p<0.001$), 0.8773 at 60~s ($p=0.002$), and 0.8688 at 120~s ($p<0.001$), with all three differences significant after correction.
-The 30-second reference had the highest Raja $F_1$ of 0.8825 among the seven durations.
+Across the seven epoch durations, the proposed algorithm maintained consistent pooled performance and similarly stable performance on Cao2018, although its Raja results differed significantly from the 30~s reference at three durations (Table~\ref{tab:epoch_duration}, Figure~\ref{fig:f1_by_epoch}).
+Pooled macro $F_1$ varied by only 0.0039, from 0.8367 to 0.8406. None of the six alternative durations differed significantly from the 30~s reference after Bonferroni correction, and the smallest corrected $p$-value was observed at 120~s ($p=0.067$).
+Performance on Cao2018 was also stable, with an $F_1$ spread of 0.0046 and no significant difference at any tested duration. Although 120~s produced the highest $F_1$ of 0.8112, this value did not differ significantly from the reference ($p=0.659$).
+Raja showed a less consistent pattern. Relative to the 30~s reference, $F_1$ fell to 0.8793 at 50~s ($p<0.001$), 0.8773 at 60~s ($p=0.002$), and 0.8688 at 120~s ($p<0.001$). All three differences remained significant after Bonferroni correction.
+The 30~s reference yielded the highest Raja $F_1$ of 0.8825 across the seven durations.
