@@ -80,36 +80,14 @@ rank-biserial correlation $r$ as an effect-size estimate.
 \input{e_result/exp1/sec}
 
 
-=====================================================================
+% =====================================================================
 % EXPERIMENT 2 — epoch duration
 % =====================================================================
 \subsection{Experiment 2: Stability Across Epoch Durations}
 \label{sec:exp3_epoch}
 
+\input{e_result/exp2/sec}
 
-Epoch duration is routinely chosen on paradigm-specific or theoretical grounds and is
-rarely optimised for the blink detector itself. In driving studies, epoch lengths ranging
-from a few seconds to several minutes appear in the literature. A robust pipeline should
-produce stable event-level $F_1$ across this range, because the underlying physiology of
-blinks does not change with the epoch grid imposed during analysis.
-
-\paragraph{Design.}
-Proposed-Med is evaluated under epoch durations of 10, 20, 30, 40, 50, 60 and 120 seconds.
-For each duration the full pipeline is re-run from scratch, since epoch-level
-peak-to-peak statistics change with epoch length.
-Table~\ref{tab:epoch_duration} reports results and two-tailed Wilcoxon $p$-values
-relative to the 30-second reference.
-
-\input{e_result/tab_effect_different_epoch_size}
-
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=0.8\linewidth]{fig_exp3_epoch_duration.pdf}
-  \caption{Macro-averaged $F_1$ of Proposed-Med across epoch durations.}
-  \label{fig:f1_by_epoch}
-\end{figure}
-
-\input{e_result/r3_epoch_duration/paragraph}
 
 
 
