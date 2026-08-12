@@ -1,0 +1,11 @@
+
+\paragraph{Wilcoxon signed-rank test.}
+Pairwise comparisons between conditions use the Wilcoxon signed-rank test on
+matched pairs of session-level F1 scores.
+The test is preferred over a paired $t$-test because session-level F1
+distributions are bounded and often skewed.
+For comparisons in which the proposed method is hypothesised to outperform a
+baseline, a one-tailed test is used; stability analyses use two-tailed tests.
+Bonferroni correction is applied for the number of conditions compared within
+each experiment, and we report exact $p$-values alongside the matched-pairs
+rank-biserial correlation $r$ as an effect-size estimate.

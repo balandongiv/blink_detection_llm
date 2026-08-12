@@ -1,37 +1,9 @@
 \section{METHOD AND MATERIALS}\label{sec:method}
-\input{d_method/m_pipeline_overview}
-
-%\input{d_method/m_epoch_pipeline}
-
-\input{d_method/step1_select_bad_epoch}
-\input{d_method/step2_get_threshold_candidates}
-\input{d_method/step3_get_blink_regions}
-
-
-\subsection{Epoch Segmentation and Detection Pipeline}
-
-
-
-
-
-
-%\subsection{Problem Definition}\label{sec:eval}
+%\input{d_method/m_pipeline_overview}
 %
-%Let a blink annotation be an interval \(g_i = [s_i, e_i]\) and a detector output be an interval \(d_j = [\hat{s}_j, \hat{e}_j]\). A detected region is counted as a true positive if it overlaps at least one unmatched ground-truth region. Unmatched detections are false positives; unmatched ground-truth regions are false negatives. This event-level treatment follows the logic of interval-based detection rather than pointwise accuracy, which is appropriate because blink boundaries are uncertain, annotation granularity varies, and non-event samples dominate the timeline \citep{saito2015precision,salles2024softed}.
+%
+%\input{d_method/step1_select_bad_epoch}
+%\input{d_method/step2_get_threshold_candidates}
+%\input{d_method/step3_get_blink_regions}
 
-\subsection{Datasets}
-\label{sec:datasets}
-\input{d_method/m_datasets}
-
-%\subsection{Preprocessing}
-%\input{d_method/m_preprocessing}
-
-
-
-\subsection{Detector Configurations}
-\input{d_method/m_configurations}
-
-\input{d_method/m_experiment_overview}
-
-\subsection{Evaluation and Statistical Analysis}
-\input{d_method/m_evaluation_stats}
+\input{d_method/experiment_setup}
