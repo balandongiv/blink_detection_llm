@@ -1,27 +1,9 @@
-\begin{figure}[htbp]
+
+
+
+\begin{figure*}[!t]
     \centering
-    \fbox{\begin{minipage}{0.90\columnwidth}\centering\small
-        Raw EEG recording (continuous, multichannel)\\[-1pt]
-        $\downarrow$\\[-1pt]
-        Downsample to \texttt{RESAMPLE\_RATE}~$=100$~Hz; band-pass filter from
-        \texttt{FILTER\_LOW}~$=1.0$~Hz to \texttt{FILTER\_HIGH}~$=20.0$~Hz\\[-1pt]
-        $\downarrow$\\[-1pt]
-        Segment into non-overlapping \texttt{EPOCH\_DURATION\_S}~$=30$~s epochs and
-        drop low-health epochs\\[-1pt]
-        $\downarrow$\\[-1pt]
-        \textbf{Stage A: Selection of Candidate Epochs} \\ per-channel peak-to-peak autoreject screening flags
-        suspicious epochs $\mathcal{B}$\\[-1pt]
-        $\downarrow$\\[-1pt]
-        \textbf{Stage B: Computation of Sample-level Blink-Region Threshold Candidates} \\ estimate $\theta=\xi+k(1.4826\cdot\mathrm{MAD})$ from
-        flagged epochs (median or mean centre)\\[-1pt]
-        $\downarrow$\\[-1pt]
-        \textbf{Stage C: Extraction of Blink Region}\\ scan threshold crossings and map blink regions to
-        epoch-relative timing\\[-1pt]
-        $\downarrow$\\[-1pt]
-        Event-level evaluation: precision, recall, macro-averaged $F_1$, and
-        Wilcoxon signed-rank tests
-    \end{minipage}}
-    \caption{Per-epoch blink-detection pipeline. The continuous recording is downsampled and band-pass filtered, segmented into fixed-length epochs with low-health epochs removed, and then passed through the three detection stages: Stage~A screens suspicious (blink-heavy) epochs by peak-to-peak amplitude, Stage~B estimates a robust sample-level amplitude  threshold from those epochs, and Stage~C localises blink regions by scanning threshold
-    crossings. Detections are finally scored against the ground truth at the event level.}
+    \includegraphics[width=\textwidth]{flowchart}
+    \caption{Epoch-aware double-thresholding pipeline for multichannel EEG blink-region detection. Continuous EEG signals from FP1, AF3, F3, FP2, AF4, and F4 are downsampled to 100 Hz, band-pass filtered from 1–20 Hz, and segmented into non-overlapping 30-s epochs after low-health epochs are removed. Stage A applies channel-specific peak-to-peak screening and a multichannel union rule to select suspicious epochs; E2, E5, and E7 form the candidate set in this example. Stage B pools and concatenates samples from these candidate epochs to estimate a robust sample-level threshold separately for each channel. Stage C applies the resulting channel-specific threshold to all valid epochs, including candidate and non-candidate epochs, and reports each detected blink region by epoch ID, channel, onset time, and duration. Orange denotes Stage A candidate epochs, while red denotes detected blink regions.}
     \label{fig:pipeline_flow}
-\end{figure}
+\end{figure*}
