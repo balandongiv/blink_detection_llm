@@ -1,10 +1,16 @@
 \paragraph{Processing pipeline overview.}
 \label{sec:pipeline_overview}
 
-The proposed pipeline is an epoch-aware, threshold-based pipeline that transforms a continuous multichannel EEG recording into a non-overlapping epoch through a
-fixed sequence of five operations.
-The Figure~\ref{fig:pipeline_flow} summarises this
-sequence as a flow chart, from the preprocessing, epoching, and the double thresholding which is the proposed method, through three detection stages (A, B, and C) which we will discussed in detail in section.
+A. Processing Pipeline Overview
+
+The proposed method is an epoch-aware, double-thresholding pipeline that transforms a continuous multichannel EEG recording into channel-wise blink-region detections through five sequential operations. First, the EEG signals are downsampled and band-pass filtered before being divided into fixed-length, non-overlapping epochs. The proposed double-thresholding method then operates through three detection stages. Stage A performs multichannel peak-to-peak screening to identify candidate epochs containing prominent amplitude excursions. Stage B pools the samples from these candidate epochs to estimate a robust sample-level threshold independently for each channel. Stage C applies the resulting channel-specific thresholds to all valid epochs to localize blink regions and determine their epoch identifier, channel, onset time, and duration. Figure ~\ref{fig:pipeline_flow} summarizes the complete processing pipeline, while Stages A, B, and C are described in detail in the following subsections.
+
+
+
+%The proposed pipeline is an epoch-aware, threshold-based pipeline that transforms a continuous multichannel EEG recording into a non-overlapping epoch through a
+%fixed sequence of five operations.
+%The  summarises this
+%sequence as a flow chart, from the preprocessing, epoching, and the double thresholding which is the proposed method, through three detection stages (A, B, and C) which we will discussed in detail in section.
 
 \input{d_method/flowchart_pipeline_proposed}
 
