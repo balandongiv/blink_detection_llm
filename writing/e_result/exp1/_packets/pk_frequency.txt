@@ -1,0 +1,31 @@
+WHICH ELECTRODE WAS SELECTED AS BEST
+
+Raja — Experiment 1, full montage, 46 sessions:
+  Fp1: 21 of 46 sessions (0.457)
+  Fp2: 19 of 46 sessions (0.413)
+  AF4: 5 of 46 sessions (0.109)
+  AF3: 1 of 46 sessions (0.022)
+
+Cao2018 — Experiment 1, full montage, 58 sessions:
+  Fp1: 34 of 58 sessions (0.586)
+  Fp2: 15 of 58 sessions (0.259)
+  F8: 2 of 58 sessions (0.034)
+  F7: 2 of 58 sessions (0.034)
+  F3: 2 of 58 sessions (0.034)
+  F4: 1 of 58 sessions (0.017)
+  Fz: 1 of 58 sessions (0.017)
+  FCz: 1 of 58 sessions (0.017)
+
+Pooled over the four detection conditions of Experiment 2 (session x condition selections):
+  Raja (184 selections):
+    Fp2: 75 of 184 (0.408)
+    Fp1: 67 of 184 (0.364)
+    AF4: 14 of 184 (0.076)
+    AF3: 11 of 184 (0.060)
+    Fz: 4 of 184 (0.022)
+  Cao2018 (232 selections):
+    Fp1: 119 of 232 (0.513)
+    Fp2: 57 of 232 (0.246)
+    F8: 11 of 232 (0.047)
+    Fz: 11 of 232 (0.047)
+    F7: 9 of 232 (0.039)

@@ -13,17 +13,9 @@
 
 \input{e_result/exp1/p04_per_electrode/paragraph}
 
-\input{e_result/tab_exp1_channel_ablation}
-\input{e_result/tab_region_performance}
 
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.9\linewidth]{fig_region_performance.pdf}
-    \caption{Per-electrode detection $F_1$ under the full montage, for every electrode,
-        coloured by scalp region. Each bar is one electrode scored inside the 32-channel run,
-        not a single-electrode pipeline.}
-    \label{fig:region_performance}
-\end{figure}
+
+
 % ---------------------------------------------------------------------------
 \subsubsection{Regional Channel Subsets}
 \label{sec:exp1_regional}
@@ -33,13 +25,13 @@
 \input{e_result/exp1/p06_failure_mode/paragraph}
 
 
-\input{e_result/tab_exp1_subset_summary}
+\input{e_result/exp1/tab_exp1_subset_summary}
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.9\linewidth]{fig_exp1_region_boxplot.pdf}
     \caption{Session-level macro $F_1$ by channel-selection group (median centre),
-    Raja versus Cao2018.}
+    Internal versus Cao2018.}
     \label{fig:exp1_region_boxplot}
 \end{figure}
 
@@ -59,10 +51,9 @@
 
 \input{e_result/exp1/p07_single_channel/paragraph}
 
-%\subsubsection{Solo-vs-montage analysis }
-%\input{e_result/tab_exp1_solo_vs_montage}
+\input{e_result/exp1/tab_region_performance}
 
-%\input{e_result/exp1/p08_montage_contribution/paragraph}
+
 
 \begin{figure}[ht]
     \centering
@@ -77,19 +68,11 @@
 %\subsubsection{Stability of the Channel Choice}
 %\label{sec:channel_stability}
 
-\input{e_result/tab_channel_selection}
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.9\linewidth]{fig_channel_selection.pdf}
-    \caption{Best-channel selection frequency, pooled over the four conditions.}
-    \label{fig:channel_selection}
-\end{figure}
+\input{e_result/exp1/tab_channel_selection}
 
 %\input{e_result/exp1/p10_selection_frequency/paragraph}
 
 %\input{e_result/exp1/p11_oracle_cost/paragraph}
 
-\input{e_result/tab_channel_robustness}
 %
 %\input{e_result/exp1/p12_agreement/paragraph}

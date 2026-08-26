@@ -1,0 +1,26 @@
+AGREEMENT ON THE BEST ELECTRODE ACROSS THE FOUR DETECTION CONDITIONS
+
+Raja (46 sessions):
+  all four conditions chose the same electrode in 9 of 46 sessions (0.196)
+  mean pairwise agreement = 0.489
+    BLINKER-concat: 0.442
+    MNE-annot: 0.326
+    Proposed-Mean: 0.587
+    Proposed-Med: 0.601
+
+Cao2018 (58 sessions):
+  all four conditions chose the same electrode in 6 of 58 sessions (0.103)
+  mean pairwise agreement = 0.408
+    BLINKER-concat: 0.397
+    MNE-annot: 0.218
+    Proposed-Mean: 0.506
+    Proposed-Med: 0.511
+
+Pooled (104 sessions):
+  all four conditions chose the same electrode in 15 of 104 sessions (0.144)
+  mean pairwise agreement = 0.444
+    BLINKER-concat: 0.417
+    MNE-annot: 0.266
+    Proposed-Mean: 0.542
+    Proposed-Med: 0.551
+

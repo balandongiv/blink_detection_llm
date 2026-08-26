@@ -1,6 +1,6 @@
 """Table 1 — Raja EGI-128 (HydroCel GSN) to 10--20 channel-name mapping.
 
-Writes ``writing/e_result/tab_egi_channel_map.tex``.
+Writes ``writing/e_result/exp1/tab_egi_channel_map.tex``.
 
 Source: ``32_ch.csv`` (the montage file used by the Raja acquisition) plus the region
 assignment actually used by the Experiment 1 run (``brain_region_raja.yaml``). Cao2018 is
@@ -32,7 +32,7 @@ def main() -> None:
 
     lines = [
         r"\begin{table}[ht]", r"\centering", r"\footnotesize",
-        r"\caption{Raja EGI 128-channel (HydroCel GSN) to 10--20 scalp-location mapping, "
+        r"\caption{Internal-dataset EGI 128-channel (HydroCel GSN) to 10--20 scalp-location mapping, "
         r"taken from the \texttt{egi\_pair} block of \texttt{brain\_region\_raja.yaml}. "
         r"Results are reported throughout by 10--20 location; this table gives the native "
         r"EGI index for each one. The region column is the assignment used by the "
@@ -48,7 +48,7 @@ def main() -> None:
         )
     lines += [r"\bottomrule", r"\end{tabular}", r"\end{table}"]
 
-    P.write_tex(P.ER / "tab_egi_channel_map.tex", lines, SCRIPT)
+    P.write_tex(P.ER / "exp1" / "tab_egi_channel_map.tex", lines, SCRIPT)
 
 
 if __name__ == "__main__":

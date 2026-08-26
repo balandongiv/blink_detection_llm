@@ -58,7 +58,7 @@ def main() -> None:
     x = np.arange(len(P.CONDS))
     width = 0.38
     ax.bar(x - width / 2, [P.macro(best, "raja", c)[2] for c in P.CONDS], width,
-           label="Raja", color="#4C72B0")
+           label=P.DSN["raja"], color="#4C72B0")
     ax.bar(x + width / 2, [P.macro(best, "cao", c)[2] for c in P.CONDS], width,
            label="Cao2018", color="#55A868")
     ax.set_xticks(x)

@@ -1,8 +1,8 @@
 """Tables 14/15 and Figure 11 — cross-experiment summary of Proposed-Med.
 
 Writes:
-  ``writing/e_result/tab_exp_summary.tex``
-  ``writing/e_result/tab_exp_stats.tex``
+  ``writing/e_result/exp_summary/tab_exp_summary.tex``
+  ``writing/e_result/exp_summary/tab_exp_stats.tex``
   ``writing/figures/fig_exp_boxplot.{pdf,png}``
 
 Each of the three experiments is reduced to its primary configuration and Proposed-Med is
@@ -103,21 +103,22 @@ def build_summary(pm: dict, blinker: dict) -> list[str]:
     lines = [
         r"\begin{table*}[ht]", r"  \centering",
         r"  \caption{Proposed-Med detection performance across the three experiments on "
-        r"the Raja and Cao2018 driving-EEG corpora. Macro-averaged $F_1$ over all sessions "
-        r"(best-channel-per-session). The best competing method is BLINKER-concat from the "
+        r"the Internal and Cao2018 driving-EEG corpora. Macro-averaged $F_1$ over all sessions "
+        r"(best-channel-per-session), reported as a percentage. The best competing method is "
+        r"BLINKER-concat from the "
         r"strategy comparison; $\Delta$ is the pooled Proposed-Med advantage over "
-        f"BLINKER-concat (pooled macro-$F_1$ {bl_pooled:.4f}).}}",
+        f"BLINKER-concat (pooled macro-$F_1$ {bl_pooled * 100:.2f}\\%), in percentage points.}}",
         r"  \label{tab:exp_summary}", r"  \begin{tabular}{llccll}", r"    \toprule",
-        r"    Exp. & Description & PM $F_1$ (Raja) & PM $F_1$ (Cao2018) & "
-        r"Best competitor & $\Delta$ vs competitor \\",
+        r"    Exp. & Description & PM $F_1$ (Internal) (\%) & PM $F_1$ (Cao2018) (\%) & "
+        r"Best competitor & $\Delta$ vs competitor (pp) \\",
         r"    \midrule",
     ]
     for exp in EXPS:
         raja, cao = pm[(exp, "raja")].mean(), pm[(exp, "cao")].mean()
         pooled = pd.concat([pm[(exp, "raja")], pm[(exp, "cao")]]).mean()
         lines.append(
-            f"    {exp} & {EXP_DESC[exp]} & {raja:.4f} & {cao:.4f} & {BASELINE} & "
-            f"${pooled - bl_pooled:+.4f}$ \\\\"
+            f"    {exp} & {EXP_DESC[exp]} & {raja * 100:.2f} & {cao * 100:.2f} & {BASELINE} & "
+            f"${(pooled - bl_pooled) * 100:+.2f}$ \\\\"
         )
     lines += [r"    \bottomrule", r"  \end{tabular}", r"\end{table*}"]
     return lines
@@ -161,19 +162,19 @@ def build_stats(pm: dict, blinker: dict) -> list[str]:
         r"  \caption{Paired Wilcoxon signed-rank tests of Proposed-Med versus the best "
         r"competing method (BLINKER-concat from the strategy comparison) on session-level "
         r"$F_1$, for each experiment and dataset. $\Delta F_1$ is the mean Proposed-Med "
-        r"advantage; $p$ is Bonferroni-corrected over the " + str(n_comparisons)
+        r"advantage, in percentage points; $p$ is Bonferroni-corrected over the " + str(n_comparisons)
         + r" comparisons (one-sided, Proposed-Med greater); $r$ is the rank-biserial "
         r"effect size; the 95\% CI is a " + f"{BOOTSTRAP_N:,}".replace(",", "{,}")
-        + r"-sample bootstrap on $\Delta F_1$.}",
+        + r"-sample bootstrap on $\Delta F_1$, in percentage points.}",
         r"  \label{tab:exp_stats}", r"  \begin{tabular}{llcccccc}", r"    \toprule",
-        r"    Exp. & Dataset & $\Delta F_1$ & $W$ & $p_{\mathrm{Bonf}}$ & $r$ & "
-        r"95\% CI & $n$ \\",
+        r"    Exp. & Dataset & $\Delta F_1$ (pp) & $W$ & $p_{\mathrm{Bonf}}$ & $r$ & "
+        r"95\% CI (pp) & $n$ \\",
         r"    \midrule",
     ]
     for exp, ds, mean_diff, w, p_bonf, r_eff, lo, hi, n in rows:
         lines.append(
-            f"    {exp} & {ds} & ${mean_diff:+.4f}$ & {w:.0f} & {_p_cell(p_bonf)} & "
-            f"{r_eff:.3f} & $[{lo:+.4f},\\,{hi:+.4f}]$ & {n} \\\\"
+            f"    {exp} & {ds} & ${mean_diff * 100:+.2f}$ & {w:.0f} & {_p_cell(p_bonf)} & "
+            f"{r_eff:.2f} & $[{lo * 100:+.2f},\\,{hi * 100:+.2f}]$ & {n} \\\\"
         )
     lines += [r"    \bottomrule", r"  \end{tabular}", r"\end{table*}"]
 
@@ -190,8 +191,8 @@ def main() -> None:
     mne = {ds: baseline_series(ds, "MNE-annot") for ds in ["raja", "cao"]}
 
     build_figure(pm, blinker, mne)
-    P.write_tex(P.ER / "tab_exp_summary.tex", build_summary(pm, blinker), SCRIPT)
-    P.write_tex(P.ER / "tab_exp_stats.tex", build_stats(pm, blinker), SCRIPT)
+    P.write_tex(P.ER / "exp_summary" / "tab_exp_summary.tex", build_summary(pm, blinker), SCRIPT)
+    P.write_tex(P.ER / "exp_summary" / "tab_exp_stats.tex", build_stats(pm, blinker), SCRIPT)
 
 
 if __name__ == "__main__":

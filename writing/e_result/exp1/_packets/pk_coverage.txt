@@ -1,0 +1,47 @@
+SUBSET SIZE AGAINST PERFORMANCE (every point plotted in the coverage figure)
+format — subset (electrodes): F1
+
+Raja:
+  All (full montage) (32 electrodes): 0.8825
+  Frontal (6 electrodes): 0.8676
+  Frontal-L (3 electrodes): 0.8518
+  Frontal-R (3 electrodes): 0.8459
+  Fp1 alone (1 electrodes): 0.8373
+  Fp2 alone (1 electrodes): 0.8337
+  AF4 alone (1 electrodes): 0.7516
+  AF3 alone (1 electrodes): 0.6759
+  Central (6 electrodes): 0.5859
+  Central-L (3 electrodes): 0.5767
+  F4 alone (1 electrodes): 0.3998
+  F3 alone (1 electrodes): 0.3985
+  Central-R (3 electrodes): 0.0714
+  Posterior (12 electrodes): 0.0426
+  Occipital (8 electrodes): 0.0406
+  Occipital-L (4 electrodes): 0.0343
+  Occipital-R (4 electrodes): 0.0304
+  Parietal (4 electrodes): 0.0264
+  Parietal-L (2 electrodes): 0.0217
+  Parietal-R (2 electrodes): 0.0212
+  spread among the 6 single-electrode subsets: 0.3985 to 0.8373
+
+Cao2018:
+  All (full montage) (32 electrodes): 0.8068
+  Frontal (4 electrodes): 0.7961
+  Frontal-L (2 electrodes): 0.7841
+  Fp1 alone (1 electrodes): 0.7765
+  Frontal-R (2 electrodes): 0.7677
+  Fp2 alone (1 electrodes): 0.7559
+  F3 alone (1 electrodes): 0.4930
+  F4 alone (1 electrodes): 0.4903
+  Central (6 electrodes): 0.4668
+  Central-L (3 electrodes): 0.4142
+  Central-R (3 electrodes): 0.4101
+  Posterior (8 electrodes): 0.1736
+  Parietal (2 electrodes): 0.1668
+  Parietal-R (1 electrodes): 0.1622
+  Parietal-L (1 electrodes): 0.1480
+  Occipital (6 electrodes): 0.1197
+  Occipital-L (3 electrodes): 0.0992
+  Occipital-R (3 electrodes): 0.0968
+  spread among the 6 single-electrode subsets: 0.1480 to 0.7765
+

@@ -1,8 +1,8 @@
 """Tables 4 and 5 — headline strategy comparison at 30 s, and baseline inversions.
 
 Writes:
-  ``writing/e_result/tab_comparison_30s_epoch.tex``  (tab:exp1_main)
-  ``writing/e_result/tab_exp2_inversions.tex``       (tab:exp2_inversions)
+  ``writing/e_result/exp4/tab_strategycomparison_30s_epoch.tex``  (tab:exp1_main)
+  ``writing/e_result/exp4/tab_exp2_inversions.tex``                (tab:exp2_inversions)
 
 Every condition is summarised at its best-channel-per-session operating point, and the
 same rule is applied to all four conditions so none is given a private advantage.
@@ -36,12 +36,12 @@ def build_main(best: dict, sig: dict) -> list[str]:
     vs_mne = sig[("MNE-annot", "Proposed-Med")]
     vs_mean = sig[("Proposed-Mean", "Proposed-Med")]
     caption = (
-        r"  \caption{Strategy comparison on the Raja and Cao2018 driving-EEG corpora at "
+        r"  \caption{Strategy comparison on the Internal and Cao2018 driving-EEG corpora at "
         r"30\,s epochs. Each condition is summarised at its best-channel-per-session "
         r"operating point (for every session the single channel or frontal sub-montage with "
         r"the highest $F_1$ is selected, then averaged over sessions); the same rule is "
         r"applied to all four conditions. Macro-averaged precision, recall and $F_1$ are "
-        r"reported per dataset and pooled over all 104 sessions. Best $F_1$ per block in "
+        r"reported as percentages, per dataset and pooled over all 104 sessions. Best $F_1$ per block in "
         r"\textbf{bold}. By paired Wilcoxon signed-rank tests on session-level $F_1$ "
         r"(Bonferroni-corrected over six pairs), Proposed-Med significantly exceeds "
         r"BLINKER-concat (" + _p_phrase(vs_blinker) + r") and MNE-annot ("
@@ -50,7 +50,7 @@ def build_main(best: dict, sig: dict) -> list[str]:
     lines = [
         r"\begin{table*}[ht]", r"  \centering", caption,
         r"  \label{tab:exp1_main}", r"  \begin{tabular}{llccc}", r"    \toprule",
-        r"    Dataset & Condition & Precision & Recall & $F_1$ \\", r"    \midrule",
+        r"    Dataset & Condition & Precision (\%) & Recall (\%) & $F_1$ (\%) \\", r"    \midrule",
     ]
     for ds in ["raja", "cao"]:
         leader = max(P.CONDS, key=lambda c: P.macro(best, ds, c)[2])
@@ -76,10 +76,11 @@ def build_inversions() -> list[str]:
     lines = [
         r"\begin{table}[ht]", r"  \centering",
         r"  \caption{Channel groups and datasets where a baseline algorithm equals or "
-        r"exceeds Proposed-Med in best-channel-per-session macro-$F_1$.}",
+        r"exceeds Proposed-Med in best-channel-per-session macro-$F_1$. Values are "
+        r"percentages; $\Delta F_1$ is in percentage points.}",
         r"  \label{tab:exp2_inversions}",
         r"  \begin{tabular}{lllccc}", r"    \toprule",
-        r"    Dataset & Selection & Baseline & BL-$F_1$ & Prop-$F_1$ & $\Delta F_1$ \\",
+        r"    Dataset & Selection & Baseline & BL-$F_1$ (\%) & Prop-$F_1$ (\%) & $\Delta F_1$ (pp) \\",
         r"    \midrule",
     ]
     inversions = []
@@ -113,8 +114,8 @@ def build_inversions() -> list[str]:
 def main() -> None:
     best = P.load_exp2_best()
     sig = P.bonferroni_wilcoxon(best)
-    P.write_tex(P.ER / "tab_comparison_30s_epoch.tex", build_main(best, sig), SCRIPT)
-    P.write_tex(P.ER / "tab_exp2_inversions.tex", build_inversions(), SCRIPT)
+    P.write_tex(P.ER / "exp4" / "tab_strategycomparison_30s_epoch.tex", build_main(best, sig), SCRIPT)
+    P.write_tex(P.ER / "exp4" / "tab_exp2_inversions.tex", build_inversions(), SCRIPT)
 
     print("\n--- Bonferroni-corrected Wilcoxon p-values (two-sided) ---")
     for (a, b), p in sig.items():

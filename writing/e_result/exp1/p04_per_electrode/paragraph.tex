@@ -1,5 +1,16 @@
-Against this full-montage reference, per-electrode detection quality was concentrated at the frontopolar pair rather than distributed across the frontal region, with each electrode scored within the 32-channel Proposed-Med run in which Stage A screened epochs using every electrode (Table~\ref{tab:exp1_channel_ablation}, Table~\ref{tab:region_performance}, and Figure~\ref{fig:region_performance}). On Raja, Fp2 and Fp1 reached $F_1$ values of 0.8682 and 0.8632, respectively, before performance fell at the neighbouring frontal sites AF4 and AF3 to 0.8032 and 0.7376, with Fz, F3, and F4 at 0.6416, 0.4565, and 0.4523; the lowest value was 0.0175 at CP6.
+Against this full-montage reference, per-electrode detection quality was concentrated at the frontopolar pair rather than distributed across the frontal region, with each electrode scored within the 32-channel Proposed-Med run in which Stage A screened epochs using every electrode (Figure~\ref{fig:region_performance}). On Internal, Fp2 and Fp1 reached $F_1$ values of 86.82\% and 86.32\%, respectively, before performance fell at the neighbouring frontal sites AF4 and AF3 to 80.32\% and 73.76\%, with F3, and F4 at 45.65\%, and 45.23\%; the lowest value was 1.75\% at CP6.
 
-On Cao2018, Fp1 and Fp2 reached $F_1$ values of 0.7968 and 0.7845, respectively, whereas the neighbouring frontal sites F7, F8, Fz, F3, and F4 were lower at 0.6028, 0.5971, 0.5970, 0.5951, and 0.5799; the lowest value was 0.0281 at Oz.
+On Cao2018, Fp1 and Fp2 reached $F_1$ values of 79.68\% and 78.45\%, respectively, whereas the neighbouring frontal sites F3 and F4 were lower at 59.51\% and 57.99\%; the lowest value was 3.10\% at O1.
 
-The central electrodes also showed a dataset-specific asymmetry: on Raja, C3 reached $F_1=0.6106$ while C4 reached $F_1=0.0185$, whereas on Cao2018 C3 and C4 were close at $F_1=0.3108$ and $F_1=0.3018$, respectively, so the pronounced C3--C4 asymmetry was specific to Raja.
+The central electrodes also showed a dataset-specific asymmetry. On Internal, C3 reached $F_1=61.06\%$ while C4 reached $F_1=1.85\%$, whereas on Cao2018 C3 and C4 were close at $F_1=31.08\%$ and $F_1=30.18\%$, respectively, so the pronounced C3--C4 asymmetry was specific to Internal.
+
+Consistent with the preceding per-electrode pattern, the region-collapsed results showed a strong anterior-to-posterior decline in Proposed-Med performance, although the decline was not strictly monotonic on Internal because occipital $F_1$ slightly exceeded parietal $F_1$ (Table~\ref{tab:region_performance} and Figure~\ref{fig:region_performance}). On Internal, frontal electrodes ($n=4$) yielded 75.64\% precision, 56.76\% recall, and 61.24\% $F_1$, compared with 36.26\%, 12.88\%, and 14.80\%, respectively, for central electrodes ($n=6$), 14.09\%, 1.10\%, and 1.94\% for parietal electrodes ($n=4$), and 12.47\%, 1.38\%, and 2.30\% for occipital electrodes ($n=8$). On Cao2018, the decrease was monotonic from frontal ($n=2$; 72.17\% precision, 54.05\% recall, 58.75\% $F_1$) to central ($n=6$; 62.57\%, 31.23\%, 38.13\%), parietal ($n=2$; 48.70\%, 13.32\%, 18.70\%), and occipital electrodes ($n=6$; 34.04\%, 5.29\%, 8.24\%), with both precision and recall decreasing across successive regions. When frontal and frontopolar electrodes were combined, their mean $F_1$ was 69.68\% across $n=6$ electrodes on Internal, compared with 8.05\% across the $n=26$ other electrodes, while on Cao2018 the corresponding means were 68.91\% across $n=4$ frontal and frontopolar electrodes and 23.95\% across the $n=28$ other electrodes.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.9\linewidth]{fig_region_performance.pdf}
+    \caption{Per-electrode detection $F_1$ under the full montage, for every electrode,
+        coloured by scalp region. Each bar is one electrode scored inside the 32-channel run,
+        not a single-electrode pipeline.}
+    \label{fig:region_performance}
+\end{figure}

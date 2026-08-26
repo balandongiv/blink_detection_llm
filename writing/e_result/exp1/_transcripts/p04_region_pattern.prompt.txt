@@ -1,0 +1,88 @@
+You are drafting ONE paragraph of a submitted academic journal article.
+
+REGISTER:
+- Plain declarative academic prose. Past tense for what was done and measured.
+- NOT Nature/Science house style: no "Here we show", no "strikingly", "remarkably",
+  "crucially", "sheds light on"; no rhetorical questions; no opening hook; no closing
+  flourish about impact.
+- LaTeX body text only. Use \ref{...} for cross-references and ~ before \ref and \cite.
+
+PARAGRAPH STRUCTURE (mandatory):
+- Begin the paragraph with a clear topic sentence that states its main idea.
+- Every remaining sentence must directly explain, support, or develop that topic sentence.
+- Do NOT begin with an isolated detail, a citation, an example, a bare cross-reference
+  ("X is shown in Figure 3"), or background information laid down before the main point is
+  established. A cross-reference may appear in the topic sentence only as a parenthetical
+  attached to a claim, never as the claim itself.
+- This paragraph follows two paragraphs that already report the frontopolar concentration
+  (Fp1/Fp2 highest, falling off at neighbouring frontal sites) and the Raja-specific C3/C4
+  asymmetry, under the same full-montage per-electrode analysis. Carry a transition in the
+  topic sentence that connects this paragraph to that same per-electrode pattern, now
+  described at the level of scalp region rather than single electrodes.
+
+HARD RULES ON EVIDENCE:
+- Use ONLY numbers that appear literally in the DATA PACKET below. Do not round, re-scale,
+  recompute, or derive any number. A difference or ratio must already be in the packet.
+- Cite ONLY keys from the CITEABLE KEYS list. Never invent a citation key. If no listed key
+  supports a claim, make the claim without a citation or omit it.
+- Do not claim anything the packet does not support. Where the task says a result is
+  negative or contradicts a hypothesis, say so plainly; do not soften it.
+
+OUTPUT CONTRACT:
+- Output ONLY the LaTeX paragraph, between the lines BEGIN_TEX and END_TEX.
+- No preamble, no explanation, no markdown fences, no headings, no commentary.
+
+===== TASK =====
+This paragraph belongs to the Results section of the article. Report what was observed;
+do not interpret, do not speculate about mechanisms beyond what the packet states, and do
+not discuss implications for the field - those belong to the Discussion.
+Write British spelling. Refer to the two corpora as Internal and Cao2018.
+Write the detector as Proposed-Med. Write F1 as $F_1$ and percentages as e.g. 61.24\%.
+Available cross-reference labels (use \ref{} with ~ before it; use ONLY these):
+  tab:exp1_channel_ablation    - per-electrode precision/recall/F1, both datasets
+  fig:region_performance       - per-electrode F1 bar chart coloured by scalp region,
+                                  Internal on top, Cao2018 on bottom
+  sec:exp2_strategy            - Experiment 2
+  sec:exp3_epoch               - Experiment 3
+
+Write a paragraph that describes the per-electrode pattern shown in
+Figure~\ref{fig:region_performance} collapsed to coarse scalp region (frontal, central,
+parietal, occipital; frontopolar, midline/outside and unassigned electrodes are not part
+of this collapse). There is no table for these region-collapsed numbers any more - the
+figure is the only place this pattern is shown, so the paragraph must carry the numbers.
+
+Content it must carry:
+- State that performance in the figure falls off monotonically from frontal to central to
+  parietal to occipital on both corpora, and give the region-collapsed $F_1$ for the four
+  regions on each corpus (with $n$, the electrode count, for each region).
+- Give the region-collapsed precision and recall too, not only $F_1$, so the reader can see
+  whether the fall-off is driven more by precision or by recall.
+- Report the frontal+frontopolar electrodes as a block versus all other electrodes, giving
+  the mean $F_1$ and electrode count $n$ for each block, on both corpora.
+- Do not repeat the specific per-electrode values already given in the preceding paragraphs
+  (Fp1/Fp2/AF3/AF4/Fz/F3/F4/C3/C4); this paragraph works at the region level only.
+
+===== DATA PACKET (the only numbers you may use) =====
+PER-ELECTRODE RESULTS COLLAPSED TO COARSE SCALP REGIONS
+(frontopolar, midline/outside, and unassigned electrodes excluded; each region row
+averages the per-channel macro precision, recall and F1 over the electrodes it contains;
+n is the number of electrodes in the region; percentages given to 2 decimal places)
+
+Internal:
+  frontal (n=4): precision = 75.64\%, recall = 56.76\%, F1 = 61.24\%
+  central (n=6): precision = 36.26\%, recall = 12.88\%, F1 = 14.80\%
+  parietal (n=4): precision = 14.09\%, recall = 1.10\%, F1 = 1.94\%
+  occipital (n=8): precision = 12.47\%, recall = 1.38\%, F1 = 2.30\%
+  frontal+frontopolar electrodes (n=6): mean F1 = 69.68\%
+  all other electrodes (n=26): mean F1 = 8.05\%
+
+Cao2018:
+  frontal (n=2): precision = 72.17\%, recall = 54.05\%, F1 = 58.75\%
+  central (n=6): precision = 62.57\%, recall = 31.23\%, F1 = 38.13\%
+  parietal (n=2): precision = 48.70\%, recall = 13.32\%, F1 = 18.70\%
+  occipital (n=6): precision = 34.04\%, recall = 5.29\%, F1 = 8.24\%
+  frontal+frontopolar electrodes (n=4): mean F1 = 68.91\%
+  all other electrodes (n=28): mean F1 = 23.95\%
+
+===== CITEABLE KEYS (the only keys you may cite) =====
+(no citation is required for this paragraph; omit \cite entirely)

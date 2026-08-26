@@ -44,21 +44,11 @@ ER.mkdir(parents=True, exist_ok=True)
 FIGDIR.mkdir(parents=True, exist_ok=True)
 
 CONDS = ["BLINKER-concat", "MNE-annot", "Proposed-Mean", "Proposed-Med"]
-DSN = {"raja": "Raja", "cao": "Cao2018"}
+DSN = {"raja": "Internal", "cao": "Cao2018"}
 #: Channel-selection group holding the per-channel rows (one row per electrode).
 ALL_CHANNEL = "all_channel"
 #: Epoch durations present in the exp3 sweep.
 DURATIONS = [10, 20, 30, 40, 50, 60, 120]
-#: Fine-grained region order used to lay out the channel-ablation table. The trailing
-#: catch-all block keeps midline and off-region electrodes (Fz, F7, T3, A1, ...) visible
-#: instead of silently dropping them from the table.
-REGION_ORDER = [
-    "frontal_left", "frontal_right", "central_left", "central_right",
-    "parietal_left", "parietal_right", "occipital_left", "occipital_right",
-    "temporal_parietal_left", "temporal_parietal_right",
-    "midline_or_outside", "unassigned",
-]
-
 #: Groups in ``brain_region_*.yaml`` that are selection gates, not anatomical regions:
 #: coarse unions of the ``_left``/``_right`` pairs, single-channel probes, and the
 #: full-montage umbrella. Including them would make the channel->region map ambiguous.
@@ -256,8 +246,13 @@ def display_channel(ds: str, channel: str) -> str:
 
 
 def fmt(x: float) -> str:
-    """Four-decimal metric formatting used throughout the result tables."""
-    return f"{x:.4f}"
+    """Precision/recall/F1 as a percentage, two decimal places (0.8803 -> "88.03")."""
+    return f"{x * 100:.2f}"
+
+
+def fmt_pp(x: float) -> str:
+    """Signed precision/recall/F1 delta as percentage points, two decimal places."""
+    return "--" if x != x else f"{x * 100:+.2f}"
 
 
 def tex_escape(s) -> str:

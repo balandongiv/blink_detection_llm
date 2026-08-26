@@ -1,0 +1,20 @@
+% Source: publication_results/; script experiment_script/tab19_exp3_threshold_estimator.py
+\begin{table}[ht]
+  \centering
+  \caption{Effect of the Stage-B threshold estimator on the Internal and Cao2018 driving-EEG corpora at 30\,s epochs. Proposed-Med (median/MAD) and Proposed-Mean (mean/SD) are summarised at the best-channel-per-session operating point (for every session the single channel or frontal sub-montage with the highest $F_1$ is selected, then averaged over sessions). Macro-averaged $F_1$ is reported as a percentage, per dataset and pooled over all 104 sessions. Best $F_1$ per block in \textbf{bold}. By a paired Wilcoxon signed-rank test on session-level $F_1$ (Bonferroni-corrected over six condition pairs), Proposed-Med and Proposed-Mean are statistically indistinguishable ($p=1.00$).}
+  \label{tab:exp3_estimator}
+  \begin{tabular}{llc}
+    \toprule
+    Dataset & Condition & $F_1$ (\%) \\
+    \midrule
+    Internal & Proposed-Mean & 87.42 \\
+     & Proposed-Med & \textbf{88.25} \\
+    \midrule
+    Cao2018 & Proposed-Mean & 80.30 \\
+     & Proposed-Med & \textbf{80.68} \\
+    \midrule
+    Pooled & Proposed-Mean & 83.45 \\
+     & Proposed-Med & \textbf{84.03} \\
+    \bottomrule
+  \end{tabular}
+\end{table}

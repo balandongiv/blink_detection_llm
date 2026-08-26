@@ -1,0 +1,18 @@
+% Source: publication_results/; script experiment_script/tab14_tab15_fig11_exp_summary.py
+\begin{table*}[ht]
+  \centering
+  \caption{Paired Wilcoxon signed-rank tests of Proposed-Med versus the best competing method (BLINKER-concat from the strategy comparison) on session-level $F_1$, for each experiment and dataset. $\Delta F_1$ is the mean Proposed-Med advantage, in percentage points; $p$ is Bonferroni-corrected over the 6 comparisons (one-sided, Proposed-Med greater); $r$ is the rank-biserial effect size; the 95\% CI is a 10{,}000-sample bootstrap on $\Delta F_1$, in percentage points.}
+  \label{tab:exp_stats}
+  \begin{tabular}{llcccccc}
+    \toprule
+    Exp. & Dataset & $\Delta F_1$ (pp) & $W$ & $p_{\mathrm{Bonf}}$ & $r$ & 95\% CI (pp) & $n$ \\
+    \midrule
+    exp1 & Internal & $+12.39$ & 911 & $<10^{-5}$ & 0.16 & $[+7.15,\,+17.87]$ & 46 \\
+    exp1 & Cao2018 & $+12.35$ & 1647 & $<10^{-9}$ & 0.04 & $[+9.66,\,+15.02]$ & 58 \\
+    exp2 & Internal & $+11.71$ & 909 & $<10^{-5}$ & 0.16 & $[+6.55,\,+16.99]$ & 46 \\
+    exp2 & Cao2018 & $+11.27$ & 1613 & $<10^{-8}$ & 0.06 & $[+8.60,\,+13.98]$ & 58 \\
+    exp3 & Internal & $+12.28$ & 911 & $<10^{-5}$ & 0.16 & $[+6.93,\,+17.61]$ & 46 \\
+    exp3 & Cao2018 & $+12.13$ & 1647 & $<10^{-9}$ & 0.04 & $[+9.43,\,+14.81]$ & 58 \\
+    \bottomrule
+  \end{tabular}
+\end{table*}

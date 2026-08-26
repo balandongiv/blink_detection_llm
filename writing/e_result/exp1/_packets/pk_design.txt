@@ -1,0 +1,31 @@
+EXPERIMENT 1 DESIGN FACTS (channel-subset analysis)
+
+Raja:
+  sessions = 46
+  electrodes in the full montage = 32
+  anatomical channel subsets evaluated = 14 (includes the full montage)
+  single-electrode subsets evaluated = 6
+  total channel subsets evaluated = 20
+  subsets compared against the full montage = 13
+
+Cao2018:
+  sessions = 58
+  electrodes in the full montage = 32
+  anatomical channel subsets evaluated = 14 (includes the full montage)
+  single-electrode subsets evaluated = 4
+  total channel subsets evaluated = 18
+  subsets compared against the full montage = 13
+
+Shared design:
+  epoch duration = 30 seconds
+  Stage-B centre = median (Proposed-Med)
+  aggregation = best-channel-per-session, then averaged over sessions
+  test = two-tailed Wilcoxon signed-rank, Bonferroni-corrected within each dataset
+  effect size = matched-pairs rank-biserial correlation
+
+SCOPE NOTE (not a number, but a fact the paragraph must state):
+  Each subset re-runs Stage A, Stage B and Stage C on that subset alone, so each
+  subset is a self-contained detector rather than the full-montage detector with
+  channels hidden. The analysis therefore tests whether a subset is SUFFICIENT.
+  It is not a leave-one-region-out analysis and does not measure the necessity of
+  a region to the complete system.

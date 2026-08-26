@@ -1,6 +1,6 @@
 """Table 12 — do the four conditions agree on which channel is best?
 
-Writes ``writing/e_result/tab_channel_robustness.tex``.
+Writes ``writing/e_result/exp1/tab_channel_robustness.tex``.
 
 If the best channel were an artefact of one detector's quirks, the four conditions would
 disagree session by session. Full agreement is the fraction of sessions where all four
@@ -37,7 +37,7 @@ def choice_matrix(best: dict, ds_list) -> pd.DataFrame:
 def main() -> None:
     best = P.load_exp2_best()
     rows = []
-    for label, ds_list in [("Raja", ["raja"]), ("Cao2018", ["cao"]),
+    for label, ds_list in [(P.DSN["raja"], ["raja"]), ("Cao2018", ["cao"]),
                            ("Pooled", ["raja", "cao"])]:
         mat = choice_matrix(best, ds_list)
         n_total = len(mat)
@@ -65,14 +65,14 @@ def main() -> None:
     ]
     for label, n_total, n_full, pairwise, per_cond in rows:
         lines.append(
-            f"    {label} & {n_total} & {n_full}/{n_total} ({n_full / n_total:.3f}) & "
-            f"{pairwise:.3f} & {per_cond['BLINKER-concat']:.3f} & "
-            f"{per_cond['MNE-annot']:.3f} & {per_cond['Proposed-Mean']:.3f} & "
-            f"{per_cond['Proposed-Med']:.3f} \\\\"
+            f"    {label} & {n_total} & {n_full}/{n_total} ({n_full / n_total:.2f}) & "
+            f"{pairwise:.2f} & {per_cond['BLINKER-concat']:.2f} & "
+            f"{per_cond['MNE-annot']:.2f} & {per_cond['Proposed-Mean']:.2f} & "
+            f"{per_cond['Proposed-Med']:.2f} \\\\"
         )
     lines += [r"    \bottomrule", r"  \end{tabular}", r"\end{table}"]
 
-    P.write_tex(P.ER / "tab_channel_robustness.tex", lines, SCRIPT)
+    P.write_tex(P.ER / "exp1" / "tab_channel_robustness.tex", lines, SCRIPT)
 
 
 if __name__ == "__main__":

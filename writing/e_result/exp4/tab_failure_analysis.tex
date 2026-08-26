@@ -1,0 +1,25 @@
+% Source: publication_results/; script experiment_script/tab10_failure_analysis.py
+\begin{table*}[ht]
+  \centering
+  \scriptsize
+  \setlength{\tabcolsep}{4pt}
+  \caption{The 5 lowest-$F_1$ Proposed-Med sessions per corpus (best channel per session). GT is the ground-truth blink count ($\mathrm{TP}+\mathrm{FN}$) and GT/med is GT relative to the dataset median, which separates genuine detector failure from recordings that simply carry an atypical number of blinks. $F_1$ is reported as a percentage.}
+  \label{tab:failure_analysis}
+  \begin{tabular}{llrrrrcrrl}
+    \toprule
+    Dataset & Session & GT & TP & FP & FN & Regime & $F_1$ (\%) & GT/med & Best channel \\
+    \midrule
+    Internal & S16/S29\_20190111\_034326\_3 & 1822 & 800 & 52 & 1022 & FN-heavy & 59.84 & 3.46$\times$ & Fp2 \\
+     & S1/S01\_20170519\_043933\_3 & 132 & 123 & 142 & 9 & FP-heavy & 61.96 & 0.25$\times$ & AF4 \\
+     & S3/S03\_20170605\_033654\_3 & 91 & 74 & 62 & 17 & FP-heavy & 65.20 & 0.17$\times$ & Fp1 \\
+     & S18/S31\_20190115\_035853\_2 & 455 & 313 & 157 & 142 & FP-heavy & 67.68 & 0.86$\times$ & Fp1 \\
+     & S24/S38\_20190129\_035118\_2 & 1117 & 625 & 34 & 492 & FN-heavy & 70.38 & 2.12$\times$ & Fp2 \\
+    \midrule
+    Cao2018 & S53/090925m & 367 & 289 & 731 & 78 & FP-heavy & 41.67 & 0.28$\times$ & Fp1 \\
+     & S31/061020m & 1476 & 579 & 142 & 897 & FN-heavy & 52.71 & 1.12$\times$ & Fp1 \\
+     & S49/080527n & 174 & 149 & 212 & 25 & FP-heavy & 55.70 & 0.13$\times$ & F7 \\
+     & S22/090825n & 382 & 372 & 479 & 10 & FP-heavy & 60.34 & 0.29$\times$ & Fp1 \\
+     & S53/090918n & 809 & 749 & 912 & 60 & FP-heavy & 60.65 & 0.62$\times$ & Fp1 \\
+    \bottomrule
+  \end{tabular}
+\end{table*}

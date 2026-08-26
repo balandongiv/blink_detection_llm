@@ -1,0 +1,13 @@
+FULL-MONTAGE REFERENCE CONDITION (all_channel, median centre)
+
+Raja: precision = 0.8803, recall = 0.9014, F1 = 0.8825, sessions = 46
+Cao2018: precision = 0.7591, recall = 0.8909, F1 = 0.8068, sessions = 58
+
+CROSS-EXPERIMENT IDENTITY (verified per session, not only on the means):
+  The Experiment 1 full-montage condition, the Experiment 2 Proposed-Med condition
+  and the Experiment 3 30-second condition are the same configuration and produced
+  identical per-session values.
+  Raja: 46 of 46 sessions identical, maximum absolute F1 difference = 0.0000
+  Cao2018: 58 of 58 sessions identical, maximum absolute F1 difference = 0.0000
+
+This configuration is the one carried unchanged into Experiments 2 and 3.

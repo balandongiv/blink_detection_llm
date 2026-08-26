@@ -41,7 +41,7 @@ SRC = {
     "raja": REPO / Path(_PATH_CFG["out_dirs"]["exp1"]["raja"]) / "exp1_channel_selection_raja_results.csv",
     "cao": REPO / Path(_PATH_CFG["out_dirs"]["exp1"]["cao2018"]) / "exp1_channel_selection_cao2018_results.csv",
 }
-DSN = {"raja": "Raja", "cao": "Cao2018"}
+DSN = {"raja": "Internal", "cao": "Cao2018"}
 
 # Raja uses EGI net numbering (E22, E9, ...); map to 10-20 names via egi_pair.
 _raja_yaml = yaml.safe_load((REPO / "brain_region_raja.yaml").read_text(encoding="utf-8"))
@@ -122,17 +122,17 @@ sns.set_style("whitegrid")
 fig, ax = plt.subplots(figsize=(10, 6))
 sns.boxplot(
     data=plotdf, x="Channel", y="F1", hue="Dataset", order=label_order,
-    palette={"Raja": "#4C72B0", "Cao2018": "#55A868"}, width=0.6, fliersize=3, ax=ax,
+    palette={"Internal": "#4C72B0", "Cao2018": "#55A868"}, width=0.6, fliersize=3, ax=ax,
 )
 ax.set_ylim(0, 1.12)
 ax.set_xlabel("Single channel")
 ax.set_ylabel("Session-level macro $F_1$")
-ax.set_title("Single-channel-only session-level macro $F_1$ (median center), Raja vs. Cao2018")
+ax.set_title("Single-channel-only session-level macro $F_1$ (median center), Internal vs. Cao2018")
 ax.legend(title=None, loc="lower right", framealpha=0.9)
 
 # recover each box's x-center + hue from its PathPatch, then label with the actual channel
-hue_order = ["Raja", "Cao2018"]
-color = {"Raja": "#4C72B0", "Cao2018": "#55A868"}
+hue_order = ["Internal", "Cao2018"]
+color = {"Internal": "#4C72B0", "Cao2018": "#55A868"}
 target_rgb = {ds_name: mcolors.to_rgb(color[ds_name]) for ds_name in hue_order}
 
 box_patches = [p for p in ax.patches if type(p).__name__ == "PathPatch"]

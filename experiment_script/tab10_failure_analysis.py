@@ -1,6 +1,6 @@
 """Table 10 — why do the worst sessions fail?
 
-Writes ``writing/e_result/tab_failure_analysis.tex`` and prints the full ranking plus a
+Writes ``writing/e_result/exp4/tab_failure_analysis.tex`` and prints the full ranking plus a
 mechanism summary.
 
 Sessions are ranked by Proposed-Med best-channel F1 and the bottom five per corpus are
@@ -55,10 +55,10 @@ def main() -> None:
         r"corpus (best channel per session). GT is the ground-truth blink count "
         r"($\mathrm{TP}+\mathrm{FN}$) and GT/med is GT relative to the dataset median, "
         r"which separates genuine detector failure from recordings that simply carry an "
-        r"atypical number of blinks.}",
+        r"atypical number of blinks. $F_1$ is reported as a percentage.}",
         r"  \label{tab:failure_analysis}",
         r"  \begin{tabular}{llrrrrcrrl}", r"    \toprule",
-        r"    Dataset & Session & GT & TP & FP & FN & Regime & $F_1$ & GT/med & "
+        r"    Dataset & Session & GT & TP & FP & FN & Regime & $F_1$ (\%) & GT/med & "
         r"Best channel \\",
         r"    \midrule",
     ]
@@ -69,15 +69,15 @@ def main() -> None:
             lines.append(
                 f"    {ds_cell} & {P.tex_escape(row['session'])} & {int(row['gt'])} & "
                 f"{int(row['tp'])} & {int(row['fp'])} & {int(row['fn'])} & "
-                f"{row['regime']} & {row['f1']:.3f} & "
-                f"{row['gt'] / median_gt[ds]:.1f}$\\times$ & "
+                f"{row['regime']} & {row['f1'] * 100:.2f} & "
+                f"{row['gt'] / median_gt[ds]:.2f}$\\times$ & "
                 f"{P.tex_escape(row['best_channel'])} \\\\"
             )
             first = False
         lines.append(r"    \midrule" if ds == "raja" else r"    \bottomrule")
     lines += [r"  \end{tabular}", r"\end{table*}"]
 
-    P.write_tex(P.ER / "tab_failure_analysis.tex", lines, SCRIPT)
+    P.write_tex(P.ER / "exp4" / "tab_failure_analysis.tex", lines, SCRIPT)
 
     print("\n=== MECHANISM SUMMARY ===")
     for ds in ["raja", "cao"]:

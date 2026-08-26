@@ -1,0 +1,15 @@
+COST OF THE BEST-CHANNEL-PER-SESSION RULE
+The manuscript reports every condition at its best-channel-per-session operating
+point, which is an oracle. Below, each fixed electrode is scored on every session
+and compared with the per-session best electrode of the full montage.
+
+Raja (per-session oracle F1 = 0.8825):
+  Fp1 fixed in advance: F1 = 0.8632, mean shortfall against the oracle = 0.0193, median shortfall = 0.0022, within 0.02 of the oracle in 33 of 46 sessions
+  Fp2 fixed in advance: F1 = 0.8682, mean shortfall against the oracle = 0.0143, median shortfall = 0.0039, within 0.02 of the oracle in 38 of 46 sessions
+  best of Fp1 / Fp2 fixed in advance: F1 = 0.8793, mean shortfall against the oracle = 0.0032, median shortfall = 0.0000, within 0.02 of the oracle in 43 of 46 sessions
+
+Cao2018 (per-session oracle F1 = 0.8068):
+  Fp1 fixed in advance: F1 = 0.7968, mean shortfall against the oracle = 0.0100, median shortfall = 0.0000, within 0.02 of the oracle in 49 of 58 sessions
+  Fp2 fixed in advance: F1 = 0.7845, mean shortfall against the oracle = 0.0223, median shortfall = 0.0064, within 0.02 of the oracle in 41 of 58 sessions
+  best of Fp1 / Fp2 fixed in advance: F1 = 0.8010, mean shortfall against the oracle = 0.0058, median shortfall = 0.0000, within 0.02 of the oracle in 54 of 58 sessions
+

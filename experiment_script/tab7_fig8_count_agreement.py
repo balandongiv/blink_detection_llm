@@ -8,7 +8,7 @@ support blink-rate estimation, whereas an over- or under-counting detector canno
 
 Produces:
   writing/figures/fig_count_agreement.pdf, .png
-  writing/e_result/tab_count_agreement.tex
+  writing/e_result/exp4/tab_count_agreement.tex
 
 Aggregation: best-channel-per-session (writing/VALUE_AUDIT.md). Source CSVs:
 publication_results/exp2_*/. Run inside conda env double_threshold_algo.
@@ -107,7 +107,7 @@ PD.save_fig(fig, "fig_count_agreement")
 # ---------- table ----------
 L = [r"\begin{table}[ht]", r"  \centering",
      r"  \caption{Agreement between the predicted blink count (TP\,+\,FP) and the true count "
-     r"(TP\,+\,FN) per session, pooled over Raja and Cao2018 ($n=" + str(n_sessions)
+     r"(TP\,+\,FN) per session, pooled over Internal and Cao2018 ($n=" + str(n_sessions)
      + r"$) at the best-channel-per-session "
      r"row. The mean count ratio measures systematic over- or under-counting (1.00 is ideal); "
      r"Pearson $r$ and Lin's concordance correlation coefficient (CCC) measure how closely the predicted "
@@ -115,6 +115,6 @@ L = [r"\begin{table}[ht]", r"  \centering",
      r"  \label{tab:count_agreement}", r"  \begin{tabular}{lccc}", r"    \toprule",
      r"    Condition & Mean count ratio & Pearson $r$ & Lin's CCC \\", r"    \midrule"]
 for c, r, ccc, ratio, n in stat_rows:
-    L.append(f"    {c} & {ratio:.2f} & {r:.3f} & {ccc:.3f} \\\\")
+    L.append(f"    {c} & {ratio:.2f} & {r:.2f} & {ccc:.2f} \\\\")
 L += [r"    \bottomrule", r"  \end{tabular}", r"\end{table}"]
-PD.write_tex(PD.ER / "tab_count_agreement.tex", L, SCRIPT)
+PD.write_tex(PD.ER / "exp4" / "tab_count_agreement.tex", L, SCRIPT)

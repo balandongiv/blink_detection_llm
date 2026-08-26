@@ -1,7 +1,7 @@
 % Source: publication_results/ + references_from_csv.bib; script experiment_script/tab16_literature_comparison.py
 \begin{table}[H]
   \centering
-  \caption{Qualitative positioning of the present detector against prior single-channel and threshold-based blink/EOG detectors cited in this work. Because the prior studies use different datasets, blink definitions, sampling rates and especially different matching criteria (sample-level versus event-level), their reported metrics are not directly comparable to an event-level $F_1$; such cells are marked ``n/r'' (not reported in comparable form) rather than populated with non-comparable numbers. Only the final row reports quantitative detection figures, recomputed at the best-channel-per-session event-level operating point (macro-$F_1$ on Raja / Cao2018). The comparison is therefore qualitative by design.}
+  \caption{Qualitative positioning of the present detector against prior single-channel and threshold-based blink/EOG detectors cited in this work. Because the prior studies use different datasets, blink definitions, sampling rates and especially different matching criteria (sample-level versus event-level), their reported metrics are not directly comparable to an event-level $F_1$; such cells are marked ``n/r'' (not reported in comparable form) rather than populated with non-comparable numbers. Only the final row reports quantitative detection figures, recomputed at the best-channel-per-session event-level operating point (macro-$F_1$ on Internal / Cao2018). The comparison is therefore qualitative by design.}
   \label{tab:literature_comparison}
   \setlength{\tabcolsep}{4pt}
   \begin{tabular}{p{0.19\linewidth}p{0.16\linewidth}p{0.16\linewidth}p{0.21\linewidth}p{0.12\linewidth}}
@@ -18,7 +18,7 @@
     Valderrama et al.~\citep{valderrama2018automatic} & Single-channel EOG/EEG & Own recordings & n/r & n/r \\
     Guttmann-Flury et al.~\citep{guttmann2019new} & Multi-channel EEG & Own EEG & n/r & n/r \\
     \midrule
-    \textbf{This work (Proposed-Med)} & Single frontopolar EEG & Raja + Cao2018 driving & Event-level overlap (IoU 0.1) & macro-$F_1$ 0.88 / 0.81 \\
+    \textbf{This work (Proposed-Med)} & Single frontopolar EEG & Internal + Cao2018 driving & Event-level overlap (IoU 0.1) & macro-$F_1$ 88.25\% / 80.68\% \\
     \bottomrule
   \end{tabular}
 \end{table}

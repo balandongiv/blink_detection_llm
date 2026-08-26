@@ -1,0 +1,22 @@
+PER-ELECTRODE RESULTS COLLAPSED TO COARSE SCALP REGIONS
+(frontopolar, midline/outside, and unassigned electrodes excluded; each region
+ row averages the per-channel macro precision, recall and F1 over the
+ electrodes it contains; n is the number of electrodes in the region;
+ percentages given to 2 decimal places)
+
+Internal:
+  frontal (n=4): precision = 75.64\%, recall = 56.76\%, F1 = 61.24\%
+  central (n=6): precision = 36.26\%, recall = 12.88\%, F1 = 14.80\%
+  parietal (n=4): precision = 14.09\%, recall = 1.10\%, F1 = 1.94\%
+  occipital (n=8): precision = 12.47\%, recall = 1.38\%, F1 = 2.30\%
+  frontal+frontopolar electrodes (n=6): mean F1 = 69.68\%
+  all other electrodes (n=26): mean F1 = 8.05\%
+
+Cao2018:
+  frontal (n=2): precision = 72.17\%, recall = 54.05\%, F1 = 58.75\%
+  central (n=6): precision = 62.57\%, recall = 31.23\%, F1 = 38.13\%
+  parietal (n=2): precision = 48.70\%, recall = 13.32\%, F1 = 18.70\%
+  occipital (n=6): precision = 34.04\%, recall = 5.29\%, F1 = 8.24\%
+  frontal+frontopolar electrodes (n=4): mean F1 = 68.91\%
+  all other electrodes (n=28): mean F1 = 23.95\%
+

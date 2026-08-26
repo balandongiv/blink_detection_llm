@@ -1,6 +1,6 @@
 """Table 9 — per-session and per-subject variability of Proposed-Med.
 
-Writes ``writing/e_result/tab_best_session.tex``.
+Writes ``writing/e_result/exp4/tab_best_session.tex``.
 
 A macro-averaged headline hides how wide the spread across recordings is. This table
 reports the best, worst and median session, and the same three points at subject level,
@@ -43,26 +43,27 @@ def main() -> None:
     lines = [
         r"\begin{table}[ht]", r"  \centering",
         r"  \caption{Best and worst Proposed-Med sessions and subject-level summary across "
-        + str(n_sessions) + r" Raja+Cao2018 sessions (best-channel-per-session).}",
+        + str(n_sessions) + r" Internal+Cao2018 sessions (best-channel-per-session). "
+        r"$F_1$ values are percentages.}",
         r"  \label{tab:best-session}",
         r"  \begin{tabular}{lllccl}", r"    \toprule",
-        r"    Scope & Dataset & Unit & $n$ & Metric & Value \\", r"    \midrule",
+        r"    Scope & Dataset & Unit & $n$ & Metric & Value (\%) \\", r"    \midrule",
         f"    Best session & {P.DSN[best_s['dataset']]} & {P.tex_escape(best_s['session'])} "
-        f"& 1 & $F_1$ & {best_s['f1']:.4f} \\\\",
+        f"& 1 & $F_1$ & {best_s['f1'] * 100:.2f} \\\\",
         f"    Worst session & {P.DSN[worst_s['dataset']]} & "
-        f"{P.tex_escape(worst_s['session'])} & 1 & $F_1$ & {worst_s['f1']:.4f} \\\\",
+        f"{P.tex_escape(worst_s['session'])} & 1 & $F_1$ & {worst_s['f1'] * 100:.2f} \\\\",
         f"    Median session & all & {n_sessions} sessions & {n_sessions} & $F_1$ & "
-        f"{pm['f1'].median():.4f} \\\\",
+        f"{pm['f1'].median() * 100:.2f} \\\\",
         f"    Best subject & {P.DSN[best_u['dataset']]} & {P.tex_escape(best_u['subject'])} "
-        f"& {int(best_u['n'])} & Mean $F_1$ & {best_u['mean_f1']:.4f} \\\\",
+        f"& {int(best_u['n'])} & Mean $F_1$ & {best_u['mean_f1'] * 100:.2f} \\\\",
         f"    Worst subject & {P.DSN[worst_u['dataset']]} & "
         f"{P.tex_escape(worst_u['subject'])} & {int(worst_u['n'])} & Mean $F_1$ & "
-        f"{worst_u['mean_f1']:.4f} \\\\",
+        f"{worst_u['mean_f1'] * 100:.2f} \\\\",
         f"    Median subject & all & {len(subjects)} subjects & {len(subjects)} & "
-        f"Mean $F_1$ & {subjects['mean_f1'].median():.4f} \\\\",
+        f"Mean $F_1$ & {subjects['mean_f1'].median() * 100:.2f} \\\\",
         r"    \bottomrule", r"  \end{tabular}", r"\end{table}",
     ]
-    P.write_tex(P.ER / "tab_best_session.tex", lines, SCRIPT)
+    P.write_tex(P.ER / "exp4" / "tab_best_session.tex", lines, SCRIPT)
 
 
 if __name__ == "__main__":

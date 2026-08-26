@@ -1,0 +1,15 @@
+% Source: publication_results/; script experiment_script/tab14_tab15_fig11_exp_summary.py
+\begin{table*}[ht]
+  \centering
+  \caption{Proposed-Med detection performance across the three experiments on the Internal and Cao2018 driving-EEG corpora. Macro-averaged $F_1$ over all sessions (best-channel-per-session), reported as a percentage. The best competing method is BLINKER-concat from the strategy comparison; $\Delta$ is the pooled Proposed-Med advantage over BLINKER-concat (pooled macro-$F_1$ 72.56\%), in percentage points.}
+  \label{tab:exp_summary}
+  \begin{tabular}{llccll}
+    \toprule
+    Exp. & Description & PM $F_1$ (Internal) (\%) & PM $F_1$ (Cao2018) (\%) & Best competitor & $\Delta$ vs competitor (pp) \\
+    \midrule
+    exp1 & Channel selection (whole-cap oracle) & 88.94 & 81.75 & BLINKER-concat & $+12.37$ \\
+    exp2 & Strategy comparison & 88.25 & 80.68 & BLINKER-concat & $+11.47$ \\
+    exp3 & Epoch duration (30\,s) & 88.82 & 81.53 & BLINKER-concat & $+12.20$ \\
+    \bottomrule
+  \end{tabular}
+\end{table*}

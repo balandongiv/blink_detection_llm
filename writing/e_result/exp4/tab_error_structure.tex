@@ -1,0 +1,16 @@
+% Source: publication_results/; script experiment_script/tab8_error_structure.py
+\begin{table}[ht]
+  \centering
+  \caption{Error-structure decomposition by condition (best-channel-per-session). Mean false positives (FP) and false negatives (FN) per session, pooled over 104 sessions. The regime column records which error type dominates.}
+  \label{tab:error-structure}
+  \begin{tabular}{lcccl}
+    \toprule
+    Condition & Mean FP/session & Mean FN/session & FP:FN & Regime \\
+    \midrule
+    BLINKER-concat & 627.89 & 23.54 & 26.68 & FP-heavy \\
+    MNE-annot & 276.74 & 451.52 & 0.61 & FN-heavy \\
+    Proposed-Mean & 191.29 & 158.66 & 1.21 & FP-heavy \\
+    Proposed-Med & 207.95 & 127.70 & 1.63 & FP-heavy \\
+    \bottomrule
+  \end{tabular}
+\end{table}

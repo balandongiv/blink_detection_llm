@@ -43,7 +43,7 @@ FIGDIR.mkdir(parents=True, exist_ok=True)
 CONDS = ["Proposed-Med", "Proposed-Mean", "BLINKER-concat", "MNE-annot"]
 MARKERS = {"Proposed-Med": "o", "Proposed-Mean": "s",
            "BLINKER-concat": "^", "MNE-annot": "D"}
-DSN = {"raja": "Raja", "cao2018": "Cao2018"}
+DSN = {"raja": "Internal", "cao2018": "Cao2018"}
 DS_COLORS = {"raja": "#4C72B0", "cao2018": "#55A868"}
 
 
@@ -88,7 +88,7 @@ def main() -> None:
     ax.set_xlabel("Recall")
     ax.set_ylabel("Precision")
     ax.set_title("Per-session precision-recall operating points\n"
-                  "exp2 strategy comparison (Raja vs. Cao2018, all-channel gate)")
+                  "exp2 strategy comparison (Internal vs. Cao2018, all-channel gate)")
 
     # two-part legend: marker shape -> condition, color -> dataset
     cond_handles = [

@@ -1,0 +1,35 @@
+WHAT THE REST OF THE MONTAGE CONTRIBUTES TO ONE ELECTRODE
+Each electrode is scored twice on the same sessions: running the whole pipeline on
+that electrode alone, and scored inside the full 32-channel run where Stage A
+screens epochs using every electrode. delta F1 = full montage minus single
+electrode, so a positive value means the other 31 electrodes helped.
+p is Bonferroni-corrected within each dataset.
+
+Raja (corrected over 6 electrodes):
+  Fp2: alone F1 = 0.8337, in full montage F1 = 0.8682, delta F1 = +0.0345, p = 1.000, r = -0.148
+      recall alone = 0.8384, recall in full montage = 0.8974; precision alone = 0.8812, precision in full montage = 0.8628
+  Fp1: alone F1 = 0.8373, in full montage F1 = 0.8632, delta F1 = +0.0259, p = 1.000, r = -0.012
+      recall alone = 0.8415, recall in full montage = 0.8893; precision alone = 0.8845, precision in full montage = 0.8645
+  AF4: alone F1 = 0.7516, in full montage F1 = 0.8032, delta F1 = +0.0516, p = 0.001, r = -0.655
+      recall alone = 0.7010, recall in full montage = 0.7767; precision alone = 0.8765, precision in full montage = 0.8691
+  AF3: alone F1 = 0.6759, in full montage F1 = 0.7376, delta F1 = +0.0617, p = 0.002, r = -0.625
+      recall alone = 0.6331, recall in full montage = 0.7196; precision alone = 0.8201, precision in full montage = 0.8166
+  F3: alone F1 = 0.3985, in full montage F1 = 0.4565, delta F1 = +0.0579, p = 0.008, r = -0.560
+      recall alone = 0.3360, recall in full montage = 0.3967; precision alone = 0.6342, precision in full montage = 0.6419
+  F4: alone F1 = 0.3998, in full montage F1 = 0.4523, delta F1 = +0.0526, p = <0.001, r = -0.668
+      recall alone = 0.3245, recall in full montage = 0.3775; precision alone = 0.6977, precision in full montage = 0.6980
+  no significant gain after correction: Fp2, Fp1
+  significant gain after correction: AF4, AF3, F3, F4
+
+Cao2018 (corrected over 4 electrodes):
+  Fp1: alone F1 = 0.7765, in full montage F1 = 0.7968, delta F1 = +0.0203, p = 1.000, r = -0.094
+      recall alone = 0.8439, recall in full montage = 0.9054; precision alone = 0.7617, precision in full montage = 0.7401
+  Fp2: alone F1 = 0.7559, in full montage F1 = 0.7845, delta F1 = +0.0286, p = 0.991, r = -0.176
+      recall alone = 0.8068, recall in full montage = 0.8794; precision alone = 0.7624, precision in full montage = 0.7378
+  F3: alone F1 = 0.4930, in full montage F1 = 0.5951, delta F1 = +0.1021, p = <0.001, r = -0.672
+      recall alone = 0.4323, recall in full montage = 0.5495; precision alone = 0.7132, precision in full montage = 0.7264
+  F4: alone F1 = 0.4903, in full montage F1 = 0.5799, delta F1 = +0.0896, p = <0.001, r = -0.631
+      recall alone = 0.4267, recall in full montage = 0.5315; precision alone = 0.7002, precision in full montage = 0.7170
+  no significant gain after correction: Fp1, Fp2
+  significant gain after correction: F3, F4
+

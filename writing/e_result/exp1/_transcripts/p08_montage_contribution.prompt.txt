@@ -1,0 +1,182 @@
+You are drafting ONE paragraph of a submitted academic journal article.
+
+REGISTER:
+- Plain declarative academic prose. Past tense for what was done and measured.
+- NOT Nature/Science house style: no "Here we show", no "strikingly", "remarkably",
+  "crucially", "sheds light on"; no rhetorical questions; no opening hook; no closing
+  flourish about impact.
+- LaTeX body text only. Use \ref{...} for cross-references and ~ before \ref and \cite.
+
+PARAGRAPH STRUCTURE (mandatory):
+- Begin the paragraph with a clear topic sentence that states its main idea.
+- Every remaining sentence must directly explain, support, or develop that topic sentence.
+- Do NOT begin with an isolated detail, a citation, an example, a bare cross-reference
+  ("X is shown in Figure 3"), or background information laid down before the main point is
+  established. A cross-reference may appear in the topic sentence only as a parenthetical
+  attached to a claim, never as the claim itself.
+- Where this paragraph follows another, carry a transition in the topic sentence that
+  connects the two logically.
+
+HARD RULES ON EVIDENCE:
+- Use ONLY numbers that appear literally in the DATA PACKET below. Do not round, re-scale,
+  recompute, or derive any number. A difference or ratio must already be in the packet.
+- Cite ONLY keys from the CITEABLE KEYS list. Never invent a citation key. If no listed key
+  supports a claim, make the claim without a citation or omit it.
+- Do not claim anything the packet does not support. Where the task says a result is
+  negative or contradicts a hypothesis, say so plainly; do not soften it.
+
+OUTPUT CONTRACT:
+- Output ONLY the LaTeX paragraph, between the lines BEGIN_TEX and END_TEX.
+- No preamble, no explanation, no markdown fences, no headings, no commentary.
+
+===== TASK =====
+This paragraph belongs to the Results section of the article. Report what was observed;
+do not interpret, do not speculate about mechanisms beyond what the packet states, and do
+not discuss implications for the field - those belong to the Discussion.
+Write British spelling. Refer to the two corpora as Raja and Cao2018.
+Write the detector as Proposed-Med. Write F1 as $F_1$ and p-values as $p=0.012$.
+Available cross-reference labels (use \ref{} with ~ before it; use ONLY these):
+  tab:egi_map                  - EGI 128 to 10--20 channel map
+  tab:exp1_channel_ablation    - per-electrode precision/recall/F1, both datasets
+  tab:region_performance       - per-electrode results collapsed to coarse scalp regions
+  tab:exp1_subset_summary      - channel subsets vs the full montage, with statistics
+  tab:exp1_solo_vs_montage     - single electrode vs the same electrode in the full montage
+  tab:channel_selection        - best-channel selection frequencies
+  tab:channel-robustness       - agreement on the best channel across the four conditions
+  fig:region_performance       - per-electrode F1 bar chart coloured by scalp region
+  fig:exp1_region_boxplot      - session-level F1 by channel-selection group
+  fig:exp1_single_channel      - session-level F1 for the single-electrode subsets
+  fig:exp1_coverage_curve      - F1 against the number of electrodes given to the pipeline
+  fig:channel_selection        - best-channel selection frequency chart
+  sec:exp2_strategy            - Experiment 2
+  sec:exp3_epoch               - Experiment 3
+
+Write the paragraph reporting WHAT THE REST OF THE MONTAGE CONTRIBUTED.
+
+Content it must carry:
+- This is the one comparison in the experiment that removes channels from the complete
+  system rather than testing a subset on its own: each electrode was scored alone and
+  again inside the full 32-channel run, on the same sessions.
+- At Fp1 and Fp2 the other electrodes produced no significant gain on either corpus.
+  Give the differences and the corrected p-values.
+- At every weaker electrode the gain was significant. Give the differences and corrected
+  p-values, and note that the gain appeared in recall rather than precision.
+- Reference Table~\ref{tab:exp1_solo_vs_montage}.
+
+===== DATA PACKET (the only numbers you may use) =====
+EXPERIMENT 1 DESIGN FACTS (channel-subset analysis)
+
+Raja:
+  sessions = 46
+  electrodes in the full montage = 32
+  anatomical channel subsets evaluated = 14 (includes the full montage)
+  single-electrode subsets evaluated = 6
+  total channel subsets evaluated = 20
+  subsets compared against the full montage = 13
+
+Cao2018:
+  sessions = 58
+  electrodes in the full montage = 32
+  anatomical channel subsets evaluated = 14 (includes the full montage)
+  single-electrode subsets evaluated = 4
+  total channel subsets evaluated = 18
+  subsets compared against the full montage = 13
+
+Shared design:
+  epoch duration = 30 seconds
+  Stage-B centre = median (Proposed-Med)
+  aggregation = best-channel-per-session, then averaged over sessions
+  test = two-tailed Wilcoxon signed-rank, Bonferroni-corrected within each dataset
+  effect size = matched-pairs rank-biserial correlation
+
+SCOPE NOTE (not a number, but a fact the paragraph must state):
+  Each subset re-runs Stage A, Stage B and Stage C on that subset alone, so each
+  subset is a self-contained detector rather than the full-montage detector with
+  channels hidden. The analysis therefore tests whether a subset is SUFFICIENT.
+  It is not a leave-one-region-out analysis and does not measure the necessity of
+  a region to the complete system.
+
+
+WHAT THE REST OF THE MONTAGE CONTRIBUTES TO ONE ELECTRODE
+Each electrode is scored twice on the same sessions: running the whole pipeline on
+that electrode alone, and scored inside the full 32-channel run where Stage A
+screens epochs using every electrode. delta F1 = full montage minus single
+electrode, so a positive value means the other 31 electrodes helped.
+p is Bonferroni-corrected within each dataset.
+
+Raja (corrected over 6 electrodes):
+  Fp2: alone F1 = 0.8337, in full montage F1 = 0.8682, delta F1 = +0.0345, p = 1.000, r = -0.148
+      recall alone = 0.8384, recall in full montage = 0.8974; precision alone = 0.8812, precision in full montage = 0.8628
+  Fp1: alone F1 = 0.8373, in full montage F1 = 0.8632, delta F1 = +0.0259, p = 1.000, r = -0.012
+      recall alone = 0.8415, recall in full montage = 0.8893; precision alone = 0.8845, precision in full montage = 0.8645
+  AF4: alone F1 = 0.7516, in full montage F1 = 0.8032, delta F1 = +0.0516, p = 0.001, r = -0.655
+      recall alone = 0.7010, recall in full montage = 0.7767; precision alone = 0.8765, precision in full montage = 0.8691
+  AF3: alone F1 = 0.6759, in full montage F1 = 0.7376, delta F1 = +0.0617, p = 0.002, r = -0.625
+      recall alone = 0.6331, recall in full montage = 0.7196; precision alone = 0.8201, precision in full montage = 0.8166
+  F3: alone F1 = 0.3985, in full montage F1 = 0.4565, delta F1 = +0.0579, p = 0.008, r = -0.560
+      recall alone = 0.3360, recall in full montage = 0.3967; precision alone = 0.6342, precision in full montage = 0.6419
+  F4: alone F1 = 0.3998, in full montage F1 = 0.4523, delta F1 = +0.0526, p = <0.001, r = -0.668
+      recall alone = 0.3245, recall in full montage = 0.3775; precision alone = 0.6977, precision in full montage = 0.6980
+  no significant gain after correction: Fp2, Fp1
+  significant gain after correction: AF4, AF3, F3, F4
+
+Cao2018 (corrected over 4 electrodes):
+  Fp1: alone F1 = 0.7765, in full montage F1 = 0.7968, delta F1 = +0.0203, p = 1.000, r = -0.094
+      recall alone = 0.8439, recall in full montage = 0.9054; precision alone = 0.7617, precision in full montage = 0.7401
+  Fp2: alone F1 = 0.7559, in full montage F1 = 0.7845, delta F1 = +0.0286, p = 0.991, r = -0.176
+      recall alone = 0.8068, recall in full montage = 0.8794; precision alone = 0.7624, precision in full montage = 0.7378
+  F3: alone F1 = 0.4930, in full montage F1 = 0.5951, delta F1 = +0.1021, p = <0.001, r = -0.672
+      recall alone = 0.4323, recall in full montage = 0.5495; precision alone = 0.7132, precision in full montage = 0.7264
+  F4: alone F1 = 0.4903, in full montage F1 = 0.5799, delta F1 = +0.0896, p = <0.001, r = -0.631
+      recall alone = 0.4267, recall in full montage = 0.5315; precision alone = 0.7002, precision in full montage = 0.7170
+  no significant gain after correction: Fp1, Fp2
+  significant gain after correction: F3, F4
+
+
+
+===== CITEABLE KEYS (the only keys you may cite) =====
+agarwal2019blink (2019): Blink: A Fully Automated Unsupervised Algorithm for Eye-Blink Detection in EEG Signals
+akshathraj2026physiological (2026): Physiological artifacts removal in EEG signals: a comprehensive overview of conventional to deep learning meth
+akuthota2023artifacts (2023): Artifacts removal techniques in EEG data for BCI applications: A survey
+alyan2023blink (2023): Blink-related EEG activity measures cognitive load during proactive and reactive driving
+arpaia2025systematic (2025): A Systematic Review of Techniques for Artifact Detection and Artifact Category Identification in Electroenceph
+berka2007eeg (2007): EEG} Correlates of Task Engagement and Mental Workload in Vigilance, Learning, and Memory Tasks
+bigdelyshamlo2015prep (2015): The {PREP} Pipeline: Standardized Preprocessing for Large-Scale {EEG} Analysis
+cabot2024drowsiness (2024): Drowsiness Detection Through Yawning and Eye Blinking Models Using Convolutional Neural Networks and Transfer 
+cao2019multichannel (2019): Multi-channel EEG recordings during a sustained-attention driving task
+cao2021unsupervised (2021): Unsupervised Eye Blink Artifact Detection from EEG with Gaussian Mixture Model
+chang2016detection (2016): Detection of eye blink artifacts from single prefrontal channel electroencephalogram
+croft2000removal (2000): Removal of ocular artifact from the EEG: a review
+dai2023detection (2023): Detection of Operator Fatigue in the Main Control Room of a Nuclear Power Plant Based on Eye Blink Rate, PERCL
+dari2020unsupervised (2020): Unsupervised Blink Detection and Driver Drowsiness Metrics on Naturalistic Driving Data
+faisal2025eye (2025): Eye blink artefact removal framework for EEG signals using DWT and autoencoder
+fodor2023blinklinmult (2023): BlinkLinMulT: Transformer-Based Eye Blink Detection
+gawande2022deep (2022): Deep-Learning Approach for Efficient Eye-blink Detection with Hybrid Optimization Concept
+ghosh2023automatic (2023): Automatic Eyeblink and Muscular Artifact Detection and Removal From EEG Signals Using k-Nearest Neighbor Class
+guttmann2019new (2019): A new algorithm for blink correction adaptive to inter- and intra-subject variability
+hong2024robust (2024): Robust Eye Blink Detection Using Dual Embedding Video Vision Transformer
+jas2017autoreject (2017): Autoreject: Automated Artifact Rejection for {MEG} and {EEG} Data
+jefri2022eye (2022): Eye Blink Region Detection in EEG using Amplitude Thresholding
+jiang2023eyeblink (2023): Eyeblink Detection Algorithm Based on Joint Optimization of VME and Morphological Feature Extraction
+jurczak2022implementation (2022): Implementation of a Convolutional Neural Network for Eye Blink Artifacts Removal From the Electroencephalograp
+kleifges2017blinker (2017): BLINKER: Automated Extraction of Ocular Indices from EEG Enabling Large-Scale Analysis
+klein2013reliable (2013): A reliable statistical method to detect eyeblink-artefacts from electroencephalogram data only
+ko2020eyeblink (2020): Eyeblink Recognition Improves Fatigue Prediction from Single-Channel Forehead EEG in A Realistic Sustained Att
+leys2013detecting (2013): Detecting Outliers: Do Not Use Standard Deviation Around the Mean, Use Absolute Deviation Around the Median
+li2023segmentation (2023): A Segmentation-Denoising Network for Artifact Removal from Single-Channel EEG
+makhmudov2024real (2024): Real-Time Fatigue Detection Algorithms Using Machine Learning for Yawning and Eye State
+nystrm2024what (2024): What is a blink? Classifying and characterizing blinks in eye openness signals
+plochl2012combining (2012): Combining {EEG} and Eye Tracking: Identification, Characterization, and Correction of Eye Movement Artifacts i
+rashida2023quantitative (2023): Quantitative EEG features and machine learning classifiers for eye-blink artifact detection: A comparative stu
+ren2019comparison (2019): Comparison of the Use of Blink Rate and Blink Rate Variability for Mental State Recognition
+rousseeuw1993alternatives (1993): Alternatives to the Median Absolute Deviation
+saito2015precision (2015): The Precision-Recall Plot Is More Informative than the ROC Plot When Evaluating Binary Classifiers on Imbalanc
+salles2024softed (2024): SoftED: Metrics for soft evaluation of time series event detection
+shahbakhti2023fusion (2023): Fusion of EEG and Eye Blink Analysis for Detection of Driver Fatigue
+tian2021fatigue (2021): Fatigue driving detection based on electrooculography: a review
+tran2021detection (2021): Detection of EEG-Based Eye-Blinks Using A Thresholding Algorithm
+valderrama2018automatic (2018): An automatic algorithm for blink-artifact suppression based on iterative template matching: Application to sin
+wang2022multidimensional (2022): Multidimensional Feature Optimization Based Eye Blink Detection under Epileptiform Discharges
+wang2025sliding (2025): Sliding window higher-order cumulants for detection of eye blink artifact from short segments of single-channe
+zhang2023method (2023): RT-Blink: A Method Toward Real-Time Blink Detection From Single Frontal EEG Signal
+zulkarnanie2022enhancements (2022): Enhancements to PERCLOS Algorithm for Determining Eye Closures

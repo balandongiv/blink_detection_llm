@@ -1,7 +1,7 @@
 """Table 11 and Figure 9 — how often each electrode wins the best-channel selection.
 
 Writes:
-  ``writing/e_result/tab_channel_selection.tex``
+  ``writing/e_result/exp1/tab_channel_selection.tex``
   ``writing/figures/fig_channel_selection.{pdf,png}``
 
 Experiment 1 says which channel is best on average; this says how concentrated that choice
@@ -53,11 +53,11 @@ def main() -> None:
         counts = freq[ds]
         total = int(counts.sum())
         items = "; ".join(
-            f"{ch} {n}/{total} ({n / total:.3f})" for ch, n in counts.head(TOP_N).items()
+            f"{ch} {n}/{total} ({n / total:.2f})" for ch, n in counts.head(TOP_N).items()
         )
         lines.append(f"    {P.DSN[ds]} & Channels & {items} \\\\")
     lines += [r"    \bottomrule", r"  \end{tabular}", r"\end{table}"]
-    P.write_tex(P.ER / "tab_channel_selection.tex", lines, SCRIPT)
+    P.write_tex(P.ER / "exp1" / "tab_channel_selection.tex", lines, SCRIPT)
 
     fig, axes = plt.subplots(1, 2, figsize=(11, 4))
     for ax, ds in zip(axes, ["raja", "cao"]):

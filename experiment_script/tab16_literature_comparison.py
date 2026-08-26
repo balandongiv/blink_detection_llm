@@ -50,8 +50,8 @@ def _this_work_row():
     raja = P.macro(best, "raja", "Proposed-Med")[2]
     cao = P.macro(best, "cao", "Proposed-Med")[2]
     return (r"\textbf{This work (Proposed-Med)}", "Single frontopolar EEG",
-            "Raja + Cao2018 driving", "Event-level overlap (IoU 0.1)",
-            rf"macro-$F_1$ {raja:.2f} / {cao:.2f}")
+            "Internal + Cao2018 driving", "Event-level overlap (IoU 0.1)",
+            rf"macro-$F_1$ {raja * 100:.2f}\% / {cao * 100:.2f}\%")
 
 
 THIS_WORK = _this_work_row()
@@ -66,7 +66,7 @@ L = [SRC, r"\begin{table}[H]", r"  \centering",
      r"(sample-level versus event-level), their reported metrics are not directly comparable to an "
      r"event-level $F_1$; such cells are marked ``n/r'' (not reported in comparable form) rather than "
      r"populated with non-comparable numbers. Only the final row reports quantitative detection figures, "
-     r"recomputed at the best-channel-per-session event-level operating point (macro-$F_1$ on Raja / "
+     r"recomputed at the best-channel-per-session event-level operating point (macro-$F_1$ on Internal / "
      r"Cao2018). The comparison is therefore qualitative by design.}",
      r"  \label{tab:literature_comparison}",
      r"  \setlength{\tabcolsep}{4pt}",

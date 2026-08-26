@@ -1,0 +1,49 @@
+HOW THE NON-FRONTAL SUBSETS FAIL
+
+Raja — precision and recall of the posterior subsets:
+  All (full montage): precision = 0.8803, recall = 0.9014, F1 = 0.8825
+  Frontal: precision = 0.8886, recall = 0.8741, F1 = 0.8676
+  Central: precision = 0.6928, recall = 0.5642, F1 = 0.5859
+  Parietal: precision = 0.1952, recall = 0.0147, F1 = 0.0264
+  Occipital: precision = 0.1638, recall = 0.0262, F1 = 0.0406
+  Posterior: precision = 0.1810, recall = 0.0275, F1 = 0.0426
+
+Cao2018 — precision and recall of the posterior subsets:
+  All (full montage): precision = 0.7591, recall = 0.8909, F1 = 0.8068
+  Frontal: precision = 0.7732, recall = 0.8578, F1 = 0.7961
+  Central: precision = 0.6992, recall = 0.3894, F1 = 0.4668
+  Parietal: precision = 0.4944, recall = 0.1168, F1 = 0.1668
+  Occipital: precision = 0.4361, recall = 0.0770, F1 = 0.1197
+  Posterior: precision = 0.5048, recall = 0.1194, F1 = 0.1736
+
+STAGE-B BLINK-REGION THRESHOLD (sample-level detector parameter, microvolts, averaged over sessions)
+
+Raja:
+  fp1_only (fp1_only): 52.3
+  fp2_only (fp2_only): 52.2
+  Frontal (frontal): 49.0
+  All (full montage) (all_channel): 43.2
+  Central (central): 63.5
+  Parietal (parietal): 47.8
+  Occipital (occipital): 40.4
+  Posterior (posterior): 41.0
+  Central-R (central_right): 87.8
+
+Cao2018:
+  fp1_only (fp1_only): 66.6
+  fp2_only (fp2_only): 69.3
+  Frontal (frontal): 54.4
+  All (full montage) (all_channel): 29.8
+  Central (central): 33.6
+  Parietal (parietal): 29.9
+  Occipital (occipital): 24.0
+  Posterior (posterior): 25.3
+  Central-R (central_right): 34.2
+
+DIRECTION WARNING — the paragraph must not overstate this:
+  On Cao2018 the threshold falls monotonically from the frontopolar subsets to the
+  occipital ones. On Raja it does NOT: the central-right subset carries the highest
+  threshold of any subset while reaching the second-lowest F1, and the occipital
+  subsets sit close to the full-montage value. State the Cao2018 ordering, and state
+  plainly that Raja does not show the same ordering. Do not claim a single mechanism
+  that holds on both corpora.

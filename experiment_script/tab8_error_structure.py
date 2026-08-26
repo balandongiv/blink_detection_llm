@@ -1,6 +1,6 @@
 """Table 8 — error-structure decomposition by condition.
 
-Writes ``writing/e_result/tab_error_structure.tex``.
+Writes ``writing/e_result/exp4/tab_error_structure.tex``.
 
 Two detectors can reach the same F1 by opposite routes: one floods the session with false
 positives, the other misses blinks. The FP:FN ratio separates those regimes, which matters
@@ -42,11 +42,11 @@ def main() -> None:
         ratio = mean_fp / mean_fn if mean_fn else float("inf")
         regime = "FP-heavy" if mean_fp > mean_fn else "FN-heavy"
         lines.append(
-            f"    {cond} & {mean_fp:.1f} & {mean_fn:.1f} & {ratio:.3f} & {regime} \\\\"
+            f"    {cond} & {mean_fp:.2f} & {mean_fn:.2f} & {ratio:.2f} & {regime} \\\\"
         )
     lines += [r"    \bottomrule", r"  \end{tabular}", r"\end{table}"]
 
-    P.write_tex(P.ER / "tab_error_structure.tex", lines, SCRIPT)
+    P.write_tex(P.ER / "exp4" / "tab_error_structure.tex", lines, SCRIPT)
 
 
 if __name__ == "__main__":
