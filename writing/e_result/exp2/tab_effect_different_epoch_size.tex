@@ -1,0 +1,35 @@
+% Source: publication_results/; script experiment_script/tab13_fig10_epoch_duration.py
+\begin{table}[ht]
+  \centering
+  \caption{Best-channel-per-session macro-$F_1$ of Proposed-Med across epoch durations, computed on the full 32-channel montage: for every session the single electrode with the highest $F_1$ within that montage run is selected, then averaged over sessions. This is the same operating point and channel set reported in Experiments~1 and~3, so the 30\,s row reproduces those values exactly. $p$-values (two-tailed Wilcoxon on session-level $F_1$, Bonferroni-corrected over 6 non-reference durations) compare each duration against the 30\,s reference. Macro $F_1$ is reported as a percentage. \textbf{Bold} marks the best duration within each block.}
+  \label{tab:epoch_duration}
+  \begin{tabular}{llccc}
+    \toprule
+    Dataset & Epoch duration & $n$ & Macro $F_1$ (\%) & $p$ vs.\ 30\,s \\
+    \midrule
+    Internal & 10\,s & 46 & 87.71 & 1.000 \\
+     & 20\,s & 46 & 88.21 & 1.000 \\
+     & 30\,s & 46 & \textbf{88.25} & reference \\
+     & 40\,s & 46 & 88.14 & 0.610 \\
+     & 50\,s & 46 & 87.93 & $<0.001$ \\
+     & 60\,s & 46 & 87.73 & 0.002 \\
+     & 120\,s & 46 & 86.88 & $<0.001$ \\
+    \midrule
+    Cao2018 & 10\,s & 58 & 80.77 & 1.000 \\
+     & 20\,s & 58 & 80.76 & 1.000 \\
+     & 30\,s & 58 & 80.68 & reference \\
+     & 40\,s & 58 & 80.66 & 1.000 \\
+     & 50\,s & 58 & 80.74 & 1.000 \\
+     & 60\,s & 58 & 81.05 & 0.402 \\
+     & 120\,s & 58 & \textbf{81.12} & 0.659 \\
+    \midrule
+    Pooled & 10\,s & 104 & 83.84 & 1.000 \\
+     & 20\,s & 104 & \textbf{84.06} & 1.000 \\
+     & 30\,s & 104 & 84.03 & reference \\
+     & 40\,s & 104 & 83.97 & 0.933 \\
+     & 50\,s & 104 & 83.92 & 0.523 \\
+     & 60\,s & 104 & 84.01 & 1.000 \\
+     & 120\,s & 104 & 83.67 & 0.067 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

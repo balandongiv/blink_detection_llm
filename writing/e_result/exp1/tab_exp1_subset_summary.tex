@@ -1,0 +1,45 @@
+% Source: publication_results/; script experiment_script/tab17_exp1_subset_summary.py
+\begin{table}[htbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{Experiment~1 channel-subset performance of Proposed-Med (median centre) against the full-montage reference. Each subset is a self-contained detector: Stage~A, Stage~B and Stage~C were all re-run on that channel subset alone. $F_1$ is macro-averaged over sessions at the best-channel-per-session operating point and reported as a percentage; $\Delta F_1$ is the paired difference from the full montage in percentage points, tested with a two-tailed Wilcoxon signed-rank test and Bonferroni-corrected over the 13 subsets compared within each dataset, with the matched-pairs rank-biserial correlation $r$ as effect size. $n$ is the number of electrodes in the subset; the frontal subset contains AF3 and AF4 on Internal but not on Cao2018, whose montage lacks them.}
+\label{tab:exp1_subset_summary}
+\begin{tabular}{lrrrrr}
+\toprule
+Subset & $n$ & $F_1$ (\%) & $\Delta F_1$ (pp) & $p$ & $r$ \\
+\midrule
+\multicolumn{6}{l}{\textit{Internal (EGI 128, 46 sessions)}} \\[2pt]
+\textbf{All (full montage)} & 32 & 88.25 & $+0.00$ & -- & -- \\
+Frontal & 6 & 86.76 & $-1.49$ & $1.000$ & $-0.07$ \\
+Frontal-L & 3 & 85.18 & $-3.07$ & $0.070$ & $-0.49$ \\
+Frontal-R & 3 & 84.59 & $-3.66$ & $0.113$ & $-0.45$ \\
+Central & 6 & 58.59 & $-29.66$ & $<0.001$ & $-1.00$ \\
+Central-L & 3 & 57.67 & $-30.58$ & $<0.001$ & $-1.00$ \\
+Central-R & 3 & 7.14 & $-81.11$ & $<0.001$ & $-1.00$ \\
+Parietal & 4 & 2.64 & $-85.61$ & $<0.001$ & $-1.00$ \\
+Parietal-L & 2 & 2.17 & $-86.09$ & $<0.001$ & $-1.00$ \\
+Parietal-R & 2 & 2.12 & $-86.13$ & $<0.001$ & $-1.00$ \\
+Occipital & 8 & 4.06 & $-84.19$ & $<0.001$ & $-1.00$ \\
+Occipital-L & 4 & 3.43 & $-84.82$ & $<0.001$ & $-1.00$ \\
+Occipital-R & 4 & 3.04 & $-85.21$ & $<0.001$ & $-1.00$ \\
+Posterior & 12 & 4.26 & $-83.99$ & $<0.001$ & $-1.00$ \\
+\midrule
+\multicolumn{6}{l}{\textit{Cao2018 (10--20, 58 sessions)}} \\[2pt]
+\textbf{All (full montage)} & 32 & 80.68 & $+0.00$ & -- & -- \\
+Frontal & 4 & 79.61 & $-1.06$ & $1.000$ & $-0.20$ \\
+Frontal-L & 2 & 78.41 & $-2.27$ & $0.123$ & $-0.40$ \\
+Frontal-R & 2 & 76.77 & $-3.90$ & $0.001$ & $-0.59$ \\
+Central & 6 & 46.68 & $-33.99$ & $<0.001$ & $-0.99$ \\
+Central-L & 3 & 41.42 & $-39.26$ & $<0.001$ & $-1.00$ \\
+Central-R & 3 & 41.01 & $-39.67$ & $<0.001$ & $-1.00$ \\
+Parietal & 2 & 16.68 & $-64.00$ & $<0.001$ & $-1.00$ \\
+Parietal-L & 1 & 14.80 & $-65.88$ & $<0.001$ & $-1.00$ \\
+Parietal-R & 1 & 16.22 & $-64.46$ & $<0.001$ & $-1.00$ \\
+Occipital & 6 & 11.97 & $-68.71$ & $<0.001$ & $-1.00$ \\
+Occipital-L & 3 & 9.92 & $-70.75$ & $<0.001$ & $-1.00$ \\
+Occipital-R & 3 & 9.68 & $-70.99$ & $<0.001$ & $-1.00$ \\
+Posterior & 8 & 17.36 & $-63.31$ & $<0.001$ & $-1.00$ \\
+\bottomrule
+\end{tabular}
+\end{table}

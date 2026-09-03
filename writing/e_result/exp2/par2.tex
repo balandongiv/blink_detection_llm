@@ -1,4 +1,12 @@
 The pipeline was evaluated under epoch durations of 10, 20, 30 (reference), 40, 50, 60 and 120 seconds.
 For each duration the full pipeline is re-run from scratch, since epoch-level
 peak-to-peak statistics change with epoch length.
-Table~\ref{tab:epoch_duration} reports results and two-tailed Wilcoxon $p$-values relative to the 30-second reference.
+All values are computed on the full 32-channel montage at the best-channel-per-session
+operating point, which is the same channel set and operating point reported in
+Experiments~1 and~3; the reduced frontal sub-montages that the sweep also covers are
+excluded here so that epoch duration is the only quantity that varies across rows.
+The 30~s row therefore reproduces the corresponding Proposed-Med values of those
+experiments exactly.
+Table~\ref{tab:epoch_duration} reports macro-averaged $F_1$ and two-tailed Wilcoxon
+$p$-values relative to the 30-second reference, Bonferroni-corrected over the six
+non-reference durations.

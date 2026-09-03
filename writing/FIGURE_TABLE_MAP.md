@@ -40,11 +40,10 @@ CSVs, not manuscript artifacts.
 
 | # | Artifact | LaTeX file | Generator script |
 |---|---|---|---|
-| Table 1 | EGI-128 → 10–20 channel map | `e_result/tab_egi_channel_map.tex` | `tab1_egi_channel_map.py` |
-| Table 2 | Per-electrode performance under the full montage, both datasets | `e_result/tab_exp1_channel_ablation.tex` | `tab2_exp1_channel_ablation.py` |
-| Table 3 + Figure 3 | Region-level performance | `e_result/tab_region_performance.tex`, `figures/fig_region_performance.*` | `tab3_fig3_region_performance.py` |
-| Table 17 | Channel subsets vs the full montage, with Wilcoxon/Bonferroni/rank-biserial | `e_result/tab_exp1_subset_summary.tex` | `tab17_exp1_subset_summary.py` |
-| Table 18 | Single electrode vs the same electrode inside the full montage | `e_result/tab_exp1_solo_vs_montage.tex` | `tab18_exp1_solo_vs_montage.py` |
+| Table 1 | EGI-128 → 10–20 channel map | `e_result/exp1/tab_egi_channel_map.tex` | `tab1_egi_channel_map.py` |
+| Table 3 + Figure 3 | Region-level performance | `e_result/exp1/tab_region_performance.tex`, `figures/fig_region_performance.*` | `tab3_fig3_region_performance.py` |
+| Table 17 | Channel subsets vs the full montage, with Wilcoxon/Bonferroni/rank-biserial | `e_result/exp1/tab_exp1_subset_summary.tex` | `tab17_exp1_subset_summary.py` |
+| Table 18 | Single electrode vs the same electrode inside the full montage | `e_result/exp1/tab_exp1_solo_vs_montage.tex` | `tab18_exp1_solo_vs_montage.py` |
 | Figure 1 | Region / hemisphere box plot | `figures/fig_exp1_region_boxplot.*` | `fig1_exp1_region_boxplot.py` |
 | Figure 2 | Single-channel box plot | `figures/fig_exp1_single_channel_boxplot.*` | `fig2_exp1_single_channel_boxplot.py` |
 | Figure 12 | $F_1$ against number of electrodes given to the pipeline | `figures/fig_exp1_coverage_curve.*` | `fig12_exp1_coverage_curve.py` |
@@ -74,29 +73,30 @@ Table 18 and Figure 2. Do not describe the former as "single-channel" results.
 
 | # | Artifact | LaTeX file | Generator script |
 |---|---|---|---|
-| Table 4 + Table 5 | 4-condition comparison at 30 s; baseline inversions | `e_result/tab_comparison_30s_epoch.tex`, `e_result/tab_exp2_inversions.tex` | `tab4_tab5_strategy_comparison_30s.py` |
+| Table 4 + Table 5 | 4-condition comparison at 30 s; baseline inversions | `e_result/exp4/tab_strategycomparison_30s_epoch.tex`, `e_result/exp4/tab_exp2_inversions.tex` | `tab4_tab5_strategy_comparison_30s.py` |
+| Table 19 | Stage-B threshold estimator comparison (Proposed-Med vs Proposed-Mean only), manuscript Experiment 3 | `e_result/exp3/tab_threshold_estimator_stageb.tex` | `tab19_exp3_threshold_estimator.py` |
 | Figure 4 + Figure 5 | Condition P/R/F1; F1 by dataset | `figures/fig_condition_prf.pdf`, `figures/fig_f1_by_dataset.pdf` | `fig4_fig5_condition_prf.py` |
-| Table 6 | Cross-dataset generalisation gap | `e_result/tab_cross_dataset_gap.tex` | `tab6_cross_dataset_gap.py` |
+| Table 6 | Cross-dataset generalisation gap | `e_result/exp4/tab_cross_dataset_gap.tex` | `tab6_cross_dataset_gap.py` |
 | Figure 6 | Per-session precision–recall scatter | `figures/fig_exp2_pr_scatter.*` | `fig6_exp2_pr_scatter.py` |
 | Figure 7 | Macro operating points in PR space | `figures/fig_pr_scatter.*` | `fig7_pr_operating_points.py` |
-| Table 7 + Figure 8 | Blink-count agreement | `e_result/tab_count_agreement.tex`, `figures/fig_count_agreement.*` | `tab7_fig8_count_agreement.py` |
-| Table 8 | Error-structure decomposition (FP- vs FN-dominant) | `e_result/tab_error_structure.tex` | `tab8_error_structure.py` |
-| Table 9 | Per-session / per-subject ranking | `e_result/tab_best_session.tex` | `tab9_best_session.py` |
-| Table 10 | Per-session failure analysis | `e_result/tab_failure_analysis.tex` | `tab10_failure_analysis.py` |
-| Table 11 + Figure 9 | Best-channel selection frequency | `e_result/tab_channel_selection.tex`, `figures/fig_channel_selection.pdf` | `tab11_fig9_channel_selection_frequency.py` |
-| Table 12 | Best-channel stability across methods | `e_result/tab_channel_robustness.tex` | `tab12_channel_robustness.py` |
+| Table 7 + Figure 8 | Blink-count agreement | `e_result/exp4/tab_count_agreement.tex`, `figures/fig_count_agreement.*` | `tab7_fig8_count_agreement.py` |
+| Table 8 | Error-structure decomposition (FP- vs FN-dominant) | `e_result/exp4/tab_error_structure.tex` | `tab8_error_structure.py` |
+| Table 9 | Per-session / per-subject ranking | `e_result/exp4/tab_best_session.tex` | `tab9_best_session.py` |
+| Table 10 | Per-session failure analysis | `e_result/exp4/tab_failure_analysis.tex` | `tab10_failure_analysis.py` |
+| Table 11 + Figure 9 | Best-channel selection frequency | `e_result/exp1/tab_channel_selection.tex`, `figures/fig_channel_selection.pdf` | `tab11_fig9_channel_selection_frequency.py` |
+| Table 12 | Best-channel stability across methods | `e_result/exp1/tab_channel_robustness.tex` | `tab12_channel_robustness.py` |
 
 ## Experiment 3 — Epoch-duration stability (`publication_results/exp3_*`)
 
 | # | Artifact | LaTeX file | Generator script |
 |---|---|---|---|
-| Table 13 + Figure 10 | Macro-F1 across 7 epoch durations | `e_result/tab_effect_different_epoch_size.tex`, `figures/fig_exp3_epoch_duration.*` | `tab13_fig10_epoch_duration.py` |
+| Table 13 + Figure 10 | Macro-F1 across 7 epoch durations | `e_result/exp2/tab_effect_different_epoch_size.tex`, `figures/fig_exp3_epoch_duration.*` | `tab13_fig10_epoch_duration.py` |
 
 ## Cross-experiment summary
 
 | # | Artifact | LaTeX file | Generator script |
 |---|---|---|---|
-| Table 14 + Table 15 + Figure 11 | Proposed-Med summary, paired stats, session-level box plot | `e_result/tab_exp_summary.tex`, `e_result/tab_exp_stats.tex`, `figures/fig_exp_boxplot.*` | `tab14_tab15_fig11_exp_summary.py` |
+| Table 14 + Table 15 + Figure 11 | Proposed-Med summary, paired stats, session-level box plot | `e_result/exp_summary/tab_exp_summary.tex`, `e_result/exp_summary/tab_exp_stats.tex`, `figures/fig_exp_boxplot.*` | `tab14_tab15_fig11_exp_summary.py` |
 
 ## Literature review (not experiment-backed)
 

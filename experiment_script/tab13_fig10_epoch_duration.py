@@ -25,15 +25,14 @@ from scipy import stats
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import paper_data as P  # noqa: E402
+import paper_style as S  # noqa: E402
 
 SCRIPT = "tab13_fig10_epoch_duration.py"
 REFERENCE_S = 30
 #: Only the full-montage gate is reported, so the 30 s row matches Experiments 1 and 2.
 GATE = "all_channel"
-#: Categorical slots 1 and 2. Checked with the palette validator: adjacent-pair CVD
-#: separation dE 24.7 (protan) / 32.7 (tritan), normal-vision dE 33.6, both >= 3:1
-#: contrast on a light surface — the pair stays distinguishable in print and greyscale.
-DS_COLORS = {"raja": "#2a78d6", "cao": "#eb6834"}
+#: Shared manuscript palette (see paper_style.py) keyed by dataset short name.
+DS_COLORS = {"raja": S.DATASET_COLORS["Internal"], "cao": S.DATASET_COLORS["Cao2018"]}
 
 
 def _p_cell(p: float) -> str:
@@ -133,32 +132,32 @@ def build_figure(block_means: dict, block_p: dict) -> None:
     printed numbers, not the bar heights, are what the reader compares.
     """
     fig, ax = plt.subplots(figsize=(7.2, 4.2))
+    S.style_fig(fig)
     x = np.arange(len(P.DURATIONS))
     width = 0.38
     for offset, (label, ds) in zip((-width / 2, width / 2),
                                    [(P.DSN["raja"], "raja"), ("Cao2018", "cao")]):
         values = [block_means[label][d] * 100 for d in P.DURATIONS]
         ax.bar(x + offset, values, width, label=label, color=DS_COLORS[ds],
-               edgecolor="white", linewidth=0.6, zorder=3)
+               edgecolor=S.NAVY, linewidth=0.6, zorder=3)
         for xi, d, v in zip(x, P.DURATIONS, values):
             star = "*" if block_p[label].get(d, 1.0) < 0.05 else ""
             ax.text(xi + offset, v + 1.5, f"{v:.2f}{star}", ha="center", va="bottom",
-                    fontsize=6.5, rotation=90, color="#333333", zorder=4)
+                    fontsize=6.5, rotation=90, color=S.NAVY, zorder=4)
     ax.set_xticks(x)
     ax.set_xticklabels([f"{d} s" for d in P.DURATIONS])
     ax.set_xlabel("epoch duration")
     ax.set_ylabel("macro-$F_1$ (%)")
     ax.set_ylim(0, 100)
     ax.set_yticks(np.arange(0, 101, 20))
-    ax.grid(axis="y", color="#d9d9d9", linewidth=0.6, zorder=0)
-    ax.set_axisbelow(True)
-    for side in ("top", "right"):
-        ax.spines[side].set_visible(False)
+    S.style_axis(ax)
     # Bars span the whole 0--100 axis, so there is no in-plot space for a legend that
     # would not sit on top of the data. It goes above the axes instead; the LaTeX
     # caption carries the title, so no in-figure title is drawn.
-    ax.legend(frameon=False, loc="lower center", bbox_to_anchor=(0.5, 1.005),
-              ncol=2, fontsize=9, handlelength=1.4, columnspacing=1.6)
+    legend = ax.legend(frameon=False, loc="lower center", bbox_to_anchor=(0.5, 1.005),
+                        ncol=2, fontsize=9, handlelength=1.4, columnspacing=1.6)
+    for text in legend.get_texts():
+        text.set_color(S.NAVY)
     fig.tight_layout()
     P.save_fig(fig, "fig_exp3_epoch_duration")
     plt.close(fig)

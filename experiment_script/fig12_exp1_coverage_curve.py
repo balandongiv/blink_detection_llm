@@ -20,20 +20,20 @@ from pathlib import Path
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import seaborn as sns
 from matplotlib.lines import Line2D
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import exp1_subset_data as S  # noqa: E402
 import paper_data as P  # noqa: E402
+import paper_style as PS  # noqa: E402
 
 SCRIPT = "fig12_exp1_coverage_curve.py"
 STEM = "fig_exp1_coverage_curve"
 
 #: Shared with tab3_fig3_region_performance.py — one colour, one scalp region.
 FAMILY_COLOR = {
-    "frontopolar": "#C44E52", "frontal": "#DD8452", "central": "#4C72B0",
-    "parietal": "#8172B3", "occipital": "#55A868", "posterior": "#937860",
+    "frontopolar": PS.EEG_BLUE, "frontal": PS.NAVY, "central": PS.CORAL,
+    "parietal": PS.GREEN, "occipital": PS.LAVENDER, "posterior": PS.YELLOW,
     "full montage": "#000000",
 }
 FAMILY_ORDER = ["frontopolar", "frontal", "central", "parietal", "occipital", "posterior"]
@@ -71,7 +71,7 @@ def points(ds: str):
 def draw_panel(ax, ds: str, title: str) -> None:
     pts = points(ds)
     reference = next(f1 for n, f1, fam, _, _ in pts if fam == "full montage")
-    ax.axhline(reference, ls="--", lw=1.2, color="#555555", zorder=1)
+    ax.axhline(reference, ls="--", lw=1.2, color=PS.NAVY, zorder=1)
 
     for n_ch, f1, fam, label, is_single in pts:
         ax.scatter(n_ch, f1, s=110 if fam == "full montage" else 70,
@@ -87,7 +87,7 @@ def draw_panel(ax, ds: str, title: str) -> None:
         if label in offsets:
             xytext, ha = offsets[label]
             ax.annotate(label, (n_ch, f1), textcoords="offset points", xytext=xytext,
-                        ha=ha, fontsize=8.5, color="#222222")
+                        ha=ha, fontsize=8.5, color=PS.NAVY)
 
     ax.set_xscale("log", base=2)
     ax.set_xticks([1, 2, 3, 4, 6, 8, 12, 32])
@@ -96,11 +96,12 @@ def draw_panel(ax, ds: str, title: str) -> None:
     ax.set_ylim(0, 1.0)
     ax.set_xlabel("Electrodes given to the pipeline")
     ax.set_title(f"{title}  (reference $F_1$ = {reference:.4f})", fontsize=10.5)
+    PS.style_axis(ax, grid_axis="both")
 
 
 def main() -> None:
-    sns.set_style("whitegrid")
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.6), sharey=True)
+    PS.style_fig(fig)
     draw_panel(axes[0], "raja", "Internal")
     draw_panel(axes[1], "cao", "Cao2018")
     axes[0].set_ylabel("Session-level macro $F_1$")
@@ -113,16 +114,18 @@ def main() -> None:
         for f in FAMILY_ORDER
     ] + [
         Line2D([], [], marker="*", ls="", color="k", label="Full montage", markersize=11),
-        Line2D([], [], marker="o", ls="", color="#777777", label="Anatomical subset",
+        Line2D([], [], marker="o", ls="", color=PS.PANEL_BLUE, label="Anatomical subset",
                markersize=7),
-        Line2D([], [], marker="D", ls="", color="#777777", label="Single electrode",
+        Line2D([], [], marker="D", ls="", color=PS.PANEL_BLUE, label="Single electrode",
                markersize=6),
     ]
-    fig.legend(handles=handles, loc="lower center", ncol=5, fontsize=8.5,
-               frameon=False, bbox_to_anchor=(0.5, -0.02))
+    legend = fig.legend(handles=handles, loc="lower center", ncol=5, fontsize=8.5,
+                         frameon=False, bbox_to_anchor=(0.5, -0.02))
+    for text in legend.get_texts():
+        text.set_color(PS.NAVY)
 
     fig.suptitle("Detection $F_1$ against the number of electrodes available to the "
-                 "pipeline (Proposed-Med, median centre)", fontsize=11.5)
+                 "pipeline (Proposed-Med, median centre)", fontsize=11.5, color=PS.NAVY)
     fig.tight_layout(rect=(0, 0.09, 1, 0.95))
     P.save_fig(fig, STEM)
     plt.close(fig)

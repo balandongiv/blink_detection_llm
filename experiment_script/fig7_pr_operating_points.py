@@ -22,10 +22,10 @@ import matplotlib.pyplot as plt
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import paper_data as PD  # noqa: E402
+import paper_style as S  # noqa: E402
 
 CONDS = ["Proposed-Med", "Proposed-Mean", "BLINKER-concat", "MNE-annot"]
-COLORS = {"Proposed-Med": "#4C72B0", "Proposed-Mean": "#55A868",
-          "BLINKER-concat": "#C44E52", "MNE-annot": "#8172B3"}
+COLORS = S.CONDITION_COLORS
 MARKERS = {"Proposed-Med": "o", "Proposed-Mean": "s",
            "BLINKER-concat": "^", "MNE-annot": "D"}
 
@@ -35,8 +35,8 @@ rows = {c: pd.concat([best[("raja", c)], best[("cao", c)]], ignore_index=True)
         for c in CONDS}
 n_sessions = len(rows["Proposed-Med"])
 
-sns_grey = "0.75"
 fig, ax = plt.subplots(figsize=(7.2, 6.4))
+S.style_fig(fig)
 
 # iso-F1 contours: F1 = 2PR/(P+R) -> P = f*R / (2R - f)
 Rgrid = np.linspace(0.001, 1.0, 500)
@@ -45,11 +45,11 @@ for f in [0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
         P = (f * Rgrid) / (2 * Rgrid - f)
     valid = (2 * Rgrid - f) > 0
     P = np.where(valid & (P <= 1.0) & (P >= 0.0), P, np.nan)
-    ax.plot(Rgrid, P, color=sns_grey, lw=0.8, ls="--", zorder=1)
+    ax.plot(Rgrid, P, color=S.PANEL_BLUE, lw=0.8, ls="--", zorder=1)
     # label near R=0.98
     ri = np.argmin(np.abs(Rgrid - 0.985))
     if not np.isnan(P[ri]):
-        ax.text(0.99, P[ri], f"$F_1$={f:g}", color="0.45", fontsize=7,
+        ax.text(0.99, P[ri], f"$F_1$={f:g}", color=S.PANEL_BLUE, fontsize=7,
                 ha="left", va="center")
 
 # per-session points
@@ -63,7 +63,7 @@ for c in CONDS:
     d = rows[c]
     mr, mp = d.recall.mean(), d.precision.mean()
     ax.scatter([mr], [mp], s=240, color=COLORS[c], marker=MARKERS[c],
-               edgecolors="black", linewidths=1.4, zorder=4,
+               edgecolors=S.NAVY, linewidths=1.4, zorder=4,
                label=f"{c} (P={mp:.2f}, R={mr:.2f})")
 
 ax.set_xlim(0.0, 1.02)
@@ -71,8 +71,10 @@ ax.set_ylim(0.0, 1.02)
 ax.set_xlabel("Event-level recall")
 ax.set_ylabel("Event-level precision")
 ax.set_title(f"Per-session operating points (best channel per session, {n_sessions} sessions)")
-ax.legend(loc="lower left", fontsize=8.5, framealpha=0.92)
-ax.grid(True, color="0.92", lw=0.6)
+S.style_axis(ax, grid_axis="both")
+legend = ax.legend(loc="lower left", fontsize=8.5, framealpha=0.92)
+for text in legend.get_texts():
+    text.set_color(S.NAVY)
 fig.tight_layout()
 PD.save_fig(fig, "fig_pr_scatter")
 for c in CONDS:

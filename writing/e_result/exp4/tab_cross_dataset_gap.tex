@@ -1,0 +1,16 @@
+% Source: publication_results/; script experiment_script/tab6_cross_dataset_gap.py
+\begin{table}[ht]
+  \centering
+  \caption{Cross-dataset generalisation gap (best-channel-per-session macro-$F_1$, 30\,s epochs), reported as percentages. Gap $=$ Internal $-$ Cao2018, in percentage points.}
+  \label{tab:cross_dataset_gap}
+  \begin{tabular}{lccc}
+    \toprule
+    Condition & Internal (\%) & Cao2018 (\%) & Gap (pp) \\
+    \midrule
+    BLINKER-concat & 76.54 & 69.40 & +7.14 \\
+    MNE-annot & 66.64 & 56.27 & +10.37 \\
+    Proposed-Mean & 87.42 & 80.30 & +7.12 \\
+    Proposed-Med & 88.25 & 80.68 & +7.58 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

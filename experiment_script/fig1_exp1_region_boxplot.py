@@ -29,8 +29,10 @@ import seaborn as sns
 REPO = Path(__file__).resolve().parents[1]
 if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from src.project_paths import EXP_SETUP_DIR, load_exp_config  # noqa: E402
+import paper_style as S  # noqa: E402
 
 FIGDIR = REPO / "writing" / "figures"
 FIGDIR.mkdir(parents=True, exist_ok=True)
@@ -109,18 +111,21 @@ def channel_label(region: str, ds_name: str) -> str | None:
     return sub.sort_values("n", ascending=False).iloc[0]["channel"]
 
 
-sns.set_style("whitegrid")
 fig, ax = plt.subplots(figsize=(20, 7))
+S.style_fig(fig)
 sns.boxplot(
     data=plotdf, x="Region", y="F1", hue="Dataset", order=label_order,
-    palette={"Internal": "#4C72B0", "Cao2018": "#55A868"}, width=0.6, fliersize=2, ax=ax,
+    palette=S.DATASET_COLORS, width=0.6, fliersize=2, ax=ax,
 )
 ax.set_ylim(0, 1.12)
 ax.set_xlabel("Selection group")
 ax.set_ylabel("Session-level macro $F_1$")
 ax.set_title("Best-channel-per-session macro $F_1$ by selection group (median center), Internal vs. Cao2018\n"
              "(whole region shown alongside its own left/right hemisphere halves)")
-ax.legend(title=None, loc="lower right", framealpha=0.9)
+S.style_axis(ax, grid_axis="both")
+legend = ax.legend(title=None, loc="lower right", framealpha=0.9)
+for text in legend.get_texts():
+    text.set_color(S.NAVY)
 
 # shade alternating region families for readability
 fam_seq = [family_by_label[lbl] for lbl in label_order]
@@ -129,13 +134,13 @@ band_start = None
 for i, fam in enumerate(fam_seq + [None]):
     if fam != prev_fam:
         if prev_fam is not None and prev_fam % 2 == 1:
-            ax.axvspan(band_start - 0.5, i - 0.5, color="#f0f0f0", zorder=0)
+            ax.axvspan(band_start - 0.5, i - 0.5, color=S.PAGE_BG, zorder=0)
         band_start = i
         prev_fam = fam
 
 # recover each box's x-center + hue from its PathPatch, then label with dominant channel(s)
 hue_order = ["Internal", "Cao2018"]
-color = {"Internal": "#4C72B0", "Cao2018": "#55A868"}
+color = S.DATASET_COLORS
 target_rgb = {ds_name: mcolors.to_rgb(color[ds_name]) for ds_name in hue_order}
 
 box_patches = [p for p in ax.patches if type(p).__name__ == "PathPatch"]

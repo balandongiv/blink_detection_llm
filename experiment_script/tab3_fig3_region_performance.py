@@ -29,6 +29,7 @@ from matplotlib.patches import Patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import paper_data as P  # noqa: E402
+import paper_style as S  # noqa: E402
 
 SCRIPT = "tab3_fig3_region_performance.py"
 
@@ -57,12 +58,14 @@ def coarse_regions(ds: str):
 def build_table(frames: dict) -> list[str]:
     lines = [
         r"\begin{table}[ht]", r"  \centering",
-        r"  \caption{Experiment~1 single-channel detection performance collapsed to coarse "
-        r"scalp regions (Proposed-Med, median centre). Each region row averages the "
-        r"per-channel macro $F_1$ over the electrodes it contains. "
-        r"The frontopolar, midline/outside, and unassigned groups are omitted; only the "
-        r"frontal, central, parietal, and occipital regions are shown. $n$ is the number "
-        r"of electrodes in the region. "
+        r"  \caption{Experiment~1 per-electrode detection performance collapsed to coarse "
+        r"scalp regions (Proposed-Med, median centre), each electrode scored inside the "
+        r"full-montage run rather than as a standalone single-electrode pipeline. Each "
+        r"region row averages the per-channel macro $F_1$ over the electrodes it contains; "
+        r"regions follow the \texttt{brain\_region\_raja.yaml}/\texttt{brain\_region\_cao2018.yaml} "
+        r"assignment, so the frontopolar pair is included within frontal. The midline/outside "
+        r"and unassigned groups are omitted; only the frontal, central, parietal, and "
+        r"occipital regions are shown. $n$ is the number of electrodes in the region. "
         r"$F_1$ is reported as a percentage.}",
         r"  \label{tab:region_performance}",
         r"  \begin{tabular}{llcc}", r"    \toprule",
@@ -70,7 +73,7 @@ def build_table(frames: dict) -> list[str]:
     ]
 
     for ds in ["raja", "cao"]:
-        g = frames[ds]
+        g = _figure_frame(frames[ds])
         first = True
         for region in SUMMARY_REGION_ORDER:
             sub = g[g.coarse == region]
@@ -99,26 +102,99 @@ def _figure_frame(g):
 
 
 def build_figure(frames: dict) -> None:
-    fig, axes = plt.subplots(2, 1, figsize=(9, 8), sharex=False)
+    # Colour scheme matched to the processing-pipeline flowchart (see paper_style.py)
+    NAVY = S.NAVY
+    REGION_COLORS = S.REGION_COLORS
+
+    fig, axes = plt.subplots(
+        2, 1,
+        figsize=(9, 8),
+        sharex=False,
+    )
+    S.style_fig(fig)
+
     for ax, ds in zip(axes, ["raja", "cao"]):
         g = _figure_frame(frames[ds])
-        colors = [REGION_COLORS.get(r, "#cccccc") for r in g["coarse"]]
+
+        colors = [REGION_COLORS[r] for r in g["coarse"]]
         pct = g["f1"].to_numpy() * 100
-        bars = ax.bar(range(len(g)), pct, color=colors)
-        ax.bar_label(bars, fmt="%.1f", rotation=90, padding=2, fontsize=6)
+
+        bars = ax.bar(
+            range(len(g)),
+            pct,
+            color=colors,
+            edgecolor=NAVY,
+            linewidth=0.45,
+            width=0.78,
+        )
+
+        ax.bar_label(
+            bars,
+            fmt="%.2f",
+            rotation=45,
+            padding=2,
+            fontsize=7.5,
+            color=NAVY,
+        )
+
         ax.set_xticks(range(len(g)))
-        ax.set_xticklabels(g["display"], rotation=90, fontsize=7)
-        ax.set_title(P.DSN[ds])
+        ax.set_xticklabels(
+            g["display"],
+            rotation=90,
+            fontsize=8,
+            color=NAVY,
+        )
+
+        ax.set_title(
+            P.DSN[ds],
+            fontsize=11,
+            fontweight="bold",
+            color=NAVY,
+            pad=8,
+        )
+
         ax.set_ylim(0, 100)
         ax.margins(y=0.12)
-        ax.set_ylabel("macro-$F_1$ (%, single channel)")
 
-    handles = [Patch(color=REGION_COLORS[r], label=r) for r in SUMMARY_REGION_ORDER]
-    fig.legend(handles=handles, loc="upper center", ncol=len(handles), fontsize=8,
-               frameon=False, bbox_to_anchor=(0.5, 1.03))
-    fig.suptitle("Single-channel detection $F_1$ by electrode and scalp region",
-                 y=1.06, fontsize=12)
-    fig.tight_layout()
+        ax.set_ylabel(
+            r"Macro-$F_1$ (%)",
+            fontsize=10,
+            color=NAVY,
+        )
+
+        S.style_axis(ax)
+        ax.tick_params(axis="y", labelsize=8)
+
+    # Legend
+    handles = [
+        Patch(
+            facecolor=REGION_COLORS[r],
+            edgecolor=NAVY,
+            linewidth=0.4,
+            label=r.capitalize(),
+        )
+        for r in SUMMARY_REGION_ORDER
+    ]
+
+    fig.legend(
+        handles=handles,
+        loc="upper center",
+        ncol=len(handles),
+        fontsize=8.5,
+        frameon=False,
+        bbox_to_anchor=(0.5, 1.015),
+    )
+
+    fig.suptitle(
+        r"Single-channel detection $F_1$ by electrode and scalp region",
+        y=1.055,
+        fontsize=12,
+        fontweight="bold",
+        color=NAVY,
+    )
+
+    fig.tight_layout(rect=[0, 0, 1, 0.97])
+
     P.save_fig(fig, "fig_region_performance")
     plt.close(fig)
 
@@ -135,9 +211,10 @@ def main() -> None:
         print(f"{P.DSN[ds]}: frontal+frontopolar mean F1 = {front:.3f}; "
               f"non-frontal mean F1 = {non_front['f1'].mean():.3f} "
               f"(n={len(non_front)} channels)")
-        print(f"{P.DSN[ds]} region-collapsed macro P/R/F1 (%):")
+        print(f"{P.DSN[ds]} region-collapsed macro P/R/F1 (%), frontopolar folded into frontal:")
+        folded = _figure_frame(g)
         for region in SUMMARY_REGION_ORDER:
-            sub = g[g.coarse == region]
+            sub = folded[folded.coarse == region]
             if sub.empty:
                 continue
             print(f"  {region} (n={len(sub)}): "

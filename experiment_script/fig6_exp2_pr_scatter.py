@@ -32,6 +32,8 @@ if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
 
 from src.project_paths import EXP_SETUP_DIR, load_exp_config  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import paper_style as S  # noqa: E402
 
 _PATH_CFG = load_exp_config(EXP_SETUP_DIR / "exp_path.yaml")
 RAJA_SRC = REPO / Path(_PATH_CFG["out_dirs"]["exp2"]["raja"]) / "exp2_strategy_comparison_raja_results.csv"
@@ -44,7 +46,7 @@ CONDS = ["Proposed-Med", "Proposed-Mean", "BLINKER-concat", "MNE-annot"]
 MARKERS = {"Proposed-Med": "o", "Proposed-Mean": "s",
            "BLINKER-concat": "^", "MNE-annot": "D"}
 DSN = {"raja": "Internal", "cao2018": "Cao2018"}
-DS_COLORS = {"raja": "#4C72B0", "cao2018": "#55A868"}
+DS_COLORS = {"raja": S.DATASET_COLORS["Internal"], "cao2018": S.DATASET_COLORS["Cao2018"]}
 
 
 def main() -> None:
@@ -52,6 +54,7 @@ def main() -> None:
     df = df[df["selection"] == SELECTION]
 
     fig, ax = plt.subplots(figsize=(7.5, 6.5))
+    S.style_fig(fig)
 
     # iso-F1 contours
     r = np.linspace(0.01, 1.0, 200)
@@ -59,12 +62,12 @@ def main() -> None:
         with np.errstate(divide="ignore", invalid="ignore"):
             p = (f1 * r) / (2 * r - f1)
         p = np.where((p > 0) & (p <= 1.0), p, np.nan)
-        ax.plot(r, p, color="#bbbbbb", lw=0.8, ls=":", zorder=0)
+        ax.plot(r, p, color=S.PANEL_BLUE, lw=0.8, ls=":", zorder=0)
         valid = ~np.isnan(p)
         if valid.any():
             xi = np.argmax(valid & (r > 0.55))
             if xi:
-                ax.annotate(f"F1={f1}", (r[xi], p[xi]), fontsize=7, color="#999999",
+                ax.annotate(f"F1={f1}", (r[xi], p[xi]), fontsize=7, color=S.PANEL_BLUE,
                             ha="left", va="bottom")
 
     summary_lines = []
@@ -80,7 +83,7 @@ def main() -> None:
             mean_r, mean_p = sub["recall"].mean(), sub["precision"].mean()
             mean_f1 = sub["f1"].mean()
             ax.scatter([mean_r], [mean_p], s=200, color=DS_COLORS[ds], marker=MARKERS[cond],
-                       edgecolor="black", linewidths=1.3, zorder=3)
+                       edgecolor=S.NAVY, linewidths=1.3, zorder=3)
             summary_lines.append((ds, cond, mean_p, mean_r, mean_f1, len(sub)))
 
     ax.set_xlim(0, 1.02)
@@ -89,19 +92,25 @@ def main() -> None:
     ax.set_ylabel("Precision")
     ax.set_title("Per-session precision-recall operating points\n"
                   "exp2 strategy comparison (Internal vs. Cao2018, all-channel gate)")
+    S.style_axis(ax, grid_axis="both")
 
     # two-part legend: marker shape -> condition, color -> dataset
     cond_handles = [
-        Line2D([0], [0], marker=MARKERS[c], color="none", markerfacecolor="#666666",
-               markeredgecolor="black", markersize=9, label=c)
+        Line2D([0], [0], marker=MARKERS[c], color="none", markerfacecolor=S.PANEL_BLUE,
+               markeredgecolor=S.NAVY, markersize=9, label=c)
         for c in CONDS
     ]
-    ds_handles = [Patch(facecolor=DS_COLORS[ds], label=DSN[ds]) for ds in ("raja", "cao2018")]
+    ds_handles = [Patch(facecolor=DS_COLORS[ds], edgecolor=S.NAVY, label=DSN[ds])
+                  for ds in ("raja", "cao2018")]
     legend1 = ax.legend(handles=cond_handles, title="Condition (shape)",
                          loc="lower left", fontsize=8, framealpha=0.9)
     ax.add_artist(legend1)
-    ax.legend(handles=ds_handles, title="Dataset (color)",
-              loc="lower right", fontsize=8, framealpha=0.9)
+    legend2 = ax.legend(handles=ds_handles, title="Dataset (color)",
+                         loc="lower right", fontsize=8, framealpha=0.9)
+    for legend in (legend1, legend2):
+        legend.get_title().set_color(S.NAVY)
+        for text in legend.get_texts():
+            text.set_color(S.NAVY)
 
     fig.tight_layout()
     fig.savefig(FIGDIR / "fig_exp2_pr_scatter.pdf", bbox_inches="tight")

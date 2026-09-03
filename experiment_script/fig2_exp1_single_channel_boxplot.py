@@ -30,8 +30,10 @@ import seaborn as sns
 REPO = Path(__file__).resolve().parents[1]
 if str(REPO) not in sys.path:
     sys.path.insert(0, str(REPO))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from src.project_paths import EXP_SETUP_DIR, load_exp_config  # noqa: E402
+import paper_style as S  # noqa: E402
 
 FIGDIR = REPO / "writing" / "figures"
 FIGDIR.mkdir(parents=True, exist_ok=True)
@@ -118,21 +120,24 @@ def channel_label(chan: str, ds_name: str) -> str | None:
     return sub.sort_values("n", ascending=False).iloc[0]["channel"]
 
 
-sns.set_style("whitegrid")
 fig, ax = plt.subplots(figsize=(10, 6))
+S.style_fig(fig)
 sns.boxplot(
     data=plotdf, x="Channel", y="F1", hue="Dataset", order=label_order,
-    palette={"Internal": "#4C72B0", "Cao2018": "#55A868"}, width=0.6, fliersize=3, ax=ax,
+    palette=S.DATASET_COLORS, width=0.6, fliersize=3, ax=ax,
 )
 ax.set_ylim(0, 1.12)
 ax.set_xlabel("Single channel")
 ax.set_ylabel("Session-level macro $F_1$")
 ax.set_title("Single-channel-only session-level macro $F_1$ (median center), Internal vs. Cao2018")
-ax.legend(title=None, loc="lower right", framealpha=0.9)
+S.style_axis(ax, grid_axis="both")
+legend = ax.legend(title=None, loc="lower right", framealpha=0.9)
+for text in legend.get_texts():
+    text.set_color(S.NAVY)
 
 # recover each box's x-center + hue from its PathPatch, then label with the actual channel
 hue_order = ["Internal", "Cao2018"]
-color = {"Internal": "#4C72B0", "Cao2018": "#55A868"}
+color = S.DATASET_COLORS
 target_rgb = {ds_name: mcolors.to_rgb(color[ds_name]) for ds_name in hue_order}
 
 box_patches = [p for p in ax.patches if type(p).__name__ == "PathPatch"]

@@ -1,0 +1,26 @@
+% Source: publication_results/; script experiment_script/tab4_tab5_strategy_comparison_30s.py
+\begin{table*}[ht]
+  \centering
+  \caption{Strategy comparison on the Internal and Cao2018 driving-EEG corpora at 30\,s epochs. Each condition is summarised at its best-channel-per-session operating point (for every session the single channel or frontal sub-montage with the highest $F_1$ is selected, then averaged over sessions); the same rule is applied to all four conditions. Macro-averaged precision, recall and $F_1$ are reported as percentages, per dataset and pooled over all 104 sessions. Best $F_1$ per block in \textbf{bold}. By paired Wilcoxon signed-rank tests on session-level $F_1$ (Bonferroni-corrected over six pairs), Proposed-Med significantly exceeds BLINKER-concat ($p<10^{-9}$) and MNE-annot ($p<0.001$) but not Proposed-Mean ($p=1.00$).}
+  \label{tab:exp1_main}
+  \begin{tabular}{llccc}
+    \toprule
+    Dataset & Condition & Precision (\%) & Recall (\%) & $F_1$ (\%) \\
+    \midrule
+    Internal & BLINKER-concat & 67.94 & 95.18 & 76.54 \\
+     & MNE-annot & 69.44 & 70.63 & 66.64 \\
+     & Proposed-Mean & 88.40 & 88.76 & 87.42 \\
+     & Proposed-Med & 88.03 & 90.14 & \textbf{88.25} \\
+    \midrule
+    Cao2018 & BLINKER-concat & 56.96 & 97.15 & 69.40 \\
+     & MNE-annot & 60.13 & 61.68 & 56.27 \\
+     & Proposed-Mean & 77.07 & 87.20 & 80.30 \\
+     & Proposed-Med & 75.91 & 89.09 & \textbf{80.68} \\
+    \midrule
+    Pooled & BLINKER-concat & 61.82 & 96.27 & 72.56 \\
+     & MNE-annot & 64.25 & 65.64 & 60.86 \\
+     & Proposed-Mean & 82.09 & 87.89 & 83.45 \\
+     & Proposed-Med & 81.27 & 89.56 & \textbf{84.03} \\
+    \bottomrule
+  \end{tabular}
+\end{table*}

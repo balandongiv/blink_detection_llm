@@ -9,13 +9,15 @@ All scripts assume the conda env `double_threshold_algo` and resolve the repo ro
 table or figure in the manuscript it is responsible for:
 
 ```
-tab<N>_<slug>.py          -> writing/e_result/tab_<slug>.tex
+tab<N>_<slug>.py          -> writing/e_result/exp<M>/tab_<slug>.tex
 fig<N>_<slug>.py          -> writing/figures/fig_<slug>.{pdf,png}
 tab<N>_fig<M>_<slug>.py   -> both (one analysis, two renderings)
 exp<N>_a_<slug>.py        -> runs detection, emits the result CSVs (no manuscript artifact)
 ```
 
-The numbers are the manuscript's figure/table numbers, defined in
+Tables live under the `e_result/exp<M>/` folder for the manuscript experiment section
+that `\input`s them (`exp1`–`exp4`), or `e_result/exp_summary/` for tables that span more
+than one experiment. The numbers are the manuscript's figure/table numbers, defined in
 **`writing/FIGURE_TABLE_MAP.md`** — that file is the authority. If the manuscript is
 renumbered, rename the scripts to match.
 
@@ -69,7 +71,6 @@ Run after the primaries. Each reads `publication_results/` and writes the manusc
 | Script | Produces |
 |--------|----------|
 | `tab1_egi_channel_map.py` | Table 1 — Raja EGI ↔ 10–20 mapping, from the `egi_pair` block of `brain_region_raja.yaml` |
-| `tab2_exp1_channel_ablation.py` | Table 2 — per-channel precision/recall/F1, both corpora |
 | `tab3_fig3_region_performance.py` | Table 3 + Figure 3 — region-level means and the whole-scalp electrode map |
 | `fig1_exp1_region_boxplot.py` | Figure 1 — session-level F1 by channel-selection group |
 | `fig2_exp1_single_channel_boxplot.py` | Figure 2 — session-level F1 for the single-channel groups |

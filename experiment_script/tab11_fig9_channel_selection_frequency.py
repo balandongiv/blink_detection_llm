@@ -22,6 +22,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import paper_data as P  # noqa: E402
+import paper_style as S  # noqa: E402
 
 SCRIPT = "tab11_fig9_channel_selection_frequency.py"
 TOP_N = 5
@@ -60,16 +61,20 @@ def main() -> None:
     P.write_tex(P.ER / "exp1" / "tab_channel_selection.tex", lines, SCRIPT)
 
     fig, axes = plt.subplots(1, 2, figsize=(11, 4))
+    S.style_fig(fig)
     for ax, ds in zip(axes, ["raja", "cao"]):
         counts = freq[ds].head(10)
         total = int(freq[ds].sum())
-        ax.bar(range(len(counts)), counts.to_numpy() / total, color="#4C72B0")
+        ax.bar(range(len(counts)), counts.to_numpy() / total,
+               color=S.DATASET_COLORS[P.DSN[ds]], edgecolor=S.NAVY)
         ax.set_xticks(range(len(counts)))
         ax.set_xticklabels(counts.index, rotation=45, ha="right", fontsize=8)
         ax.set_title(P.DSN[ds])
         ax.set_ylim(0, 1.0)
         ax.set_ylabel("fraction of selections" if ds == "raja" else "")
-    fig.suptitle("Best-channel selection frequency, pooled over the four conditions")
+        S.style_axis(ax)
+    fig.suptitle("Best-channel selection frequency, pooled over the four conditions",
+                 color=S.NAVY)
     fig.tight_layout()
     P.save_fig(fig, "fig_channel_selection")
     plt.close(fig)

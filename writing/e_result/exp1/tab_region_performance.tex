@@ -1,0 +1,21 @@
+% Source: publication_results/; script experiment_script/tab3_fig3_region_performance.py
+\begin{table}[ht]
+  \centering
+  \caption{Per-electrode detection performance collapsed to coarse scalp regions (Proposed-Med, median centre), each electrode scored inside the full-montage run rather than as a standalone single-electrode pipeline. Each region row averages the per-channel macro $F_1$ over the electrodes it contains. The midline/outside and unassigned groups are omitted; only the frontal, central, parietal, and occipital regions are shown. $n$ is the number of electrodes in the region. $F_1$ is reported as a percentage.}
+  \label{tab:region_performance}
+  \begin{tabular}{llcc}
+    \toprule
+    Dataset & Region & $n$ & $F_1$ (\%) \\
+    \midrule
+    Internal & frontal & 6 & 69.68 \\
+     & central & 6 & 14.80 \\
+     & parietal & 4 & 1.94 \\
+     & occipital & 8 & 2.30 \\
+    \midrule
+    Cao2018 & frontal & 4 & 68.91 \\
+     & central & 6 & 38.13 \\
+     & parietal & 2 & 18.70 \\
+     & occipital & 6 & 8.24 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
