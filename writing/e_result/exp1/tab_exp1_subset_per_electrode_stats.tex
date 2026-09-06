@@ -1,0 +1,70 @@
+% Source: publication_results/; script experiment_script/tab20_exp1_subset_per_electrode_stats.py
+\onecolumn
+\begingroup
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{longtable}{llrrrrrr}
+\caption{Experiment~1 per-electrode paired comparison of Proposed-Med (median centre): each electrode scored inside its own region's self-contained subset rerun against the same electrode scored inside the full-montage run, paired by session. $F_1$ (Subset) and $F_1$ (Montage) are session means; $\Delta F_1$ is the paired difference, Subset minus Montage, in percentage points, so a negative value indicates lower performance in the subset rerun. Significance is a two-tailed Wilcoxon signed-rank test, paired by session, with $p$ Bonferroni-corrected over every electrode tested within each dataset (24 for Internal, 18 for Cao2018); $r_{\mathrm{rb}}$ is the matched-pairs rank-biserial correlation, signed to match $\Delta F_1$. Adjusted $p<0.05$ is shown in bold. Electrodes are grouped by the anatomical subset in Figure~\ref{fig:exp1_subset_per_electrode} and ordered by descending subset $F_1$ within each region.}
+\label{tab:exp1_subset_per_electrode_stats} \\
+\toprule
+Electrode & Region & $n$ & $F_1$ Subset (\%) & $F_1$ Montage (\%) & $\Delta F_1$ (pp) & adjusted $p$ & $r_{\mathrm{rb}}$ \\
+\midrule
+\endfirsthead
+\multicolumn{8}{l}{\textit{(Table~\ref{tab:exp1_subset_per_electrode_stats} continued)}} \\
+\toprule
+Electrode & Region & $n$ & $F_1$ Subset (\%) & $F_1$ Montage (\%) & $\Delta F_1$ (pp) & adjusted $p$ & $r_{\mathrm{rb}}$ \\
+\midrule
+\endhead
+\midrule
+\multicolumn{8}{r}{\textit{continued on next page}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+\multicolumn{8}{l}{\textit{Internal (EGI 128, 46 sessions), 24 electrodes tested}} \\[2pt]
+Fp2 & Frontal & 46 & 85.28 & 86.82 & $-1.54$ & $1.000$ & $-0.05$ \\
+Fp1 & Frontal & 46 & 84.84 & 86.32 & $-1.48$ & $1.000$ & $-0.08$ \\
+AF4 & Frontal & 46 & 77.04 & 80.32 & $-3.28$ & $\mathbf{0.003}$ & $-0.67$ \\
+AF3 & Frontal & 46 & 70.70 & 73.76 & $-3.06$ & $\mathbf{<0.001}$ & $-0.69$ \\
+F3 & Frontal & 46 & 42.68 & 45.65 & $-2.96$ & $\mathbf{<0.001}$ & $-0.79$ \\
+F4 & Frontal & 46 & 41.00 & 45.23 & $-4.24$ & $\mathbf{<0.001}$ & $-0.84$ \\
+C3 & Central & 46 & 58.59 & 61.06 & $-2.47$ & $\mathbf{0.030}$ & $-0.55$ \\
+FC5 & Central & 46 & 10.45 & 11.60 & $-1.14$ & $0.058$ & $-0.54$ \\
+FC6 & Central & 46 & 7.40 & 8.10 & $-0.71$ & $\mathbf{0.040}$ & $-0.57$ \\
+FC1 & Central & 46 & 2.89 & 3.07 & $-0.18$ & $0.362$ & $-0.50$ \\
+FC2 & Central & 46 & 2.89 & 3.11 & $-0.22$ & $1.000$ & $-0.28$ \\
+C4 & Central & 46 & 1.73 & 1.85 & $-0.12$ & $1.000$ & $-0.38$ \\
+CP1 & Parietal & 46 & 1.92 & 2.19 & $-0.27$ & $0.108$ & $-0.58$ \\
+CP2 & Parietal & 46 & 1.78 & 2.02 & $-0.24$ & $\mathbf{0.041}$ & $-0.66$ \\
+CP5 & Parietal & 46 & 1.64 & 1.80 & $-0.16$ & $\mathbf{0.049}$ & $-0.62$ \\
+CP6 & Parietal & 46 & 1.54 & 1.75 & $-0.20$ & $\mathbf{0.009}$ & $-0.76$ \\
+PO3 & Occipital & 46 & 3.35 & 3.60 & $-0.25$ & $\mathbf{0.014}$ & $-0.64$ \\
+PO4 & Occipital & 46 & 2.81 & 2.98 & $-0.17$ & $\mathbf{0.007}$ & $-0.68$ \\
+E83 & Occipital & 46 & 2.05 & 2.13 & $-0.09$ & $1.000$ & $+0.08$ \\
+O1 & Occipital & 46 & 2.04 & 2.13 & $-0.09$ & $1.000$ & $-0.06$ \\
+P3 & Occipital & 46 & 1.83 & 2.05 & $-0.22$ & $1.000$ & $-0.38$ \\
+P8 & Occipital & 46 & 1.82 & 1.94 & $-0.12$ & $0.207$ & $-0.54$ \\
+P7 & Occipital & 46 & 1.71 & 1.82 & $-0.11$ & $1.000$ & $-0.25$ \\
+P4 & Occipital & 46 & 1.65 & 1.77 & $-0.12$ & $0.581$ & $-0.46$ \\
+\midrule
+\multicolumn{8}{l}{\textit{Cao2018 (10--20, 58 sessions), 18 electrodes tested}} \\[2pt]
+Fp1 & Frontal & 58 & 78.80 & 79.68 & $-0.88$ & $1.000$ & $+0.05$ \\
+Fp2 & Frontal & 58 & 77.05 & 78.45 & $-1.40$ & $1.000$ & $-0.18$ \\
+F3 & Frontal & 58 & 55.97 & 59.51 & $-3.55$ & $\mathbf{0.009}$ & $-0.54$ \\
+F4 & Frontal & 58 & 54.64 & 57.99 & $-3.35$ & $\mathbf{0.002}$ & $-0.60$ \\
+FC3 & Central & 58 & 40.52 & 44.13 & $-3.61$ & $\mathbf{<0.001}$ & $-0.85$ \\
+FT8 & Central & 58 & 37.44 & 41.63 & $-4.19$ & $\mathbf{<0.001}$ & $-0.83$ \\
+FC4 & Central & 58 & 37.25 & 40.99 & $-3.73$ & $\mathbf{<0.001}$ & $-0.90$ \\
+FT7 & Central & 58 & 36.26 & 40.76 & $-4.49$ & $\mathbf{<0.001}$ & $-0.82$ \\
+C3 & Central & 58 & 27.67 & 31.08 & $-3.42$ & $\mathbf{<0.001}$ & $-0.89$ \\
+C4 & Central & 58 & 26.62 & 30.18 & $-3.56$ & $\mathbf{<0.001}$ & $-0.89$ \\
+CP4 & Parietal & 58 & 15.63 & 19.56 & $-3.93$ & $\mathbf{<0.001}$ & $-0.68$ \\
+CP3 & Parietal & 58 & 14.37 & 17.84 & $-3.46$ & $\mathbf{<0.001}$ & $-0.64$ \\
+P3 & Occipital & 58 & 10.04 & 12.80 & $-2.77$ & $\mathbf{<0.001}$ & $-0.81$ \\
+P4 & Occipital & 58 & 9.86 & 12.67 & $-2.81$ & $\mathbf{<0.001}$ & $-0.83$ \\
+T5 & Occipital & 58 & 7.20 & 9.26 & $-2.06$ & $\mathbf{<0.001}$ & $-0.83$ \\
+T6 & Occipital & 58 & 6.39 & 8.30 & $-1.91$ & $\mathbf{<0.001}$ & $-0.85$ \\
+O2 & Occipital & 58 & 2.61 & 3.33 & $-0.72$ & $\mathbf{<0.001}$ & $-0.75$ \\
+O1 & Occipital & 58 & 2.40 & 3.10 & $-0.70$ & $\mathbf{<0.001}$ & $-0.75$ \\
+\end{longtable}
+\endgroup
+\twocolumn

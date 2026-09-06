@@ -3,43 +3,43 @@
 \centering
 \footnotesize
 \setlength{\tabcolsep}{4pt}
-\caption{Experiment~1 channel-subset performance of Proposed-Med (median centre) against the full-montage reference. Each subset is a self-contained detector: Stage~A, Stage~B and Stage~C were all re-run on that channel subset alone. $F_1$ is macro-averaged over sessions at the best-channel-per-session operating point and reported as a percentage; $\Delta F_1$ is the paired difference from the full montage in percentage points, tested with a two-tailed Wilcoxon signed-rank test and Bonferroni-corrected over the 13 subsets compared within each dataset, with the matched-pairs rank-biserial correlation $r$ as effect size. $n$ is the number of electrodes in the subset; the frontal subset contains AF3 and AF4 on Internal but not on Cao2018, whose montage lacks them.}
+\caption{Experiment~1 channel-subset performance of Proposed-Med (median centre). Each subset is a self-contained detector: Stage~A, Stage~B and Stage~C were all re-run on that channel subset alone. $F_1$ (Subset) is the region-mean $F_1$: each electrode's own macro $F_1$ is averaged over sessions and those per-electrode means are then averaged across the electrodes the subset contains, the same aggregation Table~\ref{tab:region_performance}/Figure~\ref{fig:region_performance} use for the full montage, applied here to the subset's own rerun. $F_1$ (Montage) reports the same region's electrodes scored inside the full-montage run instead, on the same sessions. $\Delta F_1$ is the paired difference, Subset minus Montage, in percentage points, tested with a two-tailed Wilcoxon signed-rank test and Bonferroni-corrected over the 13 subsets compared within each dataset, with the matched-pairs rank-biserial correlation $r$ as effect size. The \textbf{All (full montage)} row instead reports the best-channel-per-session oracle $F_1$ used as the headline full-montage figure throughout the manuscript, shown for reference only; it is not the $\Delta F_1$ baseline for the rows below it. $n$ is the number of electrodes in the subset; the frontal subset contains AF3 and AF4 on Internal but not on Cao2018, whose montage lacks them.}
 \label{tab:exp1_subset_summary}
-\begin{tabular}{lrrrrr}
+\begin{tabular}{lrrrrrr}
 \toprule
-Subset & $n$ & $F_1$ (\%) & $\Delta F_1$ (pp) & $p$ & $r$ \\
+Subset & $n$ & $F_1$ Subset (\%) & $F_1$ Montage (\%) & $\Delta F_1$ (pp) & $p$ & $r$ \\
 \midrule
-\multicolumn{6}{l}{\textit{Internal (EGI 128, 46 sessions)}} \\[2pt]
-\textbf{All (full montage)} & 32 & 88.25 & $+0.00$ & -- & -- \\
-Frontal & 6 & 86.76 & $-1.49$ & $1.000$ & $-0.07$ \\
-Frontal-L & 3 & 85.18 & $-3.07$ & $0.070$ & $-0.49$ \\
-Frontal-R & 3 & 84.59 & $-3.66$ & $0.113$ & $-0.45$ \\
-Central & 6 & 58.59 & $-29.66$ & $<0.001$ & $-1.00$ \\
-Central-L & 3 & 57.67 & $-30.58$ & $<0.001$ & $-1.00$ \\
-Central-R & 3 & 7.14 & $-81.11$ & $<0.001$ & $-1.00$ \\
-Parietal & 4 & 2.64 & $-85.61$ & $<0.001$ & $-1.00$ \\
-Parietal-L & 2 & 2.17 & $-86.09$ & $<0.001$ & $-1.00$ \\
-Parietal-R & 2 & 2.12 & $-86.13$ & $<0.001$ & $-1.00$ \\
-Occipital & 8 & 4.06 & $-84.19$ & $<0.001$ & $-1.00$ \\
-Occipital-L & 4 & 3.43 & $-84.82$ & $<0.001$ & $-1.00$ \\
-Occipital-R & 4 & 3.04 & $-85.21$ & $<0.001$ & $-1.00$ \\
-Posterior & 12 & 4.26 & $-83.99$ & $<0.001$ & $-1.00$ \\
+\multicolumn{7}{l}{\textit{Internal (EGI 128, 46 sessions)}} \\[2pt]
+\textbf{All (full montage)} & 32 & 88.25 & -- & $+0.00$ & -- & -- \\
+Frontal & 6 & 66.92 & 69.68 & $-2.76$ & $<0.001$ & $-0.80$ \\
+Frontal-L & 3 & 65.49 & 68.58 & $-3.08$ & $<0.001$ & $-0.76$ \\
+Frontal-R & 3 & 66.59 & 70.79 & $-4.20$ & $<0.001$ & $-0.74$ \\
+Central & 6 & 13.99 & 14.80 & $-0.81$ & $<0.001$ & $-0.65$ \\
+Central-L & 3 & 23.55 & 25.24 & $-1.69$ & $0.008$ & $-0.59$ \\
+Central-R & 3 & 3.64 & 4.35 & $-0.71$ & $0.002$ & $-0.64$ \\
+Parietal & 4 & 1.72 & 1.94 & $-0.22$ & $<0.001$ & $-0.87$ \\
+Parietal-L & 2 & 1.74 & 2.00 & $-0.26$ & $<0.001$ & $-0.80$ \\
+Parietal-R & 2 & 1.67 & 1.88 & $-0.21$ & $<0.001$ & $-0.75$ \\
+Occipital & 8 & 2.16 & 2.30 & $-0.15$ & $<0.001$ & $-0.88$ \\
+Occipital-L & 4 & 2.19 & 2.40 & $-0.21$ & $<0.001$ & $-0.90$ \\
+Occipital-R & 4 & 1.98 & 2.21 & $-0.23$ & $<0.001$ & $-0.82$ \\
+Posterior & 12 & 2.08 & 2.18 & $-0.11$ & $<0.001$ & $-0.93$ \\
 \midrule
-\multicolumn{6}{l}{\textit{Cao2018 (10--20, 58 sessions)}} \\[2pt]
-\textbf{All (full montage)} & 32 & 80.68 & $+0.00$ & -- & -- \\
-Frontal & 4 & 79.61 & $-1.06$ & $1.000$ & $-0.20$ \\
-Frontal-L & 2 & 78.41 & $-2.27$ & $0.123$ & $-0.40$ \\
-Frontal-R & 2 & 76.77 & $-3.90$ & $0.001$ & $-0.59$ \\
-Central & 6 & 46.68 & $-33.99$ & $<0.001$ & $-0.99$ \\
-Central-L & 3 & 41.42 & $-39.26$ & $<0.001$ & $-1.00$ \\
-Central-R & 3 & 41.01 & $-39.67$ & $<0.001$ & $-1.00$ \\
-Parietal & 2 & 16.68 & $-64.00$ & $<0.001$ & $-1.00$ \\
-Parietal-L & 1 & 14.80 & $-65.88$ & $<0.001$ & $-1.00$ \\
-Parietal-R & 1 & 16.22 & $-64.46$ & $<0.001$ & $-1.00$ \\
-Occipital & 6 & 11.97 & $-68.71$ & $<0.001$ & $-1.00$ \\
-Occipital-L & 3 & 9.92 & $-70.75$ & $<0.001$ & $-1.00$ \\
-Occipital-R & 3 & 9.68 & $-70.99$ & $<0.001$ & $-1.00$ \\
-Posterior & 8 & 17.36 & $-63.31$ & $<0.001$ & $-1.00$ \\
+\multicolumn{7}{l}{\textit{Cao2018 (10--20, 58 sessions)}} \\[2pt]
+\textbf{All (full montage)} & 32 & 80.68 & -- & $+0.00$ & -- & -- \\
+Frontal & 4 & 66.61 & 68.91 & $-2.29$ & $0.026$ & $-0.47$ \\
+Frontal-L & 2 & 66.11 & 69.60 & $-3.49$ & $0.029$ & $-0.46$ \\
+Frontal-R & 2 & 64.84 & 68.22 & $-3.38$ & $0.014$ & $-0.49$ \\
+Central & 6 & 34.29 & 38.13 & $-3.83$ & $<0.001$ & $-0.91$ \\
+Central-L & 3 & 32.97 & 38.66 & $-5.69$ & $<0.001$ & $-0.83$ \\
+Central-R & 3 & 33.15 & 37.60 & $-4.45$ & $<0.001$ & $-0.75$ \\
+Parietal & 2 & 15.00 & 18.70 & $-3.69$ & $<0.001$ & $-0.66$ \\
+Parietal-L & 1 & 14.80 & 17.84 & $-3.04$ & $0.019$ & $-0.49$ \\
+Parietal-R & 1 & 16.22 & 19.56 & $-3.34$ & $0.007$ & $-0.53$ \\
+Occipital & 6 & 6.42 & 8.24 & $-1.83$ & $<0.001$ & $-0.84$ \\
+Occipital-L & 3 & 6.23 & 8.39 & $-2.16$ & $<0.001$ & $-0.83$ \\
+Occipital-R & 3 & 5.97 & 8.10 & $-2.14$ & $<0.001$ & $-0.82$ \\
+Posterior & 8 & 8.62 & 10.86 & $-2.24$ & $<0.001$ & $-0.87$ \\
 \bottomrule
 \end{tabular}
 \end{table}

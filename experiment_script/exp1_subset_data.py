@@ -134,6 +134,84 @@ def subset_stats(ds: str) -> pd.DataFrame:
     return out
 
 
+def region_channels(ds: str, subset: str) -> list[str]:
+    """Electrode display labels belonging to *subset*, from the canonical region map.
+
+    Mirrors the region grouping ``tab3_fig3_region_performance.py`` uses for
+    Figure 3 / Table 3: the fine ``_left``/``_right`` groups from ``paper_data.region_map``
+    are unioned back into the coarse region, so membership matches Figure 3 exactly.
+    ``posterior`` is parietal + occipital (both hemispheres), matching
+    ``build_selection_groups`` in ``src/utils/channel_ablation_utils.py``.
+    """
+    rmap = P.region_map(ds)
+    if subset == "posterior":
+        fine = {"parietal_left", "parietal_right", "occipital_left", "occipital_right"}
+    elif subset.endswith(("_left", "_right")):
+        fine = {subset}
+    else:
+        fine = {f"{subset}_left", f"{subset}_right"}
+    chans = sorted(ch for ch, r in rmap.items() if r in fine)
+    return [P.display_channel(ds, c) for c in chans]
+
+
+def region_session_series(df: pd.DataFrame, selection: str, channels_display: set[str]) -> pd.Series:
+    """Per-session mean $F_1$ across *channels_display*, for one *selection* run.
+
+    Equal to first averaging each electrode's $F_1$ over sessions and then averaging
+    those per-electrode means across the region (the Table 3/Figure 3 aggregation),
+    since every electrode in the panel is scored on every session — averaging is
+    linear, so the two orders agree.
+    """
+    g = df[(df["selection"] == selection) & (df["display"].isin(channels_display))]
+    return g.groupby("session")["f1"].mean().sort_index()
+
+
+def subset_stats_region_mean(ds: str) -> pd.DataFrame:
+    """Every anatomical subset scored as the mean of its own electrodes, one row each.
+
+    Descriptive $F_1$: for each subset's self-contained rerun, average each electrode's
+    session-mean $F_1$ across the electrodes the subset contains — the same aggregation
+    Table 3/Figure 3 use for the full montage (``tab3_fig3_region_performance.py``),
+    applied here to the subset's own multi-channel rerun instead of the full-montage run.
+
+    Comparison baseline: the SAME region's electrodes scored inside the full-montage run
+    (``selection == "all_channel"``), on shared sessions — so the paired test asks whether
+    restricting Stage A/B screening to only this region changed how well the region's own
+    electrodes detect blinks, not whether the subset matches the full-montage headline
+    oracle. Wilcoxon signed-rank, Bonferroni-corrected over the subsets actually compared
+    within each dataset, with matched-pairs rank-biserial correlation as effect size.
+
+    The reference row ("All (full montage)") is unchanged: the established
+    best-channel-per-session oracle $F_1$ used throughout the manuscript.
+    """
+    d = load_median(ds)
+    present = [s for s in SUBSET_ORDER if s in set(d["selection"])]
+    ref_bps = bps_series(d[d["selection"] == REFERENCE])["f1"]
+
+    rows = []
+    for s in present:
+        n_ch = int(d.loc[d["selection"] == s, "n_channels_used"].iloc[0])
+        if s == REFERENCE:
+            rows.append({"selection": s, "label": SUBSET_LABEL[s], "n_ch": n_ch,
+                         "f1": ref_bps.mean(), "f1_montage": np.nan, "delta": 0.0,
+                         "p_raw": np.nan, "p_bonf": np.nan, "r_rb": np.nan,
+                         "n_pairs": len(ref_bps), "n_better": 0})
+            continue
+        chans = set(region_channels(ds, s))
+        subset_series = region_session_series(d, s, chans)
+        montage_series = region_session_series(d, REFERENCE, chans)
+        row = {"selection": s, "label": SUBSET_LABEL[s], "n_ch": n_ch,
+               "f1": subset_series.mean(), "f1_montage": montage_series.mean()}
+        row.update(_compare(montage_series, subset_series))
+        rows.append(row)
+
+    out = pd.DataFrame(rows)
+    n_comp = (out["selection"] != REFERENCE).sum()
+    out["p_bonf"] = (out["p_raw"] * n_comp).clip(upper=1.0)
+    out.attrs["n_comparisons"] = int(n_comp)
+    return out
+
+
 def solo_vs_montage(ds: str) -> pd.DataFrame:
     """Each ``*_only`` electrode run alone versus the same electrode under the gate.
 
@@ -166,6 +244,30 @@ def solo_vs_montage(ds: str) -> pd.DataFrame:
     out["p_bonf"] = (out["p_raw"] * len(out)).clip(upper=1.0)
     out.attrs["n_comparisons"] = len(out)
     return out
+
+
+def solo_region_mean_stats(ds: str) -> dict:
+    """The ``*_only`` single-electrode runs collapsed to one coarse-region mean.
+
+    Single-channel analogue of ``subset_stats_region_mean``'s coarse-region rows: instead
+    of a self-contained multi-electrode subset rerun, each electrode here is run
+    completely alone (its own ``*_only`` selection), so the session-level mean across
+    those electrodes is the region-mean $F_1$ a system built from independent
+    single-electrode detectors would give. It is compared, session-paired, against the
+    same electrodes scored inside the full-montage run (``all_channel``) — the same
+    quantity Table 3/Figure 3 report for the coarse frontal region, since every ``*_only``
+    electrode in both corpora belongs to the frontal region. A single Wilcoxon signed-rank
+    test is used (one comparison per dataset, so no Bonferroni factor applies).
+    """
+    d = load_median(ds)
+    solos = sorted(s for s in set(d["selection"]) if s.endswith("_only"))
+    chans = set(d.loc[d["selection"].isin(solos), "display"].unique())
+    solo_series = (d[d["selection"].isin(solos)]
+                   .groupby("session")["f1"].mean().sort_index())
+    montage_series = region_session_series(d, REFERENCE, chans)
+    cmp = _compare(montage_series, solo_series)
+    return {"n_ch": len(chans), "channels": sorted(chans),
+            "f1_solo": solo_series.mean(), "f1_montage": montage_series.mean(), **cmp}
 
 
 def fixed_vs_oracle(ds: str, electrodes: tuple[str, ...] = ("Fp1", "Fp2")) -> pd.DataFrame:

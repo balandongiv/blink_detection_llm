@@ -1,11 +1,18 @@
-"""Region-grouped box plot of session-level macro F1 (best channel per session, median center).
+"""Region-grouped box plot of session-level macro F1 (region-mean, median center).
 
 Each named Stage-A selection group from exp1 (channel_ablation_utils.build_selection_groups)
 gets its own box: the bilateral/whole-region group (e.g. "frontal") AND its two hemisphere
 halves ("frontal_left", "frontal_right") are shown SEPARATELY, side by side, so the
 contribution of the whole region can be compared against each hemisphere in isolation
 rather than being pooled into one merged box. Posterior and All have no hemisphere split.
-Within each selection, the best-performing channel is taken per session (argmax f1).
+
+For every selection except "All", each box is the per-session mean $F_1$ across the
+electrodes that selection's self-contained rerun contains — the same region-mean
+aggregation as Table~17 (``tab17_exp1_subset_summary.py`` / ``exp1_subset_data.py``),
+shown here as its session-level distribution rather than a single averaged number.
+"All" is the exception: it stays at the best-channel-per-session operating point (the
+established full-montage headline metric used throughout the manuscript), matching the
+"All (full montage)" row of Table~17.
 Raja and Cao2018 are drawn side by side (hue) in a single figure.
 
 Source: runs0/exp1_channel_cao/exp1_channel_selection_cao2018_results.csv
@@ -33,6 +40,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from src.project_paths import EXP_SETUP_DIR, load_exp_config  # noqa: E402
 import paper_style as S  # noqa: E402
+import exp1_subset_data as SD  # noqa: E402
 
 FIGDIR = REPO / "writing" / "figures"
 FIGDIR.mkdir(parents=True, exist_ok=True)
@@ -81,22 +89,39 @@ def best_channel_per_session(df: pd.DataFrame, selection: str) -> pd.DataFrame:
     return sub.loc[sub.groupby("session")["f1"].idxmax()]
 
 
+def region_mean_per_session(df: pd.DataFrame, ds: str, selection: str) -> pd.Series:
+    """Per-session mean $F_1$ across the electrodes ``region_channels`` assigns to
+    *selection* — the same region-mean quantity Table~17 reports, one value per session."""
+    chans = set(SD.region_channels(ds, selection))
+    sub = df[(df.selection == selection) & (df["channel"].apply(lambda c: display_channel(ds, c)).isin(chans))]
+    if sub.empty:
+        return sub["f1"]
+    return sub.groupby("session")["f1"].mean()
+
+
 records = []
 channel_records = []
 for ds, path in SRC.items():
     df = pd.read_csv(path)
     df = df[df.center_method == "median"]
     for label, selection, _fam in LABELS:
-        best = best_channel_per_session(df, selection)
-        if best.empty:
+        if selection == "all_channel":
+            best = best_channel_per_session(df, selection)
+            if best.empty:
+                continue
+            for v in best["f1"].values:
+                records.append({"Region": label, "Dataset": DSN[ds], "F1": v})
+            for ch, n in best["channel"].value_counts().items():
+                channel_records.append({
+                    "Region": label, "Dataset": DSN[ds],
+                    "channel": display_channel(ds, ch), "n": n,
+                })
             continue
-        for v in best["f1"].values:
+        vals = region_mean_per_session(df, ds, selection)
+        if vals.empty:
+            continue
+        for v in vals.values:
             records.append({"Region": label, "Dataset": DSN[ds], "F1": v})
-        for ch, n in best["channel"].value_counts().items():
-            channel_records.append({
-                "Region": label, "Dataset": DSN[ds],
-                "channel": display_channel(ds, ch), "n": n,
-            })
 
 plotdf = pd.DataFrame(records)
 chandf = pd.DataFrame(channel_records).groupby(
@@ -120,8 +145,9 @@ sns.boxplot(
 ax.set_ylim(0, 1.12)
 ax.set_xlabel("Selection group")
 ax.set_ylabel("Session-level macro $F_1$")
-ax.set_title("Best-channel-per-session macro $F_1$ by selection group (median center), Internal vs. Cao2018\n"
-             "(whole region shown alongside its own left/right hemisphere halves)")
+ax.set_title("Session-level macro $F_1$ by selection group (median center), Internal vs. Cao2018\n"
+             "(All: best-channel-per-session; every other group: region-mean across its electrodes; "
+             "whole region shown alongside its own left/right hemisphere halves)")
 S.style_axis(ax, grid_axis="both")
 legend = ax.legend(title=None, loc="lower right", framealpha=0.9)
 for text in legend.get_texts():

@@ -1,4 +1,4 @@
-You are drafting ONE paragraph of a submitted academic journal article.
+You are drafting paragraphs of a submitted academic journal article.
 
 REGISTER:
 - Plain declarative academic prose. Past tense for what was done and measured.
@@ -7,14 +7,14 @@ REGISTER:
   flourish about impact.
 - LaTeX body text only. Use \ref{...} for cross-references and ~ before \ref and \cite.
 
-PARAGRAPH STRUCTURE (mandatory):
+PARAGRAPH STRUCTURE (mandatory, for each paragraph):
 - Begin the paragraph with a clear topic sentence that states its main idea.
 - Every remaining sentence must directly explain, support, or develop that topic sentence.
 - Do NOT begin with an isolated detail, a citation, an example, a bare cross-reference
   ("X is shown in Figure 3"), or background information laid down before the main point is
   established. A cross-reference may appear in the topic sentence only as a parenthetical
   attached to a claim, never as the claim itself.
-- Where this paragraph follows another, carry a transition in the topic sentence that
+- Where a paragraph follows another, carry a transition in its topic sentence that
   connects the two logically.
 
 HARD RULES ON EVIDENCE:
@@ -26,84 +26,108 @@ HARD RULES ON EVIDENCE:
   negative or contradicts a hypothesis, say so plainly; do not soften it.
 
 OUTPUT CONTRACT:
-- Output ONLY the LaTeX paragraph, between the lines BEGIN_TEX and END_TEX.
+- Output ONLY the LaTeX paragraphs, between the lines BEGIN_TEX and END_TEX, separated by
+  one blank line each. Output exactly two paragraphs, in the order given below.
 - No preamble, no explanation, no markdown fences, no headings, no commentary.
 
 ===== TASK =====
-This paragraph belongs to the Results section of the article. Report what was observed;
-do not interpret, do not speculate about mechanisms beyond what the packet states, and do
-not discuss implications for the field - those belong to the Discussion.
+This paragraph pair belongs to the Results section of the article, in the subsection on
+single-electrode operation (each single-electrode selection reruns the complete pipeline
+using one electrode alone). It follows an existing, unchanged paragraph (already in the
+manuscript, not shown here) that states the design: how many sessions and single-electrode
+selections were evaluated on each corpus, that each selection is a self-contained
+one-channel detector, and that these values carry no best-channel-per-session oracle.
+Do not restate that design paragraph; write the next two paragraphs so the first of them
+opens with a topic sentence that follows naturally from it.
+Report what was observed; do not interpret, do not speculate about mechanisms beyond what
+the packet states, and do not discuss implications for the field - those belong to the
+Discussion.
 Write British spelling. Refer to the two corpora as Raja and Cao2018.
 Write the detector as Proposed-Med. Write F1 as $F_1$ and p-values as $p=0.012$.
 Available cross-reference labels (use \ref{} with ~ before it; use ONLY these):
   tab:egi_map                  - EGI 128 to 10--20 channel map
   tab:exp1_channel_ablation    - per-electrode precision/recall/F1, both datasets
   tab:region_performance       - per-electrode results collapsed to coarse scalp regions
-  tab:exp1_subset_summary      - channel subsets vs the full montage, with statistics
+  tab:exp1_subset_summary      - channel subsets: region-mean F1 vs the same electrodes
+                                  scored inside the full montage, with statistics
   tab:exp1_solo_vs_montage     - single electrode vs the same electrode in the full montage
   tab:channel_selection        - best-channel selection frequencies
   tab:channel-robustness       - agreement on the best channel across the four conditions
   fig:region_performance       - per-electrode F1 bar chart coloured by scalp region
-  fig:exp1_region_boxplot      - session-level F1 by channel-selection group
+  fig:exp1_region_boxplot      - session-level F1 by channel-selection group (All: best-
+                                  channel-per-session; every other group: region-mean)
   fig:exp1_single_channel      - session-level F1 for the single-electrode subsets
   fig:exp1_coverage_curve      - F1 against the number of electrodes given to the pipeline
   fig:channel_selection        - best-channel selection frequency chart
   sec:exp2_strategy            - Experiment 2
   sec:exp3_epoch               - Experiment 3
 
-Write the paragraph reporting SINGLE-ELECTRODE operation.
-
+PARAGRAPH 1 of 2 — FINE PER-ELECTRODE COMPARISON (single electrode alone vs the same
+electrode scored inside the full-montage run):
 Content it must carry:
-- The complete pipeline run on one frontopolar electrode retained most of the
-  full-montage performance: give the $F_1$ of the best single electrode on each corpus
-  and the percentage of the full-montage reference it represents.
-- These single-electrode values involve no channel selection at all, so unlike every
-  other condition in the article they carry no best-channel-per-session oracle. State
-  this explicitly - it makes them the values a deployed single-electrode system would
-  produce.
+- The best single-electrode $F_1$ on each corpus, and what percentage of the
+  full-montage reference it represents (use the "percent of the full-montage reference"
+  figures in the packet).
 - Performance dropped sharply for single electrodes outside the frontopolar pair; give
-  the values.
-- Reference Figure~\ref{fig:exp1_single_channel}.
+  representative values (including the weakest electrodes on each corpus) and the
+  percentage of the full-montage reference they represent.
+- State that, after Bonferroni correction, the gain from scoring the SAME electrode
+  inside the full montage instead of alone was NOT significant at Fp1 and Fp2 on either
+  corpus (give delta F1 and the corrected p-value for each), but WAS significant at
+  every weaker electrode (give delta F1 and the corrected p-value for each), and that
+  for these weaker electrodes the gain was concentrated in recall rather than precision
+  (give one worked recall/precision example per corpus from the packet).
+- Reference Table~\ref{tab:exp1_solo_vs_montage} and Figure~\ref{fig:exp1_single_channel}.
+
+PARAGRAPH 2 of 2 — COARSE COMPARISON (single-electrode-alone region mean vs the same
+electrodes' region mean scored inside the full-montage run):
+Content it must carry:
+- State that collapsing the single-electrode selections to their region mean gives a
+  second, coarser comparison: because every single-electrode selection in both corpora
+  belongs to the frontal region, this is a single frontal-region comparison per corpus,
+  not four regions.
+- Give the region-mean $F_1$ from running each electrode alone (F1 solo) against the
+  same electrodes' region-mean $F_1$ scored inside the full-montage run (F1 montage) on
+  each corpus, the delta F1, and note this comparison was tested with a single Wilcoxon
+  signed-rank test per corpus (paired by session) with no Bonferroni factor needed,
+  since it is only one comparison per corpus; give the p-value and effect size for each
+  corpus.
+- Note, for comparison, that the SAME frontal electrodes run instead as one
+  self-contained multi-electrode subset (rather than one electrode at a time) reached a
+  higher region-mean $F_1$ than running each electrode fully alone, but still below the
+  same electrodes' full-montage $F_1$ (give the subset F1 values from the packet).
+- Reference Table~\ref{tab:region_performance} and Table~\ref{tab:exp1_subset_summary}.
 
 ===== DATA PACKET (the only numbers you may use) =====
-EXPERIMENT 1 DESIGN FACTS (channel-subset analysis)
+EXPERIMENT 1 DESIGN FACTS (single-electrode operation)
 
 Raja:
   sessions = 46
   electrodes in the full montage = 32
-  anatomical channel subsets evaluated = 14 (includes the full montage)
-  single-electrode subsets evaluated = 6
-  total channel subsets evaluated = 20
-  subsets compared against the full montage = 13
+  single-electrode selections evaluated = 6 (Fp1, Fp2, AF3, AF4, F3, F4)
 
 Cao2018:
   sessions = 58
   electrodes in the full montage = 32
-  anatomical channel subsets evaluated = 14 (includes the full montage)
-  single-electrode subsets evaluated = 4
-  total channel subsets evaluated = 18
-  subsets compared against the full montage = 13
+  single-electrode selections evaluated = 4 (Fp1, Fp2, F3, F4)
 
 Shared design:
   epoch duration = 30 seconds
   Stage-B centre = median (Proposed-Med)
-  aggregation = best-channel-per-session, then averaged over sessions
-  test = two-tailed Wilcoxon signed-rank, Bonferroni-corrected within each dataset
+  each single-electrode selection reruns Stage A, Stage B and Stage C using that one
+    electrode alone, so it is a complete self-contained one-channel detector, not the
+    full-montage detector with channels hidden
+  a single-electrode selection offers no channel to choose between, so these values
+    carry no best-channel-per-session oracle, unlike every other condition in the
+    article; they are what a deployed single-electrode system would produce
+  test = two-tailed Wilcoxon signed-rank, paired by session, Bonferroni-corrected
+    within each dataset
   effect size = matched-pairs rank-biserial correlation
 
-SCOPE NOTE (not a number, but a fact the paragraph must state):
-  Each subset re-runs Stage A, Stage B and Stage C on that subset alone, so each
-  subset is a self-contained detector rather than the full-montage detector with
-  channels hidden. The analysis therefore tests whether a subset is SUFFICIENT.
-  It is not a leave-one-region-out analysis and does not measure the necessity of
-  a region to the complete system.
 
+SINGLE-ELECTRODE OPERATION (the complete pipeline run on one electrode alone)
 
-SINGLE-ELECTRODE OPERATION (the complete pipeline run on one electrode)
-NOTE: a single-electrode subset offers no channel to choose between, so these
-values carry no best-channel-per-session oracle.
-
-Raja (full-montage reference F1 = 0.8825):
+Raja (full-montage reference F1 = 0.8825, best-channel-per-session oracle):
   Fp2 alone: precision = 0.8812, recall = 0.8384, F1 = 0.8337  = 94.5 percent of the full-montage reference
   Fp1 alone: precision = 0.8845, recall = 0.8415, F1 = 0.8373  = 94.9 percent of the full-montage reference
   AF4 alone: precision = 0.8765, recall = 0.7010, F1 = 0.7516  = 85.2 percent of the full-montage reference
@@ -111,15 +135,76 @@ Raja (full-montage reference F1 = 0.8825):
   F3 alone: precision = 0.6342, recall = 0.3360, F1 = 0.3985  = 45.2 percent of the full-montage reference
   F4 alone: precision = 0.6977, recall = 0.3245, F1 = 0.3998  = 45.3 percent of the full-montage reference
 
-Cao2018 (full-montage reference F1 = 0.8068):
+Cao2018 (full-montage reference F1 = 0.8068, best-channel-per-session oracle):
   Fp1 alone: precision = 0.7617, recall = 0.8439, F1 = 0.7765  = 96.3 percent of the full-montage reference
   Fp2 alone: precision = 0.7624, recall = 0.8068, F1 = 0.7559  = 93.7 percent of the full-montage reference
   F3 alone: precision = 0.7132, recall = 0.4323, F1 = 0.4930  = 61.1 percent of the full-montage reference
   F4 alone: precision = 0.7002, recall = 0.4267, F1 = 0.4903  = 60.8 percent of the full-montage reference
 
-COMPARISON WITH MULTI-ELECTRODE SUBSETS (same dataset, F1):
-  Raja: Fp1 alone (1 electrode) = 0.8373; Central (6 electrodes) = 0.5859; Posterior (12 electrodes) = 0.0426
-  Cao2018: Fp1 alone (1 electrode) = 0.7765; Central (6 electrodes) = 0.4668; Posterior (8 electrodes) = 0.1736
+
+FINE PER-ELECTRODE COMPARISON: SINGLE ELECTRODE ALONE vs THE SAME ELECTRODE SCORED
+INSIDE THE FULL-MONTAGE RUN (Table tab:exp1_solo_vs_montage)
+Each electrode is scored twice on the same sessions: once as the sole input to the
+complete pipeline (single electrode), and once as that electrode's row inside the
+full 32-channel Proposed-Med run, where Stage A screens epochs using every electrode
+(full montage). delta F1 = full montage minus single electrode, so a positive value
+means the rest of the montage helped. p is Bonferroni-corrected within each dataset
+(6 electrodes on Raja, 4 on Cao2018).
+
+Raja (corrected over 6 electrodes):
+  Fp2: alone F1 = 0.8337, full montage F1 = 0.8682, delta F1 = +0.0345, p = 1.000, r = -0.148
+  Fp1: alone F1 = 0.8373, full montage F1 = 0.8632, delta F1 = +0.0259, p = 1.000, r = -0.012
+  AF4: alone F1 = 0.7516, full montage F1 = 0.8032, delta F1 = +0.0516, p = 0.001, r = -0.655
+  AF3: alone F1 = 0.6759, full montage F1 = 0.7376, delta F1 = +0.0617, p = 0.002, r = -0.625
+  F3: alone F1 = 0.3985, full montage F1 = 0.4565, delta F1 = +0.0579, p = 0.008, r = -0.560
+  F4: alone F1 = 0.3998, full montage F1 = 0.4523, delta F1 = +0.0526, p = <0.001, r = -0.668
+  not significant after correction: Fp2, Fp1
+  significant after correction: AF4, AF3, F3, F4
+
+Cao2018 (corrected over 4 electrodes):
+  Fp1: alone F1 = 0.7765, full montage F1 = 0.7968, delta F1 = +0.0203, p = 1.000, r = -0.094
+  Fp2: alone F1 = 0.7559, full montage F1 = 0.7845, delta F1 = +0.0286, p = 0.991, r = -0.176
+  F3: alone F1 = 0.4930, full montage F1 = 0.5951, delta F1 = +0.1021, p = <0.001, r = -0.672
+  F4: alone F1 = 0.4903, full montage F1 = 0.5799, delta F1 = +0.0896, p = <0.001, r = -0.631
+  not significant after correction: Fp1, Fp2
+  significant after correction: F3, F4
+
+For the electrodes where the gain was significant, it was concentrated in recall
+rather than precision: e.g. Raja AF4 recall 0.7010 alone vs 0.7767 full montage
+(precision 0.8765 alone vs 0.8691 full montage); Cao2018 F3 recall 0.4323 alone vs
+0.5495 full montage (precision 0.7132 alone vs 0.7264 full montage).
+
+
+COARSE COMPARISON: SINGLE-ELECTRODE-ALONE REGION MEAN vs THE SAME ELECTRODES SCORED
+INSIDE THE FULL-MONTAGE RUN, COLLAPSED TO THE COARSE FRONTAL REGION
+(This is the single-electrode analogue of the anatomical-subset coarse-region
+comparison in tab:exp1_subset_summary/tab:region_performance: instead of a
+self-contained multi-electrode subset rerun, each electrode here is run completely
+alone, one channel at a time. Every single-electrode selection in both corpora
+belongs to the frontal region, so this collapses to one frontal-region comparison
+per corpus, not four regions. F1 solo = mean, across the single-electrode selections'
+own runs, of the session-level mean F1 across those electrodes; F1 montage = the same
+electrodes' region-mean F1 scored inside the full-montage run, i.e. the SAME number as
+the "Frontal" row of tab:region_performance / the F1-montage column of the "Frontal"
+row of tab:exp1_subset_summary. One Wilcoxon signed-rank test per corpus, paired by
+session; since this is a single comparison per corpus, no Bonferroni factor applies.)
+
+Raja: electrodes = Fp1, Fp2, AF3, AF4, F3, F4 (n=6)
+  F1 solo (single-electrode-alone region mean) = 0.6495
+  F1 montage (same electrodes, region-mean, full-montage run) = 0.6968
+  delta F1 = -0.0474 (i.e. -4.74 percentage points); p = <0.001; r = -0.798; n sessions = 46
+
+Cao2018: electrodes = Fp1, Fp2, F3, F4 (n=4)
+  F1 solo (single-electrode-alone region mean) = 0.6289
+  F1 montage (same electrodes, region-mean, full-montage run) = 0.6891
+  delta F1 = -0.0602 (i.e. -6.02 percentage points); p = <0.001; r = -0.716; n sessions = 58
+
+For comparison only (already reported elsewhere, do not restate as new): the same
+frontal electrodes, run instead as ONE self-contained 6-electrode (Raja) / 4-electrode
+(Cao2018) subset rather than one electrode at a time, reached F1 subset = 0.6692
+(Raja) / 0.6661 (Cao2018) (the "Frontal" row of tab:exp1_subset_summary) — higher than
+running each electrode fully alone, but still below the same electrodes' full-montage
+F1 of 0.6968 / 0.6891.
 
 
 ===== CITEABLE KEYS (the only keys you may cite) =====
