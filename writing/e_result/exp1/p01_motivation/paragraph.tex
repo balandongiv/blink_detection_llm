@@ -1,6 +1,5 @@
-%The EEG channel-subset analysis tested whether a reduced electrode set was sufficient for Proposed-Med, because blink artefacts project most strongly over frontal scalp sites and the amount of the full montage required for detection remained unknown~\cite{croft2000removal,chang2016detection}.
-
-In the proposed pipeline, the Stage A screened epochs using a union rule over the channels provided to the pipeline, so changing the channel set, in theory, may also change which epochs reached Stage B.
-Restricting the available channels into pipeline, therefore changed the detector itself rather than merely changing the signals presented to a fixed detector.
-Therefore, the channel-subset analysis was performed by re-running the complete pipeline with each channel subset rather than evaluating a detector trained on a different channel set.
-%But as a baseline, we first show how the detector performed when trained and tested on the full channel set, on a subset of the channels, and on a single channel.
+In the proposed pipeline, Stage A screens epochs using a union rule over the channels supplied to the pipeline, so changing the channel set can also change which epochs reach Stage B.
+Restricting the input channels therefore changes the detector itself, not merely the signals presented to a fixed detector.
+The EEG channel-subset analysis accounts for this coupling by re-running the complete pipeline separately for each channel subset.
+We first supply the complete 32-channel montage to the pipeline as a baseline, reported in Section~\ref{sec:exp1_reference}. This configuration assumes no prior knowledge of which brain region projects blinks most strongly, making it the most general starting point against which reduced channel sets are compared.
+The analysis then evaluates anatomically defined regional subsets in Section~\ref{sec:exp1_regional} to identify where the EEG information most useful for blink detection is concentrated and to quantify the performance loss caused by excluding other scalp regions. Individual channels are subsequently assessed in Section~\ref{sec:exp1_single_channel} to determine whether a single optimally positioned electrode can preserve sufficient detection performance, thereby establishing the minimum channel configuration suitable for a simpler and more practical system.
