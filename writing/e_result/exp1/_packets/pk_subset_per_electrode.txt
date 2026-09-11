@@ -1,0 +1,52 @@
+PER-ELECTRODE F1 WITHIN EACH REGION'S OWN CHANNEL-SUBSET RERUN
+(Figure fig:exp1_subset_per_electrode. Companion to Figure fig:region_performance/
+Table tab:region_performance, which score every electrode inside the full 32-channel
+run. Here each electrode is instead scored inside its OWN region's self-contained
+channel-subset rerun: e.g. Fp2's value below comes from the "frontal" subset run
+(6 electrodes on Internal, 4 on Cao2018), not the 32-channel run. Electrodes are
+listed high to low within each region. "--" denotes one Internal occipital electrode
+(EGI E83) with no 10--20 name in the channel map, the same electrode/placeholder
+already shown unlabelled in Figure fig:region_performance.)
+
+Internal, frontal subset (6 electrodes, own rerun):
+  Fp2 = 85.28%, Fp1 = 84.84%, AF4 = 77.04%, AF3 = 70.70%, F3 = 42.68%, F4 = 41.00%
+
+Internal, central subset (6 electrodes, own rerun):
+  C3 = 58.59%, FC5 = 10.45%, FC6 = 7.40%, FC1 = 2.89%, FC2 = 2.89%, C4 = 1.73%
+
+Internal, parietal subset (4 electrodes, own rerun):
+  CP1 = 1.92%, CP2 = 1.78%, CP5 = 1.64%, CP6 = 1.54%
+
+Internal, occipital subset (8 electrodes, own rerun):
+  PO3 = 3.35%, PO4 = 2.81%, -- = 2.05%, O1 = 2.04%, P3 = 1.83%, P8 = 1.82%, P7 = 1.71%, P4 = 1.65%
+
+Cao2018, frontal subset (4 electrodes, own rerun):
+  Fp1 = 78.80%, Fp2 = 77.05%, F3 = 55.97%, F4 = 54.64%
+
+Cao2018, central subset (6 electrodes, own rerun):
+  FC3 = 40.52%, FT8 = 37.44%, FC4 = 37.25%, FT7 = 36.26%, C3 = 27.67%, C4 = 26.62%
+
+Cao2018, parietal subset (2 electrodes, own rerun):
+  CP4 = 15.63%, CP3 = 14.37%
+
+Cao2018, occipital subset (6 electrodes, own rerun):
+  P3 = 10.04%, P4 = 9.86%, T5 = 7.20%, T6 = 6.39%, O2 = 2.61%, O1 = 2.40%
+
+
+FOR CALLBACK ONLY (already established in the preceding per-electrode-under-full-montage
+paragraph; these are NOT new claims, use only to say the pattern below recurs/persists):
+  Full-montage (32-channel run) per-electrode F1, same electrodes:
+    Internal: Fp2 = 86.82%, Fp1 = 86.32%, AF4 = 80.32%, AF3 = 73.76%, F3 = 45.65%, F4 = 45.23%
+    Internal: C3 = 61.06%, C4 = 1.85% (a pronounced C3-C4 asymmetry, specific to Internal)
+    Cao2018: Fp1 = 79.68%, Fp2 = 78.45%, F3 = 59.51%, F4 = 57.99%
+    Cao2018: C3 = 31.08%, C4 = 30.18% (C3 and C4 close on Cao2018, unlike Internal)
+
+FACT: within the frontal subset's own rerun, every one of the six (Internal) / four
+(Cao2018) electrodes scored lower than the same electrode scored inside the full
+montage — i.e. the ranking/ordering of electrodes by F1 was unchanged between the two
+runs, only the absolute level was lower in the subset rerun.
+
+FACT: the C3-C4 asymmetry seen under the full montage on Internal (C3 far above C4)
+persisted within the central subset's own rerun (C3 = 58.59% vs C4 = 1.73%), while on
+Cao2018 the central subset's own rerun showed C3 and C4 close together (27.67% vs
+26.62%), consistent with the full-montage pattern being specific to Internal.

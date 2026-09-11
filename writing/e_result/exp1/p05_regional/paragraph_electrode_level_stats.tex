@@ -1,0 +1,25 @@
+The descriptive differences between the subset reruns and the full-montage reference were next tested at the individual-electrode level using session-paired comparisons. For every electrode entering one of the four anatomical subsets shown in Figure~\ref{fig:exp1_subset_per_electrode}, that electrode's session-level $F_1$ inside its own subset rerun was paired against the session-level $F_1$ of the same electrode inside the full-montage run, on the sessions common to both runs. Each electrode was tested with a two-tailed Wilcoxon signed-rank test, paired by session, with $p$ Bonferroni-corrected over every electrode tested within each dataset. Figure~\ref{fig:exp1_subset_per_electrode_stats} shows, for every electrode, its session-mean $F_1$ under the subset rerun overlaid on the same electrode's session-mean $F_1$ under the full montage, together with the adjusted $p$-value.
+
+On Internal (Figure~\ref{fig:exp1_subset_per_electrode_stats}A), 11 of the 24 electrodes tested remained significantly different after correction, and every significant difference was a reduction in the subset rerun. Despite a visible drop in the descriptive means, no statistically significant difference was detected for either of the two highest-performing electrodes, Fp2 and Fp1 (adjusted $p=1.000$ for both). But, the remaining two of the four highest-performing electrodes, AF4 and AF3, did reach significance, with reductions that were statistically significant. Among the non-frontal electrodes, C3 showed a significant reduction whereas C4 did not, so the pronounced C3--C4 asymmetry in absolute $F_1$ persisted regardless of whether each electrode's own subset-versus-montage change was itself significant. Several parietal and occipital electrodes also reached significance despite very low absolute $F_1$ (CP2, CP5, CP6, PO3 and PO4), while most others did not.
+%The central electrode FC5 illustrates the correction directly, with a raw $p=0.002$ that no longer survived Bonferroni correction (adjusted $p=0.058$).
+
+On Cao2018 (Figure~\ref{fig:exp1_subset_per_electrode_stats}B), significant differences were far more widespread. 16 of the 18 electrodes tested remained significant after correction, and again every significant difference was a reduction. As on Internal, the only electrodes not reaching significance were the frontopolar pair, Fp1 and Fp2 (adjusted $p=1.000$ for both). The remaining two of the four highest-performing electrodes, F3 and F4, did reach significance. Unlike Internal, every central, parietal and occipital electrode tested on Cao2018 reached significance, including C3 and C4, whose reductions remained close together, consistent with the symmetry already noted between these two electrodes on this corpus.
+
+\input{e_result/exp1/p05_regional/possible_discussion}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\linewidth]{fig_exp1_subset_per_electrode_stats.pdf}
+    \caption{Per-electrode comparison of Proposed-Med $F_1$ when each electrode was
+    evaluated inside its own self-contained anatomical subset rerun (narrow, opaque
+    bar) against the same electrode evaluated inside the full-montage run (wide,
+        translucent bar), for (A)~Internal and
+        (B)~Cao2018. Bars show session-mean $F_1$; electrodes are
+        grouped by the anatomical subset in Figure~\ref{fig:exp1_subset_per_electrode}
+        and ordered by descending subset $F_1$ within each region.
+        Comparisons are paired by session using two-tailed Wilcoxon signed-rank tests, with $p$
+        Bonferroni-corrected separately within each dataset over every electrode tested there.
+        An asterisk above an electrode marks adjusted $p<0.05$; electrodes without an asterisk did not reach this threshold.
+        Exact adjusted $p$-values are not printed on the bars and are instead reported in the text for electrodes discussed individually.}
+    \label{fig:exp1_subset_per_electrode_stats}
+\end{figure}

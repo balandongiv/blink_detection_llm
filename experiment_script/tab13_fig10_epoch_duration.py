@@ -1,13 +1,24 @@
-"""Table 13 and Figure 10 — stability of Proposed-Med across epoch durations.
+"""Figure 10 — stability of Proposed-Med across epoch durations.
 
 Writes:
-  ``writing/e_result/exp2/tab_effect_different_epoch_size.tex``
   ``writing/figures/fig_exp3_epoch_duration.{pdf,png}``
 
+There is no accompanying LaTeX table: the manuscript reports this comparison through the
+figure alone (see the exp2/sec.tex figure caption), so the per-duration macro-$F_1$ and
+significance markers are computed here only to drive the plot.
+
 Epoch length is chosen for paradigm reasons, not for the detector, so a pipeline that is
-sensitive to it is fragile in practice. Both artifacts are built from the same
-best-channel-per-session numbers on the exp3 results CSV, so the figure cannot drift away
-from the table.
+sensitive to it is fragile in practice.
+
+Experiment 1 found Fp1 and Fp2 to be, consistently, the two best-performing electrodes on
+both corpora, together accounting for the large majority of best-channel-per-session picks
+(Table~\ref{tab:channel_selection}). Rather than re-applying a per-session, per-duration
+oracle over all 32 channels, this sweep is fixed to that Fp1/Fp2 pair — a deployable
+two-electrode operating point instead of a channel oracle — while keeping every other
+condition (the ``all_channel`` Stage-A gate, i.e. Fp1/Fp2 scored inside the full 32-channel
+montage run) identical to the previous version. Fp1 and Fp2 are reported as two separate
+series throughout (not averaged together), so each electrode's own stability across
+durations remains visible.
 
 Run inside conda env ``double_threshold_algo``.
 """
@@ -27,135 +38,134 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import paper_data as P  # noqa: E402
 import paper_style as S  # noqa: E402
 
-SCRIPT = "tab13_fig10_epoch_duration.py"
 REFERENCE_S = 30
 #: Only the full-montage gate is reported, so the 30 s row matches Experiments 1 and 2.
 GATE = "all_channel"
-#: Shared manuscript palette (see paper_style.py) keyed by dataset short name.
-DS_COLORS = {"raja": S.DATASET_COLORS["Internal"], "cao": S.DATASET_COLORS["Cao2018"]}
+#: Fp1/Fp2 raw channel labels and canonical ordering — see paper_data.FP_CHANNELS.
+FP_CHANNELS = P.FP_CHANNELS
+CHANNEL_LABELS = P.CHANNEL_LABELS
+#: Shared manuscript palette (see paper_style.py). Fp1/Fp2 sit side by side within every
+#: dataset panel, so they get the same two colours used for the Proposed-Mean/Proposed-Med
+#: pair (navy vs. lavender) rather than the two dataset colours, which are reserved for
+#: telling the two corpora apart.
+CHANNEL_COLORS = {"Fp1": S.NAVY, "Fp2": S.LAVENDER}
 
 
-def _p_cell(p: float) -> str:
-    """Render a corrected p-value; never print 0.000, which reads as exactly zero."""
-    return r"$<0.001$" if p < 0.001 else f"{p:.3f}"
+def f1_by_duration(ds: str, center_method: str) -> dict[str, dict[int, dict[str, float]]]:
+    """``channel -> duration -> {dataset/session: F1}`` for Fp1 and Fp2, kept separate.
 
-
-def f1_by_duration(ds: str, center_method: str) -> dict[int, dict[str, float]]:
-    """``duration -> {dataset/session: F1}`` at the best-channel-per-session point.
-
-    Restricted to the ``all_channel`` gate. The exp3 sweep also runs ``frontal``,
-    ``frontal_left`` and ``frontal_right``, and each gate is a self-contained detector:
-    Stage A screens epochs using only that gate's channels, so the same electrode gets a
-    different score under each. Taking the per-session argmax across gates would select
-    over both channel *and* gate, which is a strictly broader oracle than the one
-    Experiments 1 and 2 report — and it inflates the mean even though the narrower gates
-    are individually worse, because the argmax is taken after the scores are known.
-    Restricting here keeps the 30 s row identical to the same condition in those
-    experiments.
+    Restricted to the ``all_channel`` gate, so each Fp1/Fp2 row is that electrode's score
+    inside the full 32-channel montage run (Stage A screens epochs using every channel),
+    not a standalone single-electrode pipeline. Fp1 and Fp2 are returned as two independent
+    per-session series rather than being averaged together, so each electrode's own
+    epoch-duration stability can be read on its own; both replace the previous per-session,
+    per-duration argmax over all 32 channels with a fixed operating point, motivated by
+    Experiment 1 finding Fp1 and Fp2 to be consistently the two best-performing electrodes
+    on both corpora. The exp3 sweep also runs the ``frontal``, ``frontal_left`` and
+    ``frontal_right`` gates; those are excluded here for the same reason as before — each
+    gate is a self-contained detector, so mixing gates would compare Fp1/Fp2 scored under
+    different Stage-A screening.
     """
     df = P.load("exp3", ds)
     df = df[(df.center_method == center_method) & (df.selection == GATE)]
     out = {}
-    for duration in P.DURATIONS:
-        rows = P.bps(df[df.epoch_duration_s == float(duration)])
-        out[duration] = {f"{ds}/{r.session}": r.f1 for r in rows.itertuples()}
+    for raw_channel, label in FP_CHANNELS[ds]:
+        sub_ch = df[df.channel == raw_channel]
+        per_duration = {}
+        for duration in P.DURATIONS:
+            sub = sub_ch[sub_ch.epoch_duration_s == float(duration)]
+            per_duration[duration] = {f"{ds}/{r.session}": r.f1 for r in sub.itertuples()}
+        out[label] = per_duration
     return out
 
 
-def build_table(per_ds: dict) -> tuple[list[str], dict, dict]:
-    n_corrections = len(P.DURATIONS) - 1
-    lines = [
-        r"\begin{table}[ht]", r"  \centering",
-        r"  \caption{Best-channel-per-session macro-$F_1$ of Proposed-Med across epoch "
-        r"durations, computed on the full 32-channel montage: for every session the "
-        r"single electrode with the highest $F_1$ within that montage run is selected, "
-        r"then averaged over sessions. This is the same operating point and channel set "
-        r"reported in Experiments~1 and~3, so the "
-        + str(REFERENCE_S) + r"\,s row reproduces those values exactly. "
-        r"$p$-values (two-tailed Wilcoxon on session-level $F_1$, "
-        r"Bonferroni-corrected over " + str(n_corrections) + r" non-reference durations) "
-        r"compare each duration against the " + str(REFERENCE_S) + r"\,s reference. "
-        r"Macro $F_1$ is reported as a percentage. "
-        r"\textbf{Bold} marks the best duration within each block.}",
-        r"  \label{tab:epoch_duration}", r"  \begin{tabular}{llccc}", r"    \toprule",
-        r"    Dataset & Epoch duration & $n$ & Macro $F_1$ (\%) & $p$ vs.\ "
-        + str(REFERENCE_S) + r"\,s \\",
-        r"    \midrule",
-    ]
-    block_means, block_p = {}, {}
-    for label, ds_list in [(P.DSN["raja"], ["raja"]), ("Cao2018", ["cao"]),
-                           ("Pooled", ["raja", "cao"])]:
-        series = {
-            d: {k: v for ds in ds_list for k, v in per_ds[ds][d].items()}
-            for d in P.DURATIONS
-        }
-        means = {d: float(np.mean(list(series[d].values()))) for d in P.DURATIONS}
-        block_means[label] = means
-        block_p[label] = {}
-        best_duration = max(P.DURATIONS, key=lambda d: means[d])
-        reference = series[REFERENCE_S]
+def compute_stats(per_ds: dict) -> tuple[dict, dict]:
+    """``(label, channel) -> duration -> mean F1`` and the matching corrected $p$-values.
 
-        for duration in P.DURATIONS:
-            n = len(series[duration])
-            mean_cell = (r"\textbf{" + f"{means[duration] * 100:.2f}" + "}"
-                         if duration == best_duration else f"{means[duration] * 100:.2f}")
-            if duration == REFERENCE_S:
-                p_cell = "reference"
-            else:
+    ``label`` ranges over Internal and Cao2018; ``channel`` over Fp1 and Fp2. Feeds
+    ``build_figure`` only — there is no LaTeX table for this comparison.
+    """
+    n_corrections = len(P.DURATIONS) - 1
+    block_means, block_p = {}, {}
+    for label, ds_list in [(P.DSN["raja"], ["raja"]), ("Cao2018", ["cao"])]:
+        for channel in CHANNEL_LABELS:
+            key = (label, channel)
+            series = {
+                d: {k: v for ds in ds_list for k, v in per_ds[ds][channel][d].items()}
+                for d in P.DURATIONS
+            }
+            means = {d: float(np.mean(list(series[d].values()))) for d in P.DURATIONS}
+            block_means[key] = means
+            block_p[key] = {}
+            reference = series[REFERENCE_S]
+
+            for duration in P.DURATIONS:
+                if duration == REFERENCE_S:
+                    continue
                 keys = sorted(set(reference) & set(series[duration]))
                 a = np.array([series[duration][k] for k in keys])
                 b = np.array([reference[k] for k in keys])
                 try:
                     _, p = stats.wilcoxon(a, b, alternative="two-sided")
-                    p_corr = min(1.0, p * n_corrections)
-                    block_p[label][duration] = p_corr
-                    p_cell = _p_cell(p_corr)
+                    block_p[key][duration] = min(1.0, p * n_corrections)
                 except ValueError:
-                    p_cell = "n/a"
-            ds_cell = label if duration == P.DURATIONS[0] else ""
-            lines.append(
-                f"    {ds_cell} & {duration}\\,s & {n} & {mean_cell} & {p_cell} \\\\"
-            )
-        lines.append(r"    \midrule")
-    lines[-1] = r"    \bottomrule"
-    lines += [r"  \end{tabular}", r"\end{table}"]
-    return lines, block_means, block_p
+                    pass
+    return block_means, block_p
+
+
+#: Every value in this table is above 75%, so the axis is clipped to 70--100% rather than
+#: starting at 0. This is a deliberate departure from the zero-baseline convention used
+#: elsewhere in the manuscript: clipping exaggerates the *visual* size of the differences
+#: between bars, so the in-plot value labels and significance asterisks — not the bar
+#: heights — remain what the reader is meant to compare.
+Y_MIN, Y_MAX = 70, 100
 
 
 def build_figure(block_means: dict, block_p: dict) -> None:
-    """Grouped bars on a 0--100 percentage axis.
+    """Grouped Fp1/Fp2 bars on a 70--100 percentage axis, one row per dataset.
 
-    The full 0--100 range is kept, so bar length stays proportional to $F_1$ and no
-    difference is exaggerated by a truncated baseline. At that range the gaps between
-    durations are a fraction of a bar width, so every bar carries its own value label
-    and a marker on the durations that differ significantly from the reference — the
-    printed numbers, not the bar heights, are what the reader compares.
+    Internal is the top row and Cao2018 the bottom row, sharing one duration axis. Every
+    bar carries its own value label, and a durations that differ significantly from the
+    reference after Bonferroni correction additionally get a "*" drawn above the label --
+    the same significance-marker convention as Figure 6/16 (``fmt_sig`` in
+    ``fig16_exp1_single_channel_stats.py``): a plain, unrotated, bold asterisk, with the
+    exact adjusted $p$-values left to the caption/prose rather than printed on the bars.
+    Fp1 and Fp2 are drawn as separate bars rather than averaged.
     """
-    fig, ax = plt.subplots(figsize=(7.2, 4.2))
+    fig, axes = plt.subplots(2, 1, figsize=(7.2, 7.6), sharex=True)
     S.style_fig(fig)
     x = np.arange(len(P.DURATIONS))
     width = 0.38
-    for offset, (label, ds) in zip((-width / 2, width / 2),
-                                   [(P.DSN["raja"], "raja"), ("Cao2018", "cao")]):
-        values = [block_means[label][d] * 100 for d in P.DURATIONS]
-        ax.bar(x + offset, values, width, label=label, color=DS_COLORS[ds],
-               edgecolor=S.NAVY, linewidth=0.6, zorder=3)
-        for xi, d, v in zip(x, P.DURATIONS, values):
-            star = "*" if block_p[label].get(d, 1.0) < 0.05 else ""
-            ax.text(xi + offset, v + 1.5, f"{v:.2f}{star}", ha="center", va="bottom",
-                    fontsize=6.5, rotation=90, color=S.NAVY, zorder=4)
-    ax.set_xticks(x)
-    ax.set_xticklabels([f"{d} s" for d in P.DURATIONS])
-    ax.set_xlabel("epoch duration")
-    ax.set_ylabel("macro-$F_1$ (%)")
-    ax.set_ylim(0, 100)
-    ax.set_yticks(np.arange(0, 101, 20))
-    S.style_axis(ax)
-    # Bars span the whole 0--100 axis, so there is no in-plot space for a legend that
-    # would not sit on top of the data. It goes above the axes instead; the LaTeX
-    # caption carries the title, so no in-figure title is drawn.
-    legend = ax.legend(frameon=False, loc="lower center", bbox_to_anchor=(0.5, 1.005),
-                        ncol=2, fontsize=9, handlelength=1.4, columnspacing=1.6)
+    label_offset = 0.4
+    star_offset = 6.0
+    for ax, label in zip(axes, [P.DSN["raja"], "Cao2018"]):
+        for offset, channel in zip((-width / 2, width / 2), CHANNEL_LABELS):
+            means = block_means[(label, channel)]
+            values = [means[d] * 100 for d in P.DURATIONS]
+            ax.bar(x + offset, values, width, label=channel, color=CHANNEL_COLORS[channel],
+                   edgecolor=S.NAVY, linewidth=0.6, zorder=3)
+            for xi, d, v in zip(x, P.DURATIONS, values):
+                ax.text(xi + offset, v + label_offset, f"{v:.2f}", ha="center",
+                        va="bottom", fontsize=S.FONT_INPLOT, rotation=90, color=S.NAVY,
+                        zorder=4)
+                if block_p[(label, channel)].get(d, 1.0) < 0.05:
+                    ax.text(xi + offset, v + star_offset, "*", ha="center", va="bottom",
+                            fontsize=S.FONT_INPLOT, color=S.NAVY, fontweight="bold",
+                            zorder=4)
+        ax.set_ylim(Y_MIN, Y_MAX)
+        ax.set_yticks(np.arange(Y_MIN, Y_MAX + 1, 5))
+        ax.set_ylabel("macro-$F_1$ (%)")
+        ax.set_title(label)
+        S.style_axis(ax)
+    axes[-1].set_xticks(x)
+    axes[-1].set_xticklabels([f"{d} s" for d in P.DURATIONS])
+    axes[-1].set_xlabel("epoch duration")
+    # The axis is clipped rather than zero-based, so there is no in-plot space for a
+    # legend that would not sit on top of the data. It goes above the top panel instead;
+    # the LaTeX caption carries the title, so no in-figure title is drawn.
+    legend = axes[0].legend(frameon=False, loc="lower center", bbox_to_anchor=(0.5, 1.08),
+                             ncol=2, fontsize=S.FONT_CHROME, handlelength=1.4,
+                             columnspacing=1.6)
     for text in legend.get_texts():
         text.set_color(S.NAVY)
     fig.tight_layout()
@@ -171,14 +181,14 @@ def main() -> None:
     args = parser.parse_args()
 
     per_ds = {ds: f1_by_duration(ds, args.center_method) for ds in ["raja", "cao"]}
-    lines, block_means, block_p = build_table(per_ds)
-    P.write_tex(P.ER / "exp2" / "tab_effect_different_epoch_size.tex", lines, SCRIPT)
+    block_means, block_p = compute_stats(per_ds)
     build_figure(block_means, block_p)
 
-    for label, means in block_means.items():
+    for key, means in block_means.items():
+        label, channel = key
         spread = max(means.values()) - min(means.values())
-        print(f"{label}: F1 range across {len(P.DURATIONS)} durations = {spread:.4f} "
-              f"(min {min(means.values()):.4f}, max {max(means.values()):.4f})")
+        print(f"{label}/{channel}: F1 range across {len(P.DURATIONS)} durations = "
+              f"{spread:.4f} (min {min(means.values()):.4f}, max {max(means.values()):.4f})")
 
 
 if __name__ == "__main__":

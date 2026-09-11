@@ -142,14 +142,14 @@ sns.boxplot(
     data=plotdf, x="Region", y="F1", hue="Dataset", order=label_order,
     palette=S.DATASET_COLORS, width=0.6, fliersize=2, ax=ax,
 )
-ax.set_ylim(0, 1.12)
+ax.set_ylim(0, 1.20)
 ax.set_xlabel("Selection group")
 ax.set_ylabel("Session-level macro $F_1$")
 ax.set_title("Session-level macro $F_1$ by selection group (median center), Internal vs. Cao2018\n"
              "(All: best-channel-per-session; every other group: region-mean across its electrodes; "
-             "whole region shown alongside its own left/right hemisphere halves)")
+             "whole region shown alongside its own left/right hemisphere halves)", pad=12)
 S.style_axis(ax, grid_axis="both")
-legend = ax.legend(title=None, loc="lower right", framealpha=0.9)
+legend = ax.legend(title=None, loc="lower right", framealpha=0.9, fontsize=S.FONT_CHROME)
 for text in legend.get_texts():
     text.set_color(S.NAVY)
 
@@ -184,7 +184,7 @@ if len(box_info) == len(label_order) * len(hue_order):
         label = channel_label(region, ds_name)
         if label is None:
             continue
-        ax.text(cx, 1.06, label, ha="center", va="bottom", fontsize=7.5,
+        ax.text(cx, 1.06, label, ha="center", va="bottom", fontsize=S.FONT_INPLOT,
                 rotation=90, color=color[ds_name])
 else:
     print(f"WARNING: could not recover {len(label_order) * len(hue_order)} box centers "

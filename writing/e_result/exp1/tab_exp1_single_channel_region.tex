@@ -1,0 +1,27 @@
+% Source: publication_results/; script experiment_script/tab21_exp1_single_channel_region.py
+\begin{table}[htbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\caption{Single-electrode results of Proposed-Med (median centre) aggregated to the five scalp regions used throughout this section (Table~\ref{tab:exp1_subset_summary}; ``Posterior'' is parietal $\cup$ occipital). $F_1$ (Single) averages each region's electrodes' own independent single-electrode detector; $F_1$ (Subset) is the same region's self-contained multi-electrode subset rerun (Table~\ref{tab:exp1_subset_summary}); $F_1$ (Full) is the same electrodes scored inside the full-montage run. $\Delta F_1$, adjusted $p$ and $r_{\mathrm{rb}}$ test Single against Full montage only (two-tailed Wilcoxon signed-rank, paired by session, Bonferroni-corrected over the 5 regions tested within each dataset); $\Delta F_1$ is Single minus Full, so a negative value means the region performed worse as independent single-electrode detectors than inside the full montage. The last column is the Friedman omnibus test across all three conditions (Single / Subset / Full), Bonferroni-corrected over the same 5-region family; pairwise post-hoc contrasts for regions reaching significance are reported in the text.}
+\label{tab:exp1_single_channel_region}
+\begin{tabular}{lrrrrrrrr}
+\toprule
+Region & $n$ & $F_1$ Single (\%) & $F_1$ Subset (\%) & $F_1$ Full (\%) & $\Delta F_1$ (pp) & adjusted $p$ & $r_{\mathrm{rb}}$ & Friedman adj. $p$ \\
+\midrule
+\multicolumn{8}{l}{\textit{Internal (EGI 128, 46 sessions)}} \\[2pt]
+Frontal & 6 & 64.95 & 66.92 & 69.68 & $-4.74$ & $<0.001$ & $-0.80$ & $<0.001$ \\
+Central & 6 & 12.82 & 13.99 & 14.80 & $-1.98$ & $<0.001$ & $-0.77$ & $<0.001$ \\
+Parietal & 4 & 1.71 & 1.72 & 1.94 & $-0.23$ & $<0.001$ & $-0.75$ & $<0.001$ \\
+Occipital & 8 & 2.00 & 2.16 & 2.30 & $-0.30$ & $<0.001$ & $-0.92$ & $<0.001$ \\
+Posterior & 12 & 1.90 & 2.08 & 2.18 & $-0.28$ & $<0.001$ & $-0.90$ & $<0.001$ \\
+\midrule
+\multicolumn{8}{l}{\textit{Cao2018 (10--20, 58 sessions)}} \\[2pt]
+Frontal & 4 & 62.89 & 66.61 & 68.91 & $-6.02$ & $<0.001$ & $-0.72$ & $0.001$ \\
+Central & 6 & 32.48 & 34.29 & 38.13 & $-5.65$ & $<0.001$ & $-0.78$ & $<0.001$ \\
+Parietal & 2 & 15.51 & 15.00 & 18.70 & $-3.19$ & $<0.001$ & $-0.56$ & $<0.001$ \\
+Occipital & 6 & 6.60 & 6.42 & 8.24 & $-1.64$ & $<0.001$ & $-0.69$ & $<0.001$ \\
+Posterior & 8 & 8.83 & 8.62 & 10.86 & $-2.03$ & $<0.001$ & $-0.65$ & $<0.001$ \\
+\bottomrule
+\end{tabular}
+\end{table}

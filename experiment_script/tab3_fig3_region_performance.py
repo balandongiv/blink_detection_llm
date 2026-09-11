@@ -133,7 +133,7 @@ def build_figure(frames: dict) -> None:
             fmt="%.2f",
             rotation=45,
             padding=2,
-            fontsize=7.5,
+            fontsize=S.FONT_INPLOT,
             color=NAVY,
         )
 
@@ -141,13 +141,11 @@ def build_figure(frames: dict) -> None:
         ax.set_xticklabels(
             g["display"],
             rotation=90,
-            fontsize=8,
             color=NAVY,
         )
 
         ax.set_title(
             P.DSN[ds],
-            fontsize=11,
             fontweight="bold",
             color=NAVY,
             pad=8,
@@ -158,12 +156,12 @@ def build_figure(frames: dict) -> None:
 
         ax.set_ylabel(
             r"Macro-$F_1$ (%)",
-            fontsize=10,
             color=NAVY,
         )
 
+        # style_axis applies the shared chrome font size (S.FONT_CHROME) to the title,
+        # axis label and tick labels set above.
         S.style_axis(ax)
-        ax.tick_params(axis="y", labelsize=8)
 
     # Legend
     handles = [
@@ -180,7 +178,7 @@ def build_figure(frames: dict) -> None:
         handles=handles,
         loc="upper center",
         ncol=len(handles),
-        fontsize=8.5,
+        fontsize=S.FONT_CHROME,
         frameon=False,
         bbox_to_anchor=(0.5, 1.015),
     )
@@ -188,7 +186,7 @@ def build_figure(frames: dict) -> None:
     fig.suptitle(
         r"Single-channel detection $F_1$ by electrode and scalp region",
         y=1.055,
-        fontsize=12,
+        fontsize=S.FONT_CHROME,
         fontweight="bold",
         color=NAVY,
     )

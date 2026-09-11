@@ -101,8 +101,9 @@ MANIFEST: list[Artifact] = [
              ["figures/fig_exp1_single_channel_boxplot.pdf",
               "figures/fig_exp1_single_channel_boxplot.png"],
              "fig2_exp1_single_channel_boxplot.py", _exp("exp1"),
-             "one channel per '*_only' selection group",
-             "Session-level F1 for the single-channel selection groups."),
+             "one self-contained '*_only' run per full-montage electrode (32 per dataset)",
+             "Single-electrode detection F1 for every full-montage electrode, coloured by "
+             "scalp region."),
 
     # ---------------- Experiment 4: strategy comparison ----------------
     Artifact("tab:exp1_main", "table", ["e_result/exp4/tab_strategycomparison_30s_epoch.tex"],

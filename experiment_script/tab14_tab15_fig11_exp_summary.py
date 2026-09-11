@@ -30,6 +30,7 @@ from scipy import stats
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import paper_data as P  # noqa: E402
+import paper_style as S  # noqa: E402
 
 SCRIPT = "tab14_tab15_fig11_exp_summary.py"
 BOOTSTRAP_N = 10_000
@@ -90,9 +91,9 @@ def build_figure(pm: dict, blinker: dict, mne: dict) -> None:
         ax.set_xlabel("Experiment")
         ax.set_ylabel("Session-level $F_1$" if ds == "raja" else "")
         ax.set_ylim(0, 1.0)
-        ax.legend(loc="lower left", fontsize=8, framealpha=0.9)
+        ax.legend(loc="lower left", fontsize=S.FONT_CHROME, framealpha=0.9)
     fig.suptitle("Proposed-Med session-level $F_1$ across experiments "
-                 "(best channel per session)", fontsize=12)
+                 "(best channel per session)", fontsize=S.FONT_CHROME)
     fig.tight_layout()
     P.save_fig(fig, "fig_exp_boxplot")
     plt.close(fig)

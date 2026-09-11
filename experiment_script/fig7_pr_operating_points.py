@@ -49,7 +49,7 @@ for f in [0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
     # label near R=0.98
     ri = np.argmin(np.abs(Rgrid - 0.985))
     if not np.isnan(P[ri]):
-        ax.text(0.99, P[ri], f"$F_1$={f:g}", color=S.PANEL_BLUE, fontsize=7,
+        ax.text(0.99, P[ri], f"$F_1$={f:g}", color=S.PANEL_BLUE, fontsize=S.FONT_INPLOT,
                 ha="left", va="center")
 
 # per-session points
@@ -72,7 +72,7 @@ ax.set_xlabel("Event-level recall")
 ax.set_ylabel("Event-level precision")
 ax.set_title(f"Per-session operating points (best channel per session, {n_sessions} sessions)")
 S.style_axis(ax, grid_axis="both")
-legend = ax.legend(loc="lower left", fontsize=8.5, framealpha=0.92)
+legend = ax.legend(loc="lower left", fontsize=S.FONT_CHROME, framealpha=0.92)
 for text in legend.get_texts():
     text.set_color(S.NAVY)
 fig.tight_layout()

@@ -53,6 +53,78 @@ eeg_regions:
     - 23
   af4_only:
     - 3
+  # Single-electrode selection groups for the remaining 26 full-montage channels
+  # (the 6 above are the original frontal-only selections). Added so exp1's
+  # single-channel rerun covers every electrode in `all_channel` below, not
+  # only the frontal ones.
+  # E129/Cz never resolves to an actual recorded channel in the Internal (raja) FIF
+  # files (confirmed by a full exp1 rerun, 2026-09-07: this group produced 0 rows for
+  # all 46 sessions, unlike every other newly-added *_only group here). This matches
+  # `all_channel` below, which also lists 129 but likewise never resolves it — its
+  # count still reaches 32 only because a different region's own listing (occipital's
+  # 83) is pulled in by the union in build_selection_groups. Kept here (rather than
+  # deleted) as a record that Cz was considered and could not be validly single-channel
+  # tested; the true resolvable single-electrode montage for Internal is 31 channels.
+  cz_only:
+    - 129
+  p3_only:
+    - 60
+  o1_only:
+    - 70
+  po3_only:
+    - 67
+  pz_only:
+    - 62
+  oz_only:
+    - 75
+  o2_only:
+    - 84
+  po4_only:
+    - 77
+  cp2_only:
+    - 87
+  p4_only:
+    - 85
+  p8_only:
+    - 91
+  cp6_only:
+    - 98
+  c4_only:
+    - 104
+  t8_only:
+    - 109
+  fc6_only:
+    - 117
+  f8_only:
+    - 122
+  fc2_only:
+    - 112
+  fz_only:
+    - 11
+  fc1_only:
+    - 13
+  f7_only:
+    - 33
+  fc5_only:
+    - 28
+  cp1_only:
+    - 37
+  c3_only:
+    - 26
+  t7_only:
+    - 40
+  cp5_only:
+    - 47
+  p7_only:
+    - 59
+  # E83 is a real, distinct recorded channel that appears in the `occipital` region's
+  # own list below (code 83) but not in `all_channel`'s declared list (which has 84/O2
+  # instead) -- discovered when the full exp1 rerun showed `all_channel` resolving to
+  # E83 rather than E129 (see the Cz note above). No egi_pair name maps to 83, so it is
+  # reported in results/tables under its raw EGI label E83. Added after the first
+  # all-channel single-electrode rerun; requires its own rerun to populate.
+  e83_only:
+    - 83
   frontal:
     - 3
     - 9

@@ -64,29 +64,31 @@ def build_figure(frames: dict) -> None:
 
         bars = ax.bar(range(len(g)), pct, color=colors, edgecolor=NAVY,
                        linewidth=0.45, width=0.78)
-        ax.bar_label(bars, fmt="%.2f", rotation=45, padding=2, fontsize=7.5, color=NAVY)
+        ax.bar_label(bars, fmt="%.2f", rotation=45, padding=2, fontsize=S.FONT_INPLOT,
+                     color=NAVY)
 
         ax.set_xticks(range(len(g)))
-        ax.set_xticklabels(g["display"], rotation=90, fontsize=8, color=NAVY)
-        ax.set_title(P.DSN[ds], fontsize=11, fontweight="bold", color=NAVY, pad=8)
+        ax.set_xticklabels(g["display"], rotation=90, color=NAVY)
+        ax.set_title(P.DSN[ds], fontweight="bold", color=NAVY, pad=8)
 
         ax.set_ylim(0, 100)
         ax.margins(y=0.12)
-        ax.set_ylabel(r"Macro-$F_1$ (%)", fontsize=10, color=NAVY)
+        ax.set_ylabel(r"Macro-$F_1$ (%)", color=NAVY)
 
+        # style_axis applies the shared chrome font size (S.FONT_CHROME) to the title,
+        # axis label and tick labels set above.
         S.style_axis(ax)
-        ax.tick_params(axis="y", labelsize=8)
 
     handles = [
         Patch(facecolor=REGION_COLORS[r], edgecolor=NAVY, linewidth=0.4, label=r.capitalize())
         for r in SUMMARY_REGION_ORDER
     ]
-    fig.legend(handles=handles, loc="upper center", ncol=len(handles), fontsize=8.5,
+    fig.legend(handles=handles, loc="upper center", ncol=len(handles), fontsize=S.FONT_CHROME,
                frameon=False, bbox_to_anchor=(0.5, 1.015))
 
     fig.suptitle(
         r"Per-electrode detection $F_1$ within each region's own channel-subset rerun",
-        y=1.055, fontsize=12, fontweight="bold", color=NAVY,
+        y=1.055, fontsize=S.FONT_CHROME, fontweight="bold", color=NAVY,
     )
 
     fig.tight_layout(rect=[0, 0, 1, 0.97])

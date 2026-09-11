@@ -67,8 +67,8 @@ def main() -> None:
         if valid.any():
             xi = np.argmax(valid & (r > 0.55))
             if xi:
-                ax.annotate(f"F1={f1}", (r[xi], p[xi]), fontsize=7, color=S.PANEL_BLUE,
-                            ha="left", va="bottom")
+                ax.annotate(f"F1={f1}", (r[xi], p[xi]), fontsize=S.FONT_INPLOT,
+                            color=S.PANEL_BLUE, ha="left", va="bottom")
 
     summary_lines = []
     for ds in ("raja", "cao2018"):
@@ -103,10 +103,12 @@ def main() -> None:
     ds_handles = [Patch(facecolor=DS_COLORS[ds], edgecolor=S.NAVY, label=DSN[ds])
                   for ds in ("raja", "cao2018")]
     legend1 = ax.legend(handles=cond_handles, title="Condition (shape)",
-                         loc="lower left", fontsize=8, framealpha=0.9)
+                         loc="lower left", fontsize=S.FONT_CHROME,
+                         title_fontsize=S.FONT_CHROME, framealpha=0.9)
     ax.add_artist(legend1)
     legend2 = ax.legend(handles=ds_handles, title="Dataset (color)",
-                         loc="lower right", fontsize=8, framealpha=0.9)
+                         loc="lower right", fontsize=S.FONT_CHROME,
+                         title_fontsize=S.FONT_CHROME, framealpha=0.9)
     for legend in (legend1, legend2):
         legend.get_title().set_color(S.NAVY)
         for text in legend.get_texts():

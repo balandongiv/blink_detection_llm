@@ -246,28 +246,148 @@ def solo_vs_montage(ds: str) -> pd.DataFrame:
     return out
 
 
-def solo_region_mean_stats(ds: str) -> dict:
-    """The ``*_only`` single-electrode runs collapsed to one coarse-region mean.
+#: The five scalp regions used throughout the regional-subset analysis
+#: (``subset_stats_region_mean``/Table 17), reused here so the single-electrode
+#: aggregation is not a new taxonomy — "posterior" is parietal + occipital, matching
+#: ``region_channels``.
+SOLO_REGION_ORDER = ["frontal", "central", "parietal", "occipital", "posterior"]
+SOLO_REGION_LABEL = {"frontal": "Frontal", "central": "Central", "parietal": "Parietal",
+                      "occipital": "Occipital", "posterior": "Posterior"}
 
-    Single-channel analogue of ``subset_stats_region_mean``'s coarse-region rows: instead
-    of a self-contained multi-electrode subset rerun, each electrode here is run
-    completely alone (its own ``*_only`` selection), so the session-level mean across
-    those electrodes is the region-mean $F_1$ a system built from independent
-    single-electrode detectors would give. It is compared, session-paired, against the
-    same electrodes scored inside the full-montage run (``all_channel``) — the same
-    quantity Table 3/Figure 3 report for the coarse frontal region, since every ``*_only``
-    electrode in both corpora belongs to the frontal region. A single Wilcoxon signed-rank
-    test is used (one comparison per dataset, so no Bonferroni factor applies).
+
+def solo_channel_region(ds: str) -> dict[str, str]:
+    """Coarse scalp region for every ``*_only`` electrode's display label.
+
+    Unlike ``region_channels`` (used for the five-region aggregation below), this
+    covers every solo electrode actually present in the data, including the
+    midline/edge sites that fall outside the five curated regions — needed to label
+    the all-electrode table and figure. Mirrors
+    ``tab3_fig3_region_performance.coarse_regions``: fine ``_left``/``_right`` regions
+    are folded to their coarse name and the frontopolar pair is folded into "frontal";
+    anything else falls back to "midline_or_outside" or "unassigned", exactly as
+    ``paper_data.per_channel`` labels it.
     """
+    rmap = P.region_map(ds)
+    frontopolar = {"E22", "E9"} if ds == "raja" else {"FP1", "FP2"}
     d = load_median(ds)
     solos = sorted(s for s in set(d["selection"]) if s.endswith("_only"))
-    chans = set(d.loc[d["selection"].isin(solos), "display"].unique())
-    solo_series = (d[d["selection"].isin(solos)]
-                   .groupby("session")["f1"].mean().sort_index())
-    montage_series = region_session_series(d, REFERENCE, chans)
-    cmp = _compare(montage_series, solo_series)
-    return {"n_ch": len(chans), "channels": sorted(chans),
-            "f1_solo": solo_series.mean(), "f1_montage": montage_series.mean(), **cmp}
+    out: dict[str, str] = {}
+    for sel in solos:
+        g = d[d["selection"] == sel]
+        ch_raw = str(g["channel"].iloc[0]).upper()
+        disp = g["display"].iloc[0]
+        region = rmap.get(ch_raw, "unassigned")
+        coarse = region.rsplit("_", 1)[0] if region.endswith(("_left", "_right")) else region
+        if ch_raw in frontopolar:
+            coarse = "frontal"
+        out[disp] = coarse
+    return out
+
+
+def solo_region_session_series(ds: str, region: str) -> pd.Series:
+    """Per-session mean $F_1$ across a region's independent single-electrode runs.
+
+    Each electrode in *region* (from ``region_channels``, so "posterior" is parietal +
+    occipital) is scored by its own self-contained ``*_only`` detector; averaging those
+    per-session $F_1$ values gives the session-level mean a bank of independent
+    single-electrode detectors covering the region would produce — the single-electrode
+    analogue of ``region_session_series`` for a self-contained multi-electrode subset.
+    """
+    d = load_median(ds)
+    chans = set(region_channels(ds, region))
+    g = d[d["selection"].str.endswith("_only") & d["display"].isin(chans)]
+    return g.groupby("session")["f1"].mean().sort_index()
+
+
+def solo_stats_region_mean(ds: str) -> pd.DataFrame:
+    """Every ``*_only`` single-electrode result aggregated to the five established regions.
+
+    Single-electrode analogue of ``subset_stats_region_mean``: instead of a
+    self-contained multi-electrode subset rerun, each electrode here is run completely
+    alone. Each region's solo-mean session series is compared, session-paired, against
+    the SAME electrodes scored inside the full-montage run — the identical comparison
+    target and aggregation ``subset_stats_region_mean`` uses, so the two are directly
+    comparable region by region. Bonferroni-corrected over the 5 regions tested within
+    each dataset (a family separate from the 32-electrode family in ``solo_vs_montage``).
+    """
+    d = load_median(ds)
+    rows = []
+    for region in SOLO_REGION_ORDER:
+        chans = set(region_channels(ds, region))
+        solo_series = solo_region_session_series(ds, region)
+        montage_series = region_session_series(d, REFERENCE, chans)
+        row = {"region": region, "label": SOLO_REGION_LABEL[region], "n_ch": len(chans),
+               "f1": solo_series.mean(), "f1_montage": montage_series.mean()}
+        row.update(_compare(montage_series, solo_series))
+        rows.append(row)
+    out = pd.DataFrame(rows)
+    n_comp = len(out)
+    out["p_bonf"] = (out["p_raw"] * n_comp).clip(upper=1.0)
+    out.attrs["n_comparisons"] = n_comp
+    return out
+
+
+def three_level_region_stats(ds: str) -> dict[str, dict]:
+    """Per region: individual electrode vs. regional subset vs. full montage, matched by session.
+
+    For each of the 5 established regions, builds 3 session-matched series — the
+    region's solo-electrode mean (``solo_region_session_series``), its own self-contained
+    subset rerun mean (``region_session_series`` on ``selection == region``), and the
+    full-montage region mean — restricted to sessions common to all three. Runs a
+    Friedman omnibus test (Bonferroni-corrected over the 5 regions tested within the
+    dataset) and the 3 pairwise two-tailed Wilcoxon signed-rank contrasts (single-vs-subset,
+    single-vs-full, subset-vs-full), Bonferroni-corrected x3 within that region — a family
+    separate from both the 5-region family above and the 32-electrode family in
+    ``solo_vs_montage``. Pairwise contrasts are computed for every region so the caller has
+    them on hand, but per standard omnibus/post-hoc practice they should only be reported
+    in the manuscript for a region whose ``friedman_p_bonf`` is itself significant.
+    """
+    d = load_median(ds)
+    out: dict[str, dict] = {}
+    raw_omnibus_p: dict[str, float] = {}
+    for region in SOLO_REGION_ORDER:
+        chans = set(region_channels(ds, region))
+        single = solo_region_session_series(ds, region)
+        subset = region_session_series(d, region, chans)
+        full = region_session_series(d, REFERENCE, chans)
+        common = single.index.intersection(subset.index).intersection(full.index)
+        s, u, f = single.loc[common].to_numpy(), subset.loc[common].to_numpy(), full.loc[common].to_numpy()
+        entry: dict = {"n": int(len(common)),
+                        "means": {"single": float(s.mean()) if len(s) else np.nan,
+                                  "subset": float(u.mean()) if len(u) else np.nan,
+                                  "full": float(f.mean()) if len(f) else np.nan}}
+        if len(common) < 3 or (np.allclose(s, u) and np.allclose(u, f)):
+            entry["friedman_p"] = np.nan
+            entry["pairwise"] = {}
+            raw_omnibus_p[region] = np.nan
+        else:
+            _, p = stats.friedmanchisquare(s, u, f)
+            entry["friedman_p"] = float(p)
+            raw_omnibus_p[region] = float(p)
+            # Sign convention: delta = first-named condition minus second-named condition
+            # (e.g. single_vs_full = single - full), matching the delta = single - full
+            # convention used everywhere else in this section (solo_vs_montage,
+            # solo_stats_region_mean) and the subset - full convention already used by
+            # Table 17 (subset_stats_region_mean) for subset_vs_full.
+            pairwise = {}
+            for name, a, b in (("single_vs_subset", s, u), ("single_vs_full", s, f),
+                                ("subset_vs_full", u, f)):
+                if np.allclose(a, b):
+                    pairwise[name] = {"delta": 0.0, "p_raw": 1.0, "r_rb": 0.0}
+                else:
+                    pw = float(stats.wilcoxon(a, b, alternative="two-sided").pvalue)
+                    pairwise[name] = {"delta": float(a.mean() - b.mean()), "p_raw": pw,
+                                       "r_rb": rank_biserial(b, a)}
+            for name in pairwise:
+                pairwise[name]["p_bonf"] = min(1.0, pairwise[name]["p_raw"] * 3)
+            entry["pairwise"] = pairwise
+        out[region] = entry
+
+    n_regions = sum(1 for p in raw_omnibus_p.values() if p == p)
+    for region, entry in out.items():
+        p = entry["friedman_p"]
+        entry["friedman_p_bonf"] = min(1.0, p * n_regions) if (p == p and n_regions) else np.nan
+    return out
 
 
 def fixed_vs_oracle(ds: str, electrodes: tuple[str, ...] = ("Fp1", "Fp2")) -> pd.DataFrame:

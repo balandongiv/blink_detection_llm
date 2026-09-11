@@ -7,7 +7,7 @@ generated from `runs/`, `runs0/`, or `runs_second_iteration/`.
 
 | Directory | Contents | Sessions |
 |---|---|---|
-| `publication_results/exp1_channel_{cao,raja}` | 18–20 channel groups × {median, mean} × 32 channels | 58 + 46 |
+| `publication_results/exp1_channel_{cao,raja}` | 46 channel groups (14 anatomical + 32 single-electrode `*_only`) × {median, mean} × 32 channels | 58 + 46 |
 | `publication_results/exp2_{cao,raja}` | 4 conditions × sessions, `all_channel` gate, `best_channel` recorded | 58 + 46 |
 | `publication_results/exp3_{cao,raja}` | 7 epoch durations (10/20/30/40/50/60/120 s) × 4 selections × {median, mean} | 58 + 46 |
 
@@ -43,24 +43,30 @@ CSVs, not manuscript artifacts.
 | Table 1 | EGI-128 → 10–20 channel map | `e_result/exp1/tab_egi_channel_map.tex` | `tab1_egi_channel_map.py` |
 | Table 3 + Figure 3 | Region-level performance | `e_result/exp1/tab_region_performance.tex`, `figures/fig_region_performance.*` | `tab3_fig3_region_performance.py` |
 | Table 17 | Channel subsets vs the full montage, with Wilcoxon/Bonferroni/rank-biserial | `e_result/exp1/tab_exp1_subset_summary.tex` | `tab17_exp1_subset_summary.py` |
-| Table 18 | Single electrode vs the same electrode inside the full montage | `e_result/exp1/tab_exp1_solo_vs_montage.tex` | `tab18_exp1_solo_vs_montage.py` |
+| Figure 15 | Per-electrode subset-rerun vs full-montage $F_1$, overlaid bars with Bonferroni-adjusted $p$ per electrode (replaces the former Table 20 longtable) | `figures/fig_exp1_subset_per_electrode_stats.*` | `fig15_exp1_subset_per_electrode_stats.py` |
+| Figure 16 | Every electrode in the four curated regions (24 Internal / 18 Cao2018 -- same set as Figure 3) as its own self-contained detector vs the same electrode inside the full montage, overlaid bars with Bonferroni-adjusted $p$ per electrode (replaces the former Table 18 longtable) | `figures/fig_exp1_single_channel_stats.*` | `fig16_exp1_single_channel_stats.py` |
+| Table 21 | Single-electrode results aggregated to the five established regions, incl. the single/regional-subset/full-montage three-level (Friedman) comparison | `e_result/exp1/tab_exp1_single_channel_region.tex` | `tab21_exp1_single_channel_region.py` |
 | Figure 1 | Region / hemisphere box plot | `figures/fig_exp1_region_boxplot.*` | `fig1_exp1_region_boxplot.py` |
-| Figure 2 | Single-channel box plot | `figures/fig_exp1_single_channel_boxplot.*` | `fig2_exp1_single_channel_boxplot.py` |
+| Figure 2 | Every electrode in the four curated regions' own self-contained single-channel $F_1$ (24 Internal / 18 Cao2018 -- same set as Figure 3), coloured by scalp region | `figures/fig_exp1_single_channel_boxplot.*` | `fig2_exp1_single_channel_boxplot.py` |
 | Figure 12 | $F_1$ against number of electrodes given to the pipeline | `figures/fig_exp1_coverage_curve.*` | `fig12_exp1_coverage_curve.py` |
+| Figure 13 | Per-electrode performance within each region's own channel-subset rerun (companion to Figure 3, subset side) | `figures/fig_exp1_subset_per_electrode.*` | `fig13_exp1_subset_per_electrode.py` |
+| Figure 14 | Configuration effect $\Delta F_1$ (single $-$ full montage) per electrode, companion to Figure 2/Figure 16 | `figures/fig_exp1_single_channel_delta.*` | `fig14_exp1_single_channel_delta.py` |
 
-Shared analysis layer for the three subset artifacts: `exp1_subset_data.py` (subset vs
-reference stats, solo-vs-montage contrast, oracle cost, Stage-B thresholds).
+Shared analysis layer for the subset and single-electrode artifacts: `exp1_subset_data.py`
+(subset vs reference stats, solo-vs-montage contrast over every full-montage electrode,
+solo-electrode region aggregation, the single/regional-subset/full-montage three-level
+comparison, oracle cost, Stage-B thresholds).
 
 **Terminology.** Experiment 1 restricts the channel set and re-runs the complete
 Stage A→B→C pipeline on each subset, so it measures whether a subset is *sufficient*.
 It is **not** a leave-one-region-out ablation and does not establish that any region is
-*necessary* to the full system. The one exception is Table 18, which removes the other
+*necessary* to the full system. The one exception is Figure 16, which removes the other
 31 electrodes from detection on a named electrode.
 
 **Per-electrode vs single-electrode.** Table 2, Table 3 and Figure 3 report electrodes
 scored *inside* the 32-channel run, where Stage A screens epochs using every electrode.
 The genuine single-electrode condition is the `*_only` selection groups, reported in
-Table 18 and Figure 2. Do not describe the former as "single-channel" results.
+Figure 16 and Figure 2. Do not describe the former as "single-channel" results.
 
 ### Prose pipeline
 
@@ -74,7 +80,7 @@ Table 18 and Figure 2. Do not describe the former as "single-channel" results.
 | # | Artifact | LaTeX file | Generator script |
 |---|---|---|---|
 | Table 4 + Table 5 | 4-condition comparison at 30 s; baseline inversions | `e_result/exp4/tab_strategycomparison_30s_epoch.tex`, `e_result/exp4/tab_exp2_inversions.tex` | `tab4_tab5_strategy_comparison_30s.py` |
-| Table 19 | Stage-B threshold estimator comparison (Proposed-Med vs Proposed-Mean only), manuscript Experiment 3 | `e_result/exp3/tab_threshold_estimator_stageb.tex` | `tab19_exp3_threshold_estimator.py` |
+| Table 19 | Stage-B threshold estimator comparison (Proposed-Med vs Proposed-Mean only), Fp1/Fp2 operating point, manuscript Experiment 3 | `e_result/exp3/tab_threshold_estimator_stageb.tex` | `tab19_exp3_threshold_estimator.py` |
 | Figure 4 + Figure 5 | Condition P/R/F1; F1 by dataset | `figures/fig_condition_prf.pdf`, `figures/fig_f1_by_dataset.pdf` | `fig4_fig5_condition_prf.py` |
 | Table 6 | Cross-dataset generalisation gap | `e_result/exp4/tab_cross_dataset_gap.tex` | `tab6_cross_dataset_gap.py` |
 | Figure 6 | Per-session precision–recall scatter | `figures/fig_exp2_pr_scatter.*` | `fig6_exp2_pr_scatter.py` |
@@ -90,7 +96,7 @@ Table 18 and Figure 2. Do not describe the former as "single-channel" results.
 
 | # | Artifact | LaTeX file | Generator script |
 |---|---|---|---|
-| Table 13 + Figure 10 | Macro-F1 across 7 epoch durations | `e_result/exp2/tab_effect_different_epoch_size.tex`, `figures/fig_exp3_epoch_duration.*` | `tab13_fig10_epoch_duration.py` |
+| Figure 10 | Macro-F1 across 7 epoch durations, Fp1/Fp2 operating point (figure only — no table) | `figures/fig_exp3_epoch_duration.*` | `tab13_fig10_epoch_duration.py` |
 
 ## Cross-experiment summary
 
@@ -127,6 +133,28 @@ Superseded generators also deleted, their artifacts now produced by the named sc
 `paper_error_structure_session.py`, `paper_channel_selection_frequency.py`,
 `paper_result_figures.py`, `regen_simple_figs.py`, `plot_region_performance.py`,
 `exp3_b_plot_epoch_duration.py`.
+
+Former Table 20 (`tab20_exp1_subset_per_electrode_stats.py`, `e_result/exp1/tab_exp1_subset_per_electrode_stats.tex`)
+was a 42-row longtable of this same per-electrode subset-vs-montage comparison; it has been
+replaced by Figure 15 above, an overlaid bar chart of the identical statistics
+(`electrode_pairs`/`ordered` unchanged). The table script and `.tex` file were deleted.
+
+Former Table 18 (`tab18_exp1_solo_vs_montage.py`, `e_result/exp1/tab_exp1_single_channel_stats.tex`)
+was a 64-row longtable (32 electrodes x 2 datasets) of the single-electrode-vs-montage
+comparison; it has been replaced by Figure 16 above, an overlaid bar chart in the same style
+as Figure 15, built directly on `exp1_subset_data.solo_vs_montage`/`solo_channel_region`
+(unchanged). The table script and `.tex` file were deleted; Table 21 (region-aggregated,
+not per-electrode) is unaffected and still stands.
+
+Figure 16 (and its sibling Figure 2/Figure 7, `fig2_exp1_single_channel_boxplot.py`) were
+further restricted to the same four curated regions Figure 3/Table 3 use, dropping the
+"Midline/edge"/"Unassigned" electrodes the former Table 18 reported "for completeness."
+This shrinks the Bonferroni family from 32 to 24 (Internal) / 18 (Cao2018) electrodes per
+dataset, so adjusted $p$-values and significance counts are recomputed over the smaller
+family, not merely filtered from the 32-electrode numbers. Figure 9
+(`fig14_exp1_single_channel_delta.py`) imports its electrode set directly from
+`fig2_exp1_single_channel_boxplot.solo_frame`/`REGION_ORDER`, so it inherited the same
+restriction automatically, with no code changes of its own.
 
 ---
 

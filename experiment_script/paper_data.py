@@ -49,6 +49,13 @@ DSN = {"raja": "Internal", "cao": "Cao2018"}
 ALL_CHANNEL = "all_channel"
 #: Epoch durations present in the exp3 sweep.
 DURATIONS = [10, 20, 30, 40, 50, 60, 120]
+#: Fp1/Fp2 raw channel labels per dataset (raja uses EGI indices; see brain_region_raja.yaml
+#: egi_pair). Experiment 1 identified these as the two consistently best-performing
+#: electrodes on both corpora (Table~\ref{tab:channel_selection}), so every later analysis
+#: that fixes a channel pair rather than re-applying a best-channel-per-session oracle
+#: uses this same mapping. Kept in this order so "Fp1" is always listed before "Fp2".
+FP_CHANNELS = {"raja": (("E22", "Fp1"), ("E9", "Fp2")), "cao": (("FP1", "Fp1"), ("FP2", "Fp2"))}
+CHANNEL_LABELS = ["Fp1", "Fp2"]
 #: Groups in ``brain_region_*.yaml`` that are selection gates, not anatomical regions:
 #: coarse unions of the ``_left``/``_right`` pairs, single-channel probes, and the
 #: full-montage umbrella. Including them would make the channel->region map ambiguous.

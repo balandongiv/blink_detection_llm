@@ -76,6 +76,66 @@ eeg_regions:
     - F3
   f4_only:
     - F4
+  # Single-electrode selection groups for the remaining 28 full-montage channels
+  # (the 4 above are the original frontal-only selections). Added so exp1's
+  # single-channel rerun covers every electrode in `all_channel` below, not
+  # only the frontal ones.
+  f7_only:
+    - F7
+  fz_only:
+    - Fz
+  f8_only:
+    - F8
+  ft7_only:
+    - FT7
+  fc3_only:
+    - FC3
+  fcz_only:
+    - FCz
+  fc4_only:
+    - FC4
+  ft8_only:
+    - FT8
+  t3_only:
+    - T3
+  c3_only:
+    - C3
+  cz_only:
+    - Cz
+  c4_only:
+    - C4
+  t4_only:
+    - T4
+  tp7_only:
+    - TP7
+  cp3_only:
+    - CP3
+  cpz_only:
+    - CPz
+  cp4_only:
+    - CP4
+  tp8_only:
+    - TP8
+  a1_only:
+    - A1
+  t5_only:
+    - T5
+  p3_only:
+    - P3
+  pz_only:
+    - Pz
+  p4_only:
+    - P4
+  t6_only:
+    - T6
+  a2_only:
+    - A2
+  o1_only:
+    - O1
+  oz_only:
+    - Oz
+  o2_only:
+    - O2
   all_channel:
     - Fp1
     - Fp2

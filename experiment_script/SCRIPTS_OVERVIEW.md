@@ -95,7 +95,7 @@ Run after the primaries. Each reads `publication_results/` and writes the manusc
 
 | Script | Produces |
 |--------|----------|
-| `tab13_fig10_epoch_duration.py` | Table 13 + Figure 10 — macro-F1 across the seven epoch durations |
+| `tab13_fig10_epoch_duration.py` | Figure 10 (no table) — macro-F1 across the seven epoch durations, Fp1/Fp2 reported separately |
 | `tab14_tab15_fig11_exp_summary.py` | Tables 14/15 + Figure 11 — cross-experiment summary, paired stats, box plot |
 | `tab16_literature_comparison.py` | Table 16 — literature comparison (not experiment-backed) |
 

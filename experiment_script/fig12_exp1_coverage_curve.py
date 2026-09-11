@@ -87,7 +87,7 @@ def draw_panel(ax, ds: str, title: str) -> None:
         if label in offsets:
             xytext, ha = offsets[label]
             ax.annotate(label, (n_ch, f1), textcoords="offset points", xytext=xytext,
-                        ha=ha, fontsize=8.5, color=PS.NAVY)
+                        ha=ha, fontsize=PS.FONT_INPLOT, color=PS.NAVY)
 
     ax.set_xscale("log", base=2)
     ax.set_xticks([1, 2, 3, 4, 6, 8, 12, 32])
@@ -95,7 +95,7 @@ def draw_panel(ax, ds: str, title: str) -> None:
     ax.set_xlim(0.8, 48)
     ax.set_ylim(0, 1.0)
     ax.set_xlabel("Electrodes given to the pipeline")
-    ax.set_title(f"{title}  (reference $F_1$ = {reference:.4f})", fontsize=10.5)
+    ax.set_title(f"{title}  (reference $F_1$ = {reference:.4f})", fontsize=PS.FONT_CHROME)
     PS.style_axis(ax, grid_axis="both")
 
 
@@ -104,7 +104,7 @@ def main() -> None:
     PS.style_fig(fig)
     draw_panel(axes[0], "raja", "Internal")
     draw_panel(axes[1], "cao", "Cao2018")
-    axes[0].set_ylabel("Session-level macro $F_1$")
+    axes[0].set_ylabel("Session-level macro $F_1$", fontsize=PS.FONT_CHROME)
 
     # One legend below both panels: in-axes legends collided with the posterior points,
     # which sit in the only corner an in-axes legend can occupy.
@@ -119,13 +119,13 @@ def main() -> None:
         Line2D([], [], marker="D", ls="", color=PS.PANEL_BLUE, label="Single electrode",
                markersize=6),
     ]
-    legend = fig.legend(handles=handles, loc="lower center", ncol=5, fontsize=8.5,
+    legend = fig.legend(handles=handles, loc="lower center", ncol=5, fontsize=PS.FONT_CHROME,
                          frameon=False, bbox_to_anchor=(0.5, -0.02))
     for text in legend.get_texts():
         text.set_color(PS.NAVY)
 
     fig.suptitle("Detection $F_1$ against the number of electrodes available to the "
-                 "pipeline (Proposed-Med, median centre)", fontsize=11.5, color=PS.NAVY)
+                 "pipeline (Proposed-Med, median centre)", fontsize=PS.FONT_CHROME, color=PS.NAVY)
     fig.tight_layout(rect=(0, 0.09, 1, 0.95))
     P.save_fig(fig, STEM)
     plt.close(fig)

@@ -24,6 +24,7 @@ import matplotlib.pyplot as plt
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import paper_data as PD  # noqa: E402
+import paper_style as S  # noqa: E402
 
 SCRIPT = "tab7_fig8_count_agreement.py"
 
@@ -79,7 +80,7 @@ axA.set_xlim(0, hi * 1.02); axA.set_ylim(0, hi * 1.02)
 axA.set_xlabel("True blink count (TP + FN)")
 axA.set_ylabel("Predicted blink count (TP + FP)")
 axA.set_title("(a) Predicted vs. true event count")
-axA.legend(loc="upper left", fontsize=8.5, framealpha=0.92)
+axA.legend(loc="upper left", fontsize=S.FONT_CHROME, framealpha=0.92)
 axA.grid(True, color="0.92", lw=0.6)
 
 # Bland-Altman for Proposed-Med
@@ -98,7 +99,7 @@ axB.axhline(0, color="0.7", ls=":", lw=1.0)
 axB.set_xlabel("Mean of predicted and true count")
 axB.set_ylabel("Predicted $-$ true count")
 axB.set_title("(b) Bland-Altman, Proposed-Med")
-axB.legend(loc="upper right", fontsize=8.5, framealpha=0.92)
+axB.legend(loc="upper right", fontsize=S.FONT_CHROME, framealpha=0.92)
 axB.grid(True, color="0.92", lw=0.6)
 
 fig.tight_layout()

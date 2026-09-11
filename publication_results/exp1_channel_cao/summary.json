@@ -8,6 +8,6 @@
   ],
   "metric_primary": "f1 per (selection, channel, centre)",
   "n_sessions": 58,
-  "n_rows": 9280,
+  "n_rows": 12528,
   "n_errors": 0
 }

@@ -4,15 +4,15 @@
 \input{e_result/exp2/par2}
 
 \input{e_result/exp2/par3}
-\input{e_result/exp2/tab_effect_different_epoch_size}
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=0.8\linewidth]{fig_exp3_epoch_duration.pdf}
+    \includegraphics[width=0.75\linewidth]{fig_exp3_epoch_duration.pdf}
     \caption{Macro-averaged $F_1$ of Proposed-Med across epoch durations, on the full
-    32-channel montage at the best-channel-per-session operating point. Bars are drawn
-    on the full 0--100\% axis, so each bar is labelled with its value; an asterisk marks
-    the durations that differ significantly from the 30\,s reference after Bonferroni
-    correction (Table~\ref{tab:epoch_duration}).}
+    32-channel montage, for Fp1 and Fp2 (Experiment~1's two consistently best-performing
+    electrodes) reported separately: Internal (top row) and Cao2018 (bottom row). Every
+    value exceeds 75\%, so the $y$-axis is clipped to 70--100\% rather than starting at
+    zero; each bar is labelled with its own value, and an asterisk marks the durations
+    that differ significantly from the 30\,s reference after Bonferroni correction.}
     \label{fig:f1_by_epoch}
 \end{figure}

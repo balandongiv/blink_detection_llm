@@ -11,9 +11,26 @@
 
 \input{e_result/exp1/p03_reference/paragraph}
 
-\input{e_result/exp1/p04_per_electrode/paragraph}
+% ---------------------------------------------------------------------------
+\paragraph{Per-Electrode Detection}
+\label{sec:exp1_per_electrode}
 
-\input{e_result/exp1/tab_region_performance}
+\input{e_result/exp1/p04_per_electrode/paragraph_per_electrode}
+
+% ---------------------------------------------------------------------------
+% NOTE (commented out on purpose, do not delete): Region-Collapsed Results for
+% the Full-Montage Reference subsection is disabled. The region-collapsed
+% view is retained for the Regional Channel Subsets and Single-Channel
+% Operation subsections below (see sec:exp1_regional_region_collapsed and
+% sec:exp1_single_channel_region_collapsed), so this full-montage version was
+% deemed redundant. Re-enable by uncommenting if the full-montage
+% region-collapsed view is needed again.
+%\paragraph{Region-Collapsed Results}
+%\label{sec:exp1_region_collapsed}
+%
+%\input{e_result/exp1/p04_per_electrode/paragraph_region_collapsed}
+%
+%\input{e_result/exp1/tab_region_performance}
 
 
 
@@ -21,55 +38,147 @@
 \subsubsection{Regional Channel Subsets}
 \label{sec:exp1_regional}
 
-\input{e_result/exp1/p05_regional/paragraph}
+% ---------------------------------------------------------------------------
+\paragraph{Per-Electrode Detection}
+\label{sec:exp1_regional_per_electrode}
 
-\input{e_result/exp1/tab_exp1_subset_per_electrode_stats}
-
-\input{e_result/exp1/p06_failure_mode/paragraph}
-
-
-\input{e_result/exp1/tab_exp1_subset_summary}
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.9\linewidth]{fig_exp1_region_boxplot.pdf}
-    \caption{Session-level macro $F_1$ by channel-selection group (median centre),
-    Internal versus Cao2018.}
-    \label{fig:exp1_region_boxplot}
-\end{figure}
-
-
+\input{e_result/exp1/p05_regional/paragraph_per_electrode}
 
 % ---------------------------------------------------------------------------
-\subsubsection{Single-Channel Operation}
-\label{sec:exp1_single_channel}
+\paragraph{Electrode-Level Significance Testing}
+\label{sec:exp1_regional_electrode_level_stats}
+
+\input{e_result/exp1/p05_regional/paragraph_electrode_level_stats}
+
+% ---------------------------------------------------------------------------
+% NOTE (commented out on purpose, do not delete): Region-Collapsed Results for
+% the Regional Channel Subsets subsection is disabled, matching the
+% full-montage and single-channel versions disabled above (see
+% sec:exp1_region_collapsed and sec:exp1_single_channel_region_collapsed).
+% All three Region-Collapsed Results paragraphs in this section are now
+% commented out. Re-enable by uncommenting if needed again.
+%\paragraph{Region-Collapsed Results}
+%\label{sec:exp1_regional_region_collapsed}
+%
+%\input{e_result/exp1/p05_regional/paragraph_region_collapsed}
+
+
+
+% NOTE (commented out on purpose): p06_failure_mode/paragraph.tex was deleted
+% from the repo, so this \input is disabled to avoid a broken build.
+%\input{e_result/exp1/p06_failure_mode/paragraph}
+
+
+% NOTE (commented out on purpose, do not delete): Table 1 (channel-subset
+% performance / region-mean comparison against the full montage) is disabled
+% per instruction. Re-enable by uncommenting if the region-mean comparison is
+% needed again.
+%\input{e_result/exp1/tab_exp1_subset_summary}
+
+%\begin{figure}[ht]
+%    \centering
+%    \includegraphics[width=0.9\linewidth]{fig_exp1_region_boxplot.pdf}
+%    \caption{Session-level macro $F_1$ by channel-selection group (median centre),
+%    Internal versus Cao2018.}
+%    \label{fig:exp1_region_boxplot}
+%\end{figure}
+
+
 
 \begin{figure}[ht]
     \centering
     \includegraphics[width=0.9\linewidth]{fig_exp1_single_channel_boxplot.pdf}
-    \caption{Session-level macro $F_1$ for the single-electrode selection groups, in
-    which the complete pipeline was run on one electrode alone.}
+    \caption{Detection $F_1$ of every electrode in the four curated anatomical regions
+    operating as its own self-contained detector, in which the complete Stage~A--Stage~C pipeline was rerun on that one
+    electrode alone, coloured by scalp region.}
     \label{fig:exp1_single_channel}
 \end{figure}
 
-\input{e_result/exp1/p07_single_channel/paragraph}
+\subsubsection{Single-Channel Operation}
+\label{sec:exp1_single_channel}
 
-\input{e_result/exp1/tab_exp1_solo_vs_montage}
+\input{e_result/exp1/p07_single_channel/paragraph_setup}
+
+% ---------------------------------------------------------------------------
+\paragraph{Per-Electrode Detection}
+\label{sec:exp1_single_channel_per_electrode}
+
+\input{e_result/exp1/p07_single_channel/paragraph_per_electrode}
+
+% ---------------------------------------------------------------------------
+
+
+
+\paragraph{Electrode-Level Significance Testing}
+\label{sec:exp1_single_channel_electrode_level_stats}
+
+\input{e_result/exp1/p07_single_channel/paragraph_electrode_level_stats}
 
 \begin{figure}[ht]
     \centering
-    \includegraphics[width=\linewidth]{fig_exp1_coverage_curve.pdf}
-    \caption{Detection $F_1$ against the number of electrodes given to the pipeline.
-    Each point is one channel subset; the dashed line marks the full-montage reference.}
-    \label{fig:exp1_coverage_curve}
+    \includegraphics[width=\linewidth]{fig_exp1_single_channel_stats.pdf}
+    \caption{Per-electrode comparison of Proposed-Med $F_1$ when each electrode in the
+    four curated anatomical regions operated as a complete self-contained detector (narrow, opaque bar) against the same electrode scored inside the full 32-channel montage (wide, translucent
+    bar), for (A)~Internal and (B)~Cao2018. Bars show session-mean $F_1$; electrodes are grouped by scalp region
+        (frontopolar folded into Frontal) and ordered by descending single-electrode
+        $F_1$ within each region, matching Figure~\ref{fig:exp1_single_channel}.
+        Comparisons are paired by session using two-tailed Wilcoxon signed-rank tests,
+        with $p$ Bonferroni-corrected separately within each dataset over the 24
+        (Internal) / 18 (Cao2018) electrodes tested there. An asterisk above an
+        electrode marks adjusted $p<0.05$; electrodes without an asterisk did not reach
+        this threshold. Exact adjusted $p$-values are not printed on the bars and are
+        instead reported in the text for electrodes discussed individually.}
+    \label{fig:exp1_single_channel_stats}
 \end{figure}
+% ---------------------------------------------------------------------------
+% NOTE (commented out on purpose, do not delete): Region-Collapsed Results for
+% the Single-Channel Operation subsection is disabled, matching the
+% full-montage version disabled above (see sec:exp1_region_collapsed). The
+% region-collapsed view is retained for the Regional Channel Subsets
+% subsection (see sec:exp1_regional_region_collapsed). Re-enable by
+% uncommenting if the single-channel region-collapsed view is needed again.
+%\paragraph{Region-Collapsed Results}
+%\label{sec:exp1_single_channel_region_collapsed}
+%
+%\input{e_result/exp1/p07_single_channel/paragraph_region_collapsed}
+%
+%\input{e_result/exp1/tab_exp1_single_channel_region}
+
+% ---------------------------------------------------------------------------
+% NOTE (commented out on purpose, do not delete): Channel-Context Comparison
+% paragraph and its accompanying delta figure are disabled per instruction.
+% Re-enable by uncommenting if this comparison is needed again.
+%\paragraph{Channel-Context Comparison}
+%\label{sec:exp1_single_channel_context}
+%
+%\input{e_result/exp1/p07_single_channel/paragraph_channel_context}
+%
+%\begin{figure}[ht]
+%    \centering
+%    \includegraphics[width=0.95\linewidth]{fig_exp1_single_channel_delta.pdf}
+%    \caption{Configuration effect for every electrode in the four curated anatomical
+%    regions (the same electrode set as Figure~\ref{fig:exp1_single_channel}): single-electrode
+%    $F_1$ minus the same electrode's full-montage $F_1$, coloured by scalp region.
+%    Electrode order matches Figure~\ref{fig:exp1_single_channel}/Figure~\ref{fig:exp1_single_channel_stats}.}
+%    \label{fig:exp1_single_channel_delta}
+%\end{figure}
+
+
+
+%\begin{figure}[ht]
+%    \centering
+%    \includegraphics[width=\linewidth]{fig_exp1_coverage_curve.pdf}
+%    \caption{Detection $F_1$ against the number of electrodes given to the pipeline.
+%    Each point is one channel subset; the dashed line marks the full-montage reference.}
+%    \label{fig:exp1_coverage_curve}
+%\end{figure}
 
 
 % ---------------------------------------------------------------------------
 %\subsubsection{Stability of the Channel Choice}
 %\label{sec:channel_stability}
 
-\input{e_result/exp1/tab_channel_selection}
+%\input{e_result/exp1/tab_channel_selection}
 
 %\input{e_result/exp1/p10_selection_frequency/paragraph}
 
