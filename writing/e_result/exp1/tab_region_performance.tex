@@ -1,11 +1,11 @@
 % Source: publication_results/; script experiment_script/tab3_fig3_region_performance.py
 \begin{table}[ht]
   \centering
-  \caption{Per-electrode detection performance collapsed to coarse scalp regions. Each region row averages the per-channel macro $F_1$ over the electrodes it contains. $n$ is the number of electrodes in the region.}
+  \caption{Experiment~1 per-electrode detection performance collapsed to coarse scalp regions (Proposed-approach, median centre), each electrode scored inside the full-montage run rather than as a standalone single-electrode pipeline. Each region row averages the per-channel macro $F_1$ over the electrodes it contains; regions follow the \texttt{brain\_region\_raja.yaml}/\texttt{brain\_region\_cao2018.yaml} assignment, so the frontopolar pair is included within frontal. The midline/outside and unassigned groups are omitted; only the frontal, central, parietal, and occipital regions are shown. $n$ is the number of electrodes in the region. $F_1$ is reported as a percentage.}
   \label{tab:region_performance}
   \begin{tabular}{llcc}
     \toprule
-    Dataset & Region & $n$ & macro $F_1$ (\%) \\
+    Dataset & Region & $n$ & $F_1$ (\%) \\
     \midrule
     Internal & frontal & 6 & 69.68 \\
      & central & 6 & 14.80 \\

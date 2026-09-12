@@ -1,34 +1,34 @@
 % Source: publication_results/; script experiment_script/tab19_exp3_threshold_estimator.py
 \begin{table}[ht]
   \centering
-  \caption{Effect of the Stage-B threshold estimator on the Internal and Cao2018 driving-EEG corpora at 30\,s epochs, for Fp1 and Fp2 reported separately (not averaged). Proposed-Med (median/MAD) and Proposed-Mean (mean/SD) are each scored inside the full 32-channel montage run (``all\_channel'' gate); Fp1 and Fp2 are the two consistently best-performing electrodes identified in Experiment~1 (Table~\ref{tab:channel_selection}), so unlike a best-channel-per-session oracle, each is a fixed, deployable single-electrode operating point. Macro-averaged $F_1$ is reported as a percentage, per dataset and pooled over all sessions. Best $F_1$ per block in \textbf{bold}. $p$ is a two-tailed Wilcoxon signed-rank test on session-level $F_1$ comparing Proposed-Med against Proposed-Mean within that electrode (one test per electrode; not Bonferroni-corrected).}
+  \caption{Effect of the Stage-B threshold estimator on the Internal and Cao2018 driving-EEG corpora at 30\,s epochs, for Fp1 and Fp2 reported separately (not averaged). Proposed-approach (median/MAD) and Proposed-Mean (mean/SD) are each scored inside the full 32-channel montage run (``all\_channel'' gate); Fp1 and Fp2 are the two consistently best-performing electrodes identified in Experiment~1 (Table~\ref{tab:channel_selection}), so unlike a best-channel-per-session oracle, each is a fixed, deployable single-electrode operating point. Macro-averaged $F_1$ is reported as a percentage, per dataset and pooled over all sessions. Best $F_1$ per block in \textbf{bold}. $p$ is a two-tailed Wilcoxon signed-rank test on session-level $F_1$ comparing Proposed-approach against Proposed-Mean within that electrode (one test per electrode; not Bonferroni-corrected).}
   \label{tab:exp3_estimator}
   \begin{tabular}{lllc}
     \toprule
     Dataset & Channel & Condition & $F_1$ (\%) \\
     \midrule
     Internal & Fp1 & Proposed-Mean & 85.55 \\
-     &  & Proposed-Med & \textbf{86.32} \\
+     &  & Proposed-approach & \textbf{86.32} \\
     \multicolumn{3}{r}{$p$ vs.\ Proposed-Mean} & 0.407 \\
     \midrule
     Internal & Fp2 & Proposed-Mean & 85.99 \\
-     &  & Proposed-Med & \textbf{86.82} \\
+     &  & Proposed-approach & \textbf{86.82} \\
     \multicolumn{3}{r}{$p$ vs.\ Proposed-Mean} & 0.435 \\
     \midrule
     Cao2018 & Fp1 & Proposed-Mean & 79.39 \\
-     &  & Proposed-Med & \textbf{79.68} \\
+     &  & Proposed-approach & \textbf{79.68} \\
     \multicolumn{3}{r}{$p$ vs.\ Proposed-Mean} & 0.331 \\
     \midrule
     Cao2018 & Fp2 & Proposed-Mean & 78.01 \\
-     &  & Proposed-Med & \textbf{78.45} \\
+     &  & Proposed-approach & \textbf{78.45} \\
     \multicolumn{3}{r}{$p$ vs.\ Proposed-Mean} & 0.795 \\
     \midrule
     Pooled & Fp1 & Proposed-Mean & 82.12 \\
-     &  & Proposed-Med & \textbf{82.62} \\
+     &  & Proposed-approach & \textbf{82.62} \\
     \multicolumn{3}{r}{$p$ vs.\ Proposed-Mean} & 0.791 \\
     \midrule
     Pooled & Fp2 & Proposed-Mean & 81.54 \\
-     &  & Proposed-Med & \textbf{82.15} \\
+     &  & Proposed-approach & \textbf{82.15} \\
     \multicolumn{3}{r}{$p$ vs.\ Proposed-Mean} & 0.775 \\
     \bottomrule
   \end{tabular}

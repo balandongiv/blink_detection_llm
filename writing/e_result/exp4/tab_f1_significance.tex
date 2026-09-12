@@ -1,0 +1,14 @@
+% Source: publication_results/; script experiment_script/tab4_f1_significance.py
+\begin{table}[ht]
+  \centering
+  \caption{Macro-$F_1$ (\%) for Proposed-approach and both baselines on Internal and Cao2018. An asterisk marks a baseline as significantly different from Proposed-approach (two-sided Wilcoxon signed-rank test on session-level $F_1$, $p<0.05$, Bonferroni-corrected across the four tests shown).}
+  \label{tab:f1_significance}
+  \begin{tabular}{lccc}
+    \toprule
+    Dataset & Proposed & BLINKER & MNE \\
+    \midrule
+    Internal & 88.25 & 76.54* & 66.64* \\
+    Cao2018 & 80.68 & 69.40* & 56.27* \\
+    \bottomrule
+  \end{tabular}
+\end{table}

@@ -6,12 +6,13 @@
 \input{e_result/exp4/par3}
 
 \input{e_result/exp4/par4}
-
-\input{e_result/exp4/tab_strategycomparison_30s_epoch}
+\input{e_result/exp4/par5}
+\input{e_result/exp4/tab_f1_significance}
 
 \begin{figure}[ht]
-    \centering
-    \includegraphics[width=0.8\linewidth]{fig_condition_prf.pdf}
-    \caption{Macro-averaged precision, recall, and $F_1$ for the four conditions over all sessions.}
-    \label{fig:condition_prf}
+  \centering
+  \includegraphics[width=0.9\linewidth]{fig_exp2_pr_scatter.pdf}
+  \caption{Per-session precision-recall operating points for Internal and Cao2018, shown separately. Each small point is one session's precision-recall pair for one condition. Marker shape encodes the condition (BLINKER, MNE, Proposed-approach) and marker color encodes the dataset. The large navy-outlined marker for each condition marks its mean over sessions within that dataset. Both axes run from 0 to 100 percent.}
+  \label{fig:exp2_pr_scatter}
 \end{figure}
+
