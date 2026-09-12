@@ -61,7 +61,7 @@ def main() -> None:
     lines = [
         r"\begin{table}[htbp]", r"\centering", r"\footnotesize",
         r"\setlength{\tabcolsep}{4pt}",
-        r"\caption{Experiment~1 channel-subset performance of Proposed-Med (median centre). "
+        r"\caption{Experiment~1 channel-subset performance of Proposed-approach (median centre). "
         r"Each subset is a self-contained detector: Stage~A, Stage~B and Stage~C were all "
         r"re-run on that channel subset alone. $F_1$ (Subset) is the region-mean $F_1$: each "
         r"electrode's own macro $F_1$ is averaged over sessions and those per-electrode means "

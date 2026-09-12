@@ -125,7 +125,7 @@ def main() -> None:
         text.set_color(PS.NAVY)
 
     fig.suptitle("Detection $F_1$ against the number of electrodes available to the "
-                 "pipeline (Proposed-Med, median centre)", fontsize=PS.FONT_CHROME, color=PS.NAVY)
+                 "pipeline (Proposed-approach, median centre)", fontsize=PS.FONT_CHROME, color=PS.NAVY)
     fig.tight_layout(rect=(0, 0.09, 1, 0.95))
     P.save_fig(fig, STEM)
     plt.close(fig)

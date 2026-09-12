@@ -1,10 +1,11 @@
 """Precision-recall operating-point scatter for exp2 (strategy comparison).
 
-Per-session (recall, precision) points for the four visible conditions
-(BLINKER-concat, MNE-annot, Proposed-Mean, Proposed-Med), Raja and Cao2018
-shown SEPARATELY (not pooled) in the same figure: marker shape encodes the
-condition, color encodes the dataset, so the two datasets can be compared
-side by side per condition.
+Per-session (recall, precision) points for the three reported conditions
+(BLINKER-concat, MNE-annot, Proposed-Med), Raja and Cao2018 shown SEPARATELY
+(not pooled) in the same figure. Marker shape encodes the condition, color
+encodes the dataset, so the two datasets can be compared side by side per
+condition. Proposed-Mean's results are not reported in this section, so it is
+excluded here too.
 
 Source: runs/exp2_raja/exp2_strategy_comparison_raja_results.csv
         runs/exp2_cao/exp2_strategy_comparison_cao2018_results.csv
@@ -19,7 +20,6 @@ Run inside conda env double_threshold_algo.
 from __future__ import annotations
 import sys
 from pathlib import Path
-import numpy as np
 import pandas as pd
 import matplotlib
 matplotlib.use("Agg")
@@ -33,6 +33,7 @@ if str(REPO) not in sys.path:
 
 from src.project_paths import EXP_SETUP_DIR, load_exp_config  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import paper_data as P  # noqa: E402
 import paper_style as S  # noqa: E402
 
 _PATH_CFG = load_exp_config(EXP_SETUP_DIR / "exp_path.yaml")
@@ -42,9 +43,8 @@ SELECTION = "all_channel"
 FIGDIR = REPO / "writing" / "figures"
 FIGDIR.mkdir(parents=True, exist_ok=True)
 
-CONDS = ["Proposed-Med", "Proposed-Mean", "BLINKER-concat", "MNE-annot"]
-MARKERS = {"Proposed-Med": "o", "Proposed-Mean": "s",
-           "BLINKER-concat": "^", "MNE-annot": "D"}
+CONDS = ["Proposed-Med", "BLINKER-concat", "MNE-annot"]
+MARKERS = {"Proposed-Med": "o", "BLINKER-concat": "^", "MNE-annot": "D"}
 DSN = {"raja": "Internal", "cao2018": "Cao2018"}
 DS_COLORS = {"raja": S.DATASET_COLORS["Internal"], "cao2018": S.DATASET_COLORS["Cao2018"]}
 
@@ -56,20 +56,6 @@ def main() -> None:
     fig, ax = plt.subplots(figsize=(7.5, 6.5))
     S.style_fig(fig)
 
-    # iso-F1 contours
-    r = np.linspace(0.01, 1.0, 200)
-    for f1 in (0.2, 0.4, 0.6, 0.8):
-        with np.errstate(divide="ignore", invalid="ignore"):
-            p = (f1 * r) / (2 * r - f1)
-        p = np.where((p > 0) & (p <= 1.0), p, np.nan)
-        ax.plot(r, p, color=S.PANEL_BLUE, lw=0.8, ls=":", zorder=0)
-        valid = ~np.isnan(p)
-        if valid.any():
-            xi = np.argmax(valid & (r > 0.55))
-            if xi:
-                ax.annotate(f"F1={f1}", (r[xi], p[xi]), fontsize=S.FONT_INPLOT,
-                            color=S.PANEL_BLUE, ha="left", va="bottom")
-
     summary_lines = []
     for ds in ("raja", "cao2018"):
         sub_ds = df[df.dataset == ds]
@@ -77,27 +63,29 @@ def main() -> None:
             sub = sub_ds[sub_ds.condition == cond]
             if sub.empty:
                 continue
-            ax.scatter(sub["recall"], sub["precision"], s=22, alpha=0.4,
+            ax.scatter(sub["recall"] * 100, sub["precision"] * 100, s=22, alpha=0.4,
                        color=DS_COLORS[ds], marker=MARKERS[cond], linewidths=0,
                        zorder=2)
             mean_r, mean_p = sub["recall"].mean(), sub["precision"].mean()
             mean_f1 = sub["f1"].mean()
-            ax.scatter([mean_r], [mean_p], s=200, color=DS_COLORS[ds], marker=MARKERS[cond],
-                       edgecolor=S.NAVY, linewidths=1.3, zorder=3)
+            ax.scatter([mean_r * 100], [mean_p * 100], s=200, color=DS_COLORS[ds],
+                       marker=MARKERS[cond], edgecolor=S.NAVY, linewidths=1.3, zorder=3)
             summary_lines.append((ds, cond, mean_p, mean_r, mean_f1, len(sub)))
 
-    ax.set_xlim(0, 1.02)
-    ax.set_ylim(0, 1.02)
-    ax.set_xlabel("Recall")
-    ax.set_ylabel("Precision")
-    ax.set_title("Per-session precision-recall operating points\n"
-                  "exp2 strategy comparison (Internal vs. Cao2018, all-channel gate)")
+    ax.set_xlim(0, 100)
+    ax.set_ylim(0, 100)
+    ax.set_xlabel("Recall (%)")
+    ax.set_ylabel("Precision (%)")
+    # No in-plot title: the LaTeX caption carries it, and an F1=80 contour label sitting
+    # near the top of a 0-100 axis would otherwise crowd a title drawn just above the axes.
     S.style_axis(ax, grid_axis="both")
 
-    # two-part legend: marker shape -> condition, color -> dataset
+    # two-part legend: marker shape -> condition, color -> dataset. Labels go through
+    # P.display() so they match Table 1's naming (BLINKER, MNE, Proposed-approach), not
+    # the raw CONDS/data-key strings (BLINKER-concat, MNE-annot, Proposed-Med).
     cond_handles = [
         Line2D([0], [0], marker=MARKERS[c], color="none", markerfacecolor=S.PANEL_BLUE,
-               markeredgecolor=S.NAVY, markersize=9, label=c)
+               markeredgecolor=S.NAVY, markersize=9, label=P.display(c))
         for c in CONDS
     ]
     ds_handles = [Patch(facecolor=DS_COLORS[ds], edgecolor=S.NAVY, label=DSN[ds])

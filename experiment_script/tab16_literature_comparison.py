@@ -49,7 +49,7 @@ def _this_work_row():
     best = P.load_exp2_best()
     raja = P.macro(best, "raja", "Proposed-Med")[2]
     cao = P.macro(best, "cao", "Proposed-Med")[2]
-    return (r"\textbf{This work (Proposed-Med)}", "Single frontopolar EEG",
+    return (r"\textbf{This work (Proposed-approach)}", "Single frontopolar EEG",
             "Internal + Cao2018 driving", "Event-level overlap (IoU 0.1)",
             rf"macro-$F_1$ {raja * 100:.2f}\% / {cao * 100:.2f}\%")
 

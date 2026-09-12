@@ -92,7 +92,7 @@ def build_figure(pm: dict, blinker: dict, mne: dict) -> None:
         ax.set_ylabel("Session-level $F_1$" if ds == "raja" else "")
         ax.set_ylim(0, 1.0)
         ax.legend(loc="lower left", fontsize=S.FONT_CHROME, framealpha=0.9)
-    fig.suptitle("Proposed-Med session-level $F_1$ across experiments "
+    fig.suptitle("Proposed-approach session-level $F_1$ across experiments "
                  "(best channel per session)", fontsize=S.FONT_CHROME)
     fig.tight_layout()
     P.save_fig(fig, "fig_exp_boxplot")
@@ -103,14 +103,14 @@ def build_summary(pm: dict, blinker: dict) -> list[str]:
     bl_pooled = pd.concat([blinker["raja"], blinker["cao"]]).mean()
     lines = [
         r"\begin{table*}[ht]", r"  \centering",
-        r"  \caption{Proposed-Med detection performance across the three experiments on "
+        r"  \caption{Proposed-approach detection performance across the three experiments on "
         r"the Internal and Cao2018 driving-EEG corpora. Macro-averaged $F_1$ over all sessions "
         r"(best-channel-per-session), reported as a percentage. The best competing method is "
         r"BLINKER-concat from the "
-        r"strategy comparison; $\Delta$ is the pooled Proposed-Med advantage over "
+        r"strategy comparison; $\Delta$ is the pooled Proposed-approach advantage over "
         f"BLINKER-concat (pooled macro-$F_1$ {bl_pooled * 100:.2f}\\%), in percentage points.}}",
         r"  \label{tab:exp_summary}", r"  \begin{tabular}{llccll}", r"    \toprule",
-        r"    Exp. & Description & PM $F_1$ (Internal) (\%) & PM $F_1$ (Cao2018) (\%) & "
+        r"    Exp. & Description & PA $F_1$ (Internal) (\%) & PA $F_1$ (Cao2018) (\%) & "
         r"Best competitor & $\Delta$ vs competitor (pp) \\",
         r"    \midrule",
     ]
@@ -160,11 +160,11 @@ def build_stats(pm: dict, blinker: dict) -> list[str]:
 
     lines = [
         r"\begin{table*}[ht]", r"  \centering",
-        r"  \caption{Paired Wilcoxon signed-rank tests of Proposed-Med versus the best "
+        r"  \caption{Paired Wilcoxon signed-rank tests of Proposed-approach versus the best "
         r"competing method (BLINKER-concat from the strategy comparison) on session-level "
-        r"$F_1$, for each experiment and dataset. $\Delta F_1$ is the mean Proposed-Med "
+        r"$F_1$, for each experiment and dataset. $\Delta F_1$ is the mean Proposed-approach "
         r"advantage, in percentage points; $p$ is Bonferroni-corrected over the " + str(n_comparisons)
-        + r" comparisons (one-sided, Proposed-Med greater); $r$ is the rank-biserial "
+        + r" comparisons (one-sided, Proposed-approach greater); $r$ is the rank-biserial "
         r"effect size; the 95\% CI is a " + f"{BOOTSTRAP_N:,}".replace(",", "{,}")
         + r"-sample bootstrap on $\Delta F_1$, in percentage points.}",
         r"  \label{tab:exp_stats}", r"  \begin{tabular}{llcccccc}", r"    \toprule",

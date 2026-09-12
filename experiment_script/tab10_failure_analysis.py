@@ -51,7 +51,7 @@ def main() -> None:
     lines = [
         r"\begin{table*}[ht]", r"  \centering", r"  \scriptsize",
         r"  \setlength{\tabcolsep}{4pt}",
-        r"  \caption{The " + str(BOTTOM_N) + r" lowest-$F_1$ Proposed-Med sessions per "
+        r"  \caption{The " + str(BOTTOM_N) + r" lowest-$F_1$ Proposed-approach sessions per "
         r"corpus (best channel per session). GT is the ground-truth blink count "
         r"($\mathrm{TP}+\mathrm{FN}$) and GT/med is GT relative to the dataset median, "
         r"which separates genuine detector failure from recordings that simply carry an "

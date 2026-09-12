@@ -42,7 +42,7 @@ def main() -> None:
 
     lines = [
         r"\begin{table}[ht]", r"  \centering",
-        r"  \caption{Best and worst Proposed-Med sessions and subject-level summary across "
+        r"  \caption{Best and worst Proposed-approach sessions and subject-level summary across "
         + str(n_sessions) + r" Internal+Cao2018 sessions (best-channel-per-session). "
         r"$F_1$ values are percentages.}",
         r"  \label{tab:best-session}",

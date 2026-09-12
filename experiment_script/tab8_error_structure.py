@@ -42,7 +42,7 @@ def main() -> None:
         ratio = mean_fp / mean_fn if mean_fn else float("inf")
         regime = "FP-heavy" if mean_fp > mean_fn else "FN-heavy"
         lines.append(
-            f"    {cond} & {mean_fp:.2f} & {mean_fn:.2f} & {ratio:.2f} & {regime} \\\\"
+            f"    {P.display(cond)} & {mean_fp:.2f} & {mean_fn:.2f} & {ratio:.2f} & {regime} \\\\"
         )
     lines += [r"    \bottomrule", r"  \end{tabular}", r"\end{table}"]
 

@@ -106,22 +106,16 @@ MANIFEST: list[Artifact] = [
              "scalp region."),
 
     # ---------------- Experiment 4: strategy comparison ----------------
-    Artifact("tab:exp1_main", "table", ["e_result/exp4/tab_strategycomparison_30s_epoch.tex"],
-             "tab4_tab5_strategy_comparison_30s.py", _exp("exp2"),
-             BPS + "; Wilcoxon two-sided, Bonferroni x6",
-             "Headline four-condition comparison at 30 s epochs."),
-    Artifact("tab:exp2_inversions", "table", ["e_result/exp4/tab_exp2_inversions.tex"],
-             "tab4_tab5_strategy_comparison_30s.py", _exp("exp2"),
-             "per-selection mean of per-session max F1",
-             "Channel groups where a baseline equals or exceeds Proposed-Med."),
-    Artifact("fig:condition_prf", "figure",
-             ["figures/fig_condition_prf.pdf", "figures/fig_condition_prf.png"],
-             "fig4_fig5_condition_prf.py", _exp("exp2"), BPS,
-             "Pooled macro precision, recall and F1 for the four conditions."),
-    Artifact("fig:f1_by_dataset", "figure",
-             ["figures/fig_f1_by_dataset.pdf", "figures/fig_f1_by_dataset.png"],
-             "fig4_fig5_condition_prf.py", _exp("exp2"), BPS,
-             "Per-condition macro F1 on Raja and Cao2018."),
+    # tab:exp1_main (the four-condition headline table) was removed: the exp4 write-up now
+    # reports Proposed-approach on its own. fig:condition_prf and fig:f1_by_dataset (both
+    # from fig4_fig5_condition_prf.py) and tab:exp2_inversions (from
+    # tab4_tab5_strategy_comparison_30s.py) were removed in turn: the headline numbers now
+    # live in tab:f1_significance below, and the operating-point story moved to
+    # fig:exp2_pr_scatter, relocated into this same section. Both generator scripts deleted.
+    Artifact("tab:f1_significance", "table", ["e_result/exp4/tab_f1_significance.tex"],
+             "tab4_f1_significance.py", _exp("exp2"),
+             BPS + "; Wilcoxon two-sided vs. BLINKER-concat, Bonferroni x2",
+             "Proposed-approach F1 per dataset with significance vs. the best baseline."),
     Artifact("tab:cross_dataset_gap", "table", ["e_result/exp4/tab_cross_dataset_gap.tex"],
              "tab6_cross_dataset_gap.py", _exp("exp2"), BPS,
              "Cross-dataset generalisation gap (Raja minus Cao2018)."),
@@ -130,10 +124,6 @@ MANIFEST: list[Artifact] = [
              "fig6_exp2_pr_scatter.py", _exp("exp2"),
              "per-session rows on the all_channel gate",
              "Per-session precision-recall scatter, corpora shown separately."),
-    Artifact("fig:pr_scatter", "figure",
-             ["figures/fig_pr_scatter.pdf", "figures/fig_pr_scatter.png"],
-             "fig7_pr_operating_points.py", _exp("exp2"), BPS,
-             "Pooled operating points with condition means and iso-F1 contours."),
     Artifact("tab:count_agreement", "table+figure",
              ["e_result/exp4/tab_count_agreement.tex",
               "figures/fig_count_agreement.pdf", "figures/fig_count_agreement.png"],
@@ -155,10 +145,9 @@ MANIFEST: list[Artifact] = [
              "tab11_fig9_channel_selection_frequency.py", _exp("exp2") + REGIONS,
              "per-session winner pooled over the four conditions",
              "Best-channel selection frequency by scalp location."),
-    Artifact("tab:channel-robustness", "table", ["e_result/exp1/tab_channel_robustness.tex"],
-             "tab12_channel_robustness.py", _exp("exp2"),
-             "agreement of the per-session best channel across conditions",
-             "Stability of the best-channel choice between the four conditions."),
+    # tab:channel-robustness (tab12_channel_robustness.py) was removed: its only prose
+    # discussion (e_result/exp1/p12_agreement/paragraph.tex) is itself commented out of
+    # the compiled document, so the table had no active discussion. Generator deleted.
 
     # ---------------- Experiment 3: Stage-B threshold estimator ----------------
     Artifact("tab:exp3_estimator", "table", ["e_result/exp3/tab_threshold_estimator_stageb.tex"],

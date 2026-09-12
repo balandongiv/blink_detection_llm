@@ -33,7 +33,7 @@ def main() -> None:
     for cond in P.CONDS:
         raja = P.macro(best, "raja", cond)[2]
         cao = P.macro(best, "cao", cond)[2]
-        lines.append(f"    {cond} & {P.fmt(raja)} & {P.fmt(cao)} & {(raja - cao) * 100:+.2f} \\\\")
+        lines.append(f"    {P.display(cond)} & {P.fmt(raja)} & {P.fmt(cao)} & {(raja - cao) * 100:+.2f} \\\\")
     lines += [r"    \bottomrule", r"  \end{tabular}", r"\end{table}"]
 
     P.write_tex(P.ER / "exp4" / "tab_cross_dataset_gap.tex", lines, SCRIPT)

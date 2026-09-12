@@ -59,7 +59,7 @@ def build_table(frames: dict) -> list[str]:
     lines = [
         r"\begin{table}[ht]", r"  \centering",
         r"  \caption{Experiment~1 per-electrode detection performance collapsed to coarse "
-        r"scalp regions (Proposed-Med, median centre), each electrode scored inside the "
+        r"scalp regions (Proposed-approach, median centre), each electrode scored inside the "
         r"full-montage run rather than as a standalone single-electrode pipeline. Each "
         r"region row averages the per-channel macro $F_1$ over the electrodes it contains; "
         r"regions follow the \texttt{brain\_region\_raja.yaml}/\texttt{brain\_region\_cao2018.yaml} "

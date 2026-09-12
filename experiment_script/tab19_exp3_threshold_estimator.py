@@ -73,7 +73,7 @@ def build(stats_by_block: dict) -> list[str]:
         r"\begin{table}[ht]", r"  \centering",
         r"  \caption{Effect of the Stage-B threshold estimator on the Internal and "
         r"Cao2018 driving-EEG corpora at 30\,s epochs, for Fp1 and Fp2 reported "
-        r"separately (not averaged). Proposed-Med (median/MAD) and Proposed-Mean "
+        r"separately (not averaged). Proposed-approach (median/MAD) and Proposed-Mean "
         r"(mean/SD) are each scored inside the full 32-channel montage run "
         r"(``all\_channel'' gate); Fp1 and Fp2 are the two consistently best-performing "
         r"electrodes identified in Experiment~1 (Table~\ref{tab:channel_selection}), so "
@@ -81,7 +81,7 @@ def build(stats_by_block: dict) -> list[str]:
         r"single-electrode operating point. Macro-averaged $F_1$ is reported as a "
         r"percentage, per dataset and pooled over all sessions. Best "
         r"$F_1$ per block in \textbf{bold}. $p$ is a two-tailed Wilcoxon signed-rank "
-        r"test on session-level $F_1$ comparing Proposed-Med against Proposed-Mean "
+        r"test on session-level $F_1$ comparing Proposed-approach against Proposed-Mean "
         r"within that electrode (one test per electrode; not Bonferroni-corrected).}",
         r"  \label{tab:exp3_estimator}", r"  \begin{tabular}{lllc}", r"    \toprule",
         r"    Dataset & Channel & Condition & $F_1$ (\%) \\",
@@ -97,7 +97,7 @@ def build(stats_by_block: dict) -> list[str]:
                 ds_cell = label if i == 0 else ""
                 ch_cell = channel if i == 0 else ""
                 lines.append(
-                    f"    {ds_cell} & {ch_cell} & {cond} & {f_cell} \\\\"
+                    f"    {ds_cell} & {ch_cell} & {P.display(cond)} & {f_cell} \\\\"
                 )
             p = block["p"]
             p_str = r"$<0.001$" if p < 0.001 else f"{p:.3f}"

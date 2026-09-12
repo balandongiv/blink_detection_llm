@@ -44,6 +44,18 @@ ER.mkdir(parents=True, exist_ok=True)
 FIGDIR.mkdir(parents=True, exist_ok=True)
 
 CONDS = ["BLINKER-concat", "MNE-annot", "Proposed-Mean", "Proposed-Med"]
+#: Rendered display name for a condition, for legends/table cells/titles a reader sees.
+#: Data lookups (dict keys, ``df.condition ==``, CSV values) must keep using the raw
+#: ``CONDS`` strings above — only what is drawn on the page goes through this mapping.
+DISPLAY_LABEL = {"Proposed-Med": "Proposed-approach", "BLINKER-concat": "BLINKER",
+                  "MNE-annot": "MNE"}
+
+
+def display(cond: str) -> str:
+    """Rendered display name for ``cond``; unmapped conditions pass through unchanged."""
+    return DISPLAY_LABEL.get(cond, cond)
+
+
 DSN = {"raja": "Internal", "cao": "Cao2018"}
 #: Channel-selection group holding the per-channel rows (one row per electrode).
 ALL_CHANNEL = "all_channel"

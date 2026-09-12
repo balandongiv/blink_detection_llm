@@ -60,7 +60,7 @@ def main() -> None:
     lines = [
         r"\begin{table}[htbp]", r"\centering", r"\footnotesize",
         r"\setlength{\tabcolsep}{4pt}",
-        r"\caption{Single-electrode results of Proposed-Med (median centre) aggregated "
+        r"\caption{Single-electrode results of Proposed-approach (median centre) aggregated "
         r"to the five scalp regions used throughout this section (Table~\ref{tab:exp1_subset_summary}; "
         r"``Posterior'' is parietal $\cup$ occipital). $F_1$ (Single) averages each region's "
         r"electrodes' own independent single-electrode detector; $F_1$ (Subset) is the "

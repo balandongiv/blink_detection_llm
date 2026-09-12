@@ -75,7 +75,7 @@ axA.plot([0, hi], [0, hi], color="0.4", ls="--", lw=1.2, zorder=1, label="identi
 for c in CONDS:
     d = data[c]
     axA.scatter(d.truth, d.pred, s=20, alpha=0.45, color=COLORS[c],
-                marker=MARKERS[c], edgecolors="none", zorder=2, label=c)
+                marker=MARKERS[c], edgecolors="none", zorder=2, label=PD.display(c))
 axA.set_xlim(0, hi * 1.02); axA.set_ylim(0, hi * 1.02)
 axA.set_xlabel("True blink count (TP + FN)")
 axA.set_ylabel("Predicted blink count (TP + FP)")
@@ -98,7 +98,7 @@ axB.axhline(bias - 1.96 * sd, color="0.4", ls="--", lw=1.2)
 axB.axhline(0, color="0.7", ls=":", lw=1.0)
 axB.set_xlabel("Mean of predicted and true count")
 axB.set_ylabel("Predicted $-$ true count")
-axB.set_title("(b) Bland-Altman, Proposed-Med")
+axB.set_title("(b) Bland-Altman, Proposed-approach")
 axB.legend(loc="upper right", fontsize=S.FONT_CHROME, framealpha=0.92)
 axB.grid(True, color="0.92", lw=0.6)
 
@@ -116,6 +116,6 @@ L = [r"\begin{table}[ht]", r"  \centering",
      r"  \label{tab:count_agreement}", r"  \begin{tabular}{lccc}", r"    \toprule",
      r"    Condition & Mean count ratio & Pearson $r$ & Lin's CCC \\", r"    \midrule"]
 for c, r, ccc, ratio, n in stat_rows:
-    L.append(f"    {c} & {ratio:.2f} & {r:.2f} & {ccc:.2f} \\\\")
+    L.append(f"    {PD.display(c)} & {ratio:.2f} & {r:.2f} & {ccc:.2f} \\\\")
 L += [r"    \bottomrule", r"  \end{tabular}", r"\end{table}"]
 PD.write_tex(PD.ER / "exp4" / "tab_count_agreement.tex", L, SCRIPT)
