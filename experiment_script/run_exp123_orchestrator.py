@@ -3,7 +3,7 @@ session; writes to runs/exp1_channel_*, runs/exp2_*, runs/exp3_*).
 
 That run already covers exp1 Raja+Cao2018, exp2 Raja+Cao2018, exp3 Raja+Cao2018 (now
 including the all_channel group — see experiment_script/setup/exp3_epoch_duration.yaml)
-with a Telegram heartbeat every 10 min and a plot + analysis after each experiment. This
+with a stdout heartbeat every 10 min and a plot + analysis after each experiment. This
 script does NOT duplicate that work. It only:
 
   1. Waits for exp1 Cao2018 (already ~done) to finish, then re-runs exp1 Raja — its
@@ -43,11 +43,17 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from telegram_heartbeat import (  # noqa: E402
-    send_key_update,
-    send_urgent_update,
-    set_state,
-)
+def send_key_update(message: str) -> None:
+    print(f"[{_ts()}] {message}")
+
+
+def send_urgent_update(message: str) -> None:
+    print(f"[{_ts()}] URGENT: {message}", file=sys.stderr)
+
+
+def set_state(**_kwargs: str) -> None:
+    pass
+
 
 PYTHON = sys.executable
 HEARTBEAT_INTERVAL_S = 600  # 10 minutes

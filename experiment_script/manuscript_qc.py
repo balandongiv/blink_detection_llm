@@ -6,9 +6,7 @@ Checks that are cheap to run and expensive to miss:
    a "Missing $ inserted" error or silently swallows the rest of the line. Session
    identifiers such as ``S34_20190122_044130_3`` are the usual source.
 2. **Undefined references and citations** — read from ``main.log`` after a build.
-3. **Artifact coverage** — every table and figure has a live generator and an existing
-   output file (delegated to ``reproduce_manuscript.py check``).
-4. **Stale provenance** — no manuscript file may cite ``runs/``, ``runs0/`` or
+3. **Stale provenance** — no manuscript file may cite ``runs/``, ``runs0/`` or
    ``runs_second_iteration/`` as its source; the published numbers come only from
    ``publication_results/``.
 
@@ -19,13 +17,11 @@ Run inside conda env ``double_threshold_algo``:
 from __future__ import annotations
 
 import re
-import subprocess
 import sys
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 WRITING = REPO / "writing"
-SCRIPTS = REPO / "experiment_script"
 
 #: Directories that must never appear as a source in a manuscript file.
 STALE_SOURCES = ("runs_second_iteration/", "runs0/", "runs/exp")
@@ -96,19 +92,11 @@ def check_stale_sources() -> int:
     return problems
 
 
-def check_artifacts() -> int:
-    r = subprocess.run([sys.executable, str(SCRIPTS / "reproduce_manuscript.py"), "check"],
-                       cwd=REPO, capture_output=True, text=True)
-    print(r.stdout.strip())
-    return r.returncode
-
-
 def main() -> None:
     total = 0
     for name, fn in [("LaTeX hazards in prose", check_latex_hazards),
                      ("Build log", check_log),
-                     ("Stale data provenance", check_stale_sources),
-                     ("Artifact coverage", check_artifacts)]:
+                     ("Stale data provenance", check_stale_sources)]:
         print(f"\n=== {name} ===")
         n = fn()
         total += n

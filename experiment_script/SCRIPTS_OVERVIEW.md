@@ -142,13 +142,21 @@ is `\input` from `result.tex`/`access.tex` at all, live or commented:
 
 | Script | Purpose |
 |--------|---------|
-| `run_exp123_orchestrator.py` | Run exp1–exp3 end to end, with Telegram progress reporting. |
+| `run_exp123_orchestrator.py` | Run exp1–exp3 end to end, with stdout progress reporting. |
 | `obs/_run_all_experiments.py`, `obs/run_exp123_full_pipeline_orchestrator.py` | Moved to `obs/` (2026-09-14) — both call `experiment_script/exp4_a_*`/`exp5_a_*`/`run_exp7_*`/`exp8_a_*`/`exp1_b_plot_*`/`exp2_b_plot_*`/`exp3_b_plot_*` scripts that no longer exist (Experiments 4-8 were removed per the note below, and the plotting scripts were later folded into the renamed `res_exp*.py`/`fig*.py`/`tab*.py` generators); would fail immediately if run. |
 | `compute_paper_numbers.py` | Recomputes the headline numbers for auditing prose against the CSVs. |
-| `sanity_check_all_channel_30s.py`, `sanity_check_exp1_2_3_s01_051017m.py`, `smoke_test_exp_path.py` | Fast checks that the wiring and a known session still reproduce. |
-| `reproduce_manuscript.py` | Walks the artifact registry and verifies every manuscript file has a live generator. |
-| `init_replication.py`, `runs_dir.py` | Replication scaffolding (`BLINK_RUNS_DIR`) for re-running the pipeline into a fresh directory. |
-| `exp_tg_report.py` | Telegram reporting helper. |
+
+**Removed (2026-09-15, public-release cleanup):** `sanity_check_all_channel_30s.py`,
+`sanity_check_exp1_2_3_s01_051017m.py`, `smoke_test_exp_path.py`, `reproduce_manuscript.py`,
+`init_replication.py`, `runs_dir.py`, `butterfly_report.py`, `exp_tg_report.py`, and
+`telegram_heartbeat.py` (repo root) — none had a live importer and none produced anything
+`access.tex`'s generators read; verified by grep against current imports and a clean
+pdflatex+bibtex rebuild before and after removal. `manuscript_qc.py`'s artifact-coverage
+check (which shelled out to `reproduce_manuscript.py`) was removed along with it; its other
+three checks (LaTeX hazards, build-log, stale-provenance) are unaffected.
+`run_exp123_orchestrator.py`'s Telegram calls were replaced with stdout prints — the
+hardcoded personal chat ID was the reason for removing the Telegram path, not the
+notification behavior itself.
 
 ---
 
