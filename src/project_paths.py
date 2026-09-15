@@ -85,8 +85,8 @@ def get_cao_paths(paths: dict | None = None) -> dict[str, Path]:
 def load_exp_config(exp_yaml: Path) -> dict:
     """Load per-experiment parameters from a companion YAML file.
 
-    If the ``BLINK_YAML_VARIANT`` environment variable is set (e.g. by
-    experiment_script/_run_all_experiments.py for a std=3.0 re-run) and a
+    If the ``BLINK_YAML_VARIANT`` environment variable is set (e.g. by the
+    now-retired experiment_script/obs/_run_all_experiments.py std=3.0 re-run) and a
     sibling ``<stem>_<variant>.yaml`` exists next to *exp_yaml*, that variant
     is loaded instead — letting the orchestrator swap configs for every
     experiment script via one env var rather than patching script source.

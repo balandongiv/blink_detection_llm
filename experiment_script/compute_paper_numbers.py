@@ -2,7 +2,7 @@
 
 Source of truth: runs_second_iteration/ (validated std=3.0 re-run). Baseline: runs/.
 
-Headline aggregation (matches HANDOFF_std30_academic_writing.md sec.2/5.1e):
+Headline aggregation (matches archive/handoff_docs/HANDOFF_std30_academic_writing.md sec.2/5.1e):
   best-channel-per-session = for each (session, condition) take the row with the
   maximum f1 over all available selections, then average across sessions.
   Precision/recall reported are taken from that same argmax-F1 row.

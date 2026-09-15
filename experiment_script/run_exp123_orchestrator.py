@@ -161,7 +161,7 @@ def sanity_check() -> None:
         "Source: the actual result CSVs written by exp1/exp2/exp3's real runs (no separate",
         "sanity-only run). exp1 & exp3 share the same per-channel engine and should match",
         "near-exactly; exp2 uses a different session-adaptive best-channel engine, so a",
-        "small gap there is structurally expected per HANDOFF.md 2026-07-15 — still",
+        "small gap there is structurally expected per archive/handoff_docs/HANDOFF.md 2026-07-15 — still",
         "reported below rather than suppressed.",
         "",
     ]

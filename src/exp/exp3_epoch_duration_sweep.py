@@ -1,7 +1,7 @@
 """Shared per-session worker for the exp3 per-dataset epoch-duration sweep scripts.
 
 Run order:
-  1. exp3_a_epoch_duration_cao2018.py / exp3_a_epoch_duration_raja.py
+  1. exp2_a_epoch_duration_cao2018.py / exp2_a_epoch_duration_raja.py
      collect per-session rows across every epoch duration.
   2. exp3_write_results() writes the exp3 per-dataset result artifacts.
   3. exp3_b_plot_epoch_duration.py reads both datasets' results CSVs to plot
@@ -168,7 +168,7 @@ def exp3_write_results(
     """Coerce ``all_metrics``, then write the exp3 per-dataset results CSV, summary CSV,
     summary.json, and print the duration-summary table.
 
-    Shared by exp3_a_epoch_duration_cao2018.py and exp3_a_epoch_duration_raja.py
+    Shared by exp2_a_epoch_duration_cao2018.py and exp2_a_epoch_duration_raja.py
     so the two scripts produce identically-shaped outputs, and so
     exp3_b_plot_epoch_duration.py's input schema stays stable.
     """

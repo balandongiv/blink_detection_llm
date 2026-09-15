@@ -8,7 +8,7 @@ implementations) are imported from ``src.exp.exp2_strategy_conditions`` so the
 analyses reuse the exact same code, but this module is the authority for the
 active condition list and detector parameters — read once here from
 experiment_script/setup/exp2_strategy_comparison.yaml, the same yaml
-experiment_script/exp2_a_strategy_comparison_cao2018.py / _raja.py read for
+experiment_script/exp3_a_strategy_comparison_cao2018.py / _raja.py read for
 the main comparison.
 """
 

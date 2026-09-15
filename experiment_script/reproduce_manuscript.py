@@ -65,8 +65,14 @@ def _exp(*names: str) -> list[str]:
     """Source CSVs for the given experiments across both datasets."""
     pattern = {
         "exp1": "exp1_channel_{f}/exp1_channel_selection_{n}_results.csv",
-        "exp2": "exp2_{f}/exp2_strategy_comparison_{n}_results.csv",
-        "exp3": "exp3_{f}/exp3_epoch_duration_{n}_results.csv",
+        # NOTE (2026-09-14): publication_results/exp2_*/exp3_* were renamed so the
+        # on-disk folder matches the manuscript's own Experiment 2 (epoch duration) /
+        # Experiment 3 (strategy comparison) numbering — see exp_path.yaml's note.
+        # The folder prefix below is therefore swapped relative to the semantic "exp2"
+        # ("strategy comparison") / "exp3" ("epoch duration") key; the CSV filename
+        # itself keeps its historical numbering, unchanged.
+        "exp2": "exp3_{f}/exp2_strategy_comparison_{n}_results.csv",
+        "exp3": "exp2_{f}/exp3_epoch_duration_{n}_results.csv",
     }
     return [
         f"{RESULTS}/" + pattern[e].format(f=f, n=n)
@@ -80,30 +86,40 @@ REGIONS = ["brain_region_raja.yaml", "brain_region_cao2018.yaml"]
 
 MANIFEST: list[Artifact] = [
     # ---------------- Experiment 1: channel selection ----------------
-    Artifact("tab:egi_map", "table", ["e_result/exp1/tab_egi_channel_map.tex"],
-             "tab1_egi_channel_map.py", ["brain_region_raja.yaml"],
+    Artifact("tab:egi_map", "table", ["e_result/obs/exp1/tab_egi_channel_map.tex"],
+             "obs/tab1_egi_channel_map.py", ["brain_region_raja.yaml"],
              "static mapping (Raja EGI hardware only; Cao2018 is native 10-20)",
-             "Raja EGI-128 to 10-20 scalp-location mapping, from the egi_pair block."),
+             "NOT compiled (never referenced anywhere in writing/, live or commented; moved to "
+             "obs/ 2026-09-14, path corrected 2026-09-15). Raja EGI-128 to 10-20 scalp-location "
+             "mapping, from the egi_pair block."),
     Artifact("tab:region_performance", "table+figure",
-             ["e_result/exp1/tab_region_performance.tex",
+             ["e_result/obs/exp1/tab_region_performance.tex",
               "figures/fig_region_performance.pdf", "figures/fig_region_performance.png"],
-             "tab3_fig3_region_performance.py", _exp("exp1") + REGIONS,
+             "obs/tab3_fig3_region_performance.py", _exp("exp1") + REGIONS,
              "per-channel values collapsed to coarse regions; frontopolar folded into frontal, "
              "midline/outside and unassigned electrodes dropped",
-             "Region-level means and the whole-scalp single-channel map, Internal on top and "
-             "Cao2018 on bottom."),
+             "NOT compiled (commented out of e_result/exp1/sec.tex; generator and .tex moved to "
+             "obs/ 2026-09-15, image assets left in figures/ so the commented "
+             "\\includegraphics call still resolves if re-enabled). Region-level means and the "
+             "whole-scalp single-channel map, Internal on top and Cao2018 on bottom."),
     Artifact("fig:exp1_region_boxplot", "figure",
              ["figures/fig_exp1_region_boxplot.pdf", "figures/fig_exp1_region_boxplot.png"],
-             "fig1_exp1_region_boxplot.py", _exp("exp1"),
+             "obs/fig1_exp1_region_boxplot.py", _exp("exp1"),
              "best channel per session within each selection group",
-             "Session-level F1 by channel-selection group, Raja vs Cao2018."),
+             "NOT compiled (commented out of e_result/exp1/sec.tex; generator moved to obs/ "
+             "2026-09-15, image assets left in figures/ since the commented block itself still "
+             "lives in the live sec.tex file). Session-level F1 by channel-selection group, "
+             "Raja vs Cao2018."),
     Artifact("fig:exp1_single_channel", "figure",
              ["figures/fig_exp1_single_channel_boxplot.pdf",
               "figures/fig_exp1_single_channel_boxplot.png"],
-             "fig2_exp1_single_channel_boxplot.py", _exp("exp1"),
-             "one self-contained '*_only' run per full-montage electrode (32 per dataset)",
-             "Single-electrode detection F1 for every full-montage electrode, coloured by "
-             "scalp region."),
+             "res_exp1_fig_single_channel_boxplot_by_region.py", _exp("exp1"),
+             "one self-contained '*_only' run per curated-region electrode (24 Internal / "
+             "18 Cao2018)",
+             "Compiled as Figure 5 (manuscript Experiment 1). Detection F1 of every electrode "
+             "in the four curated anatomical regions operating as its own self-contained "
+             "detector, coloured by scalp region. (Formerly tracked here as "
+             "fig2_exp1_single_channel_boxplot.py / stale 'Figure 2'.)"),
 
     # ---------------- Experiment 4: strategy comparison ----------------
     # tab:exp1_main (the four-condition headline table) was removed: the exp4 write-up now
@@ -113,73 +129,104 @@ MANIFEST: list[Artifact] = [
     # live in tab:f1_significance below, and the operating-point story moved to
     # fig:exp2_pr_scatter, relocated into this same section. Both generator scripts deleted.
     Artifact("tab:f1_significance", "table", ["e_result/exp4/tab_f1_significance.tex"],
-             "tab4_f1_significance.py", _exp("exp2"),
+             "res_exp3_table_strategy_f1_significance.py", _exp("exp2"),
              BPS + "; Wilcoxon two-sided vs. BLINKER-concat, Bonferroni x2",
-             "Proposed-approach F1 per dataset with significance vs. the best baseline."),
-    Artifact("tab:cross_dataset_gap", "table", ["e_result/exp4/tab_cross_dataset_gap.tex"],
-             "tab6_cross_dataset_gap.py", _exp("exp2"), BPS,
+             "Compiled as Table 1 (manuscript Experiment 3: Strategy Comparison), even though "
+             "it lives on disk under the exp4/ folder. Proposed-approach F1 per dataset with "
+             "significance vs. the best baseline. (Formerly tracked here as "
+             "tab4_f1_significance.py.)"),
+    Artifact("tab:cross_dataset_gap", "table", ["e_result/obs/exp4/tab_cross_dataset_gap.tex"],
+             "obs/tab6_cross_dataset_gap.py", _exp("exp2"), BPS,
+             "NOT compiled (never \\input in e_result/exp4/sec.tex; moved to obs/ 2026-09-15). "
              "Cross-dataset generalisation gap (Raja minus Cao2018)."),
     Artifact("fig:exp2_pr_scatter", "figure",
              ["figures/fig_exp2_pr_scatter.pdf", "figures/fig_exp2_pr_scatter.png"],
-             "fig6_exp2_pr_scatter.py", _exp("exp2"),
+             "res_exp3_fig_strategy_precision_recall_scatter.py", _exp("exp2"),
              "per-session rows on the all_channel gate",
-             "Per-session precision-recall scatter, corpora shown separately."),
+             "Compiled as Figure 8 (manuscript Experiment 3: Strategy Comparison). Per-session "
+             "precision-recall scatter, corpora shown separately. (Formerly tracked here as "
+             "fig6_exp2_pr_scatter.py / stale 'Figure 6'.)"),
     Artifact("tab:count_agreement", "table+figure",
-             ["e_result/exp4/tab_count_agreement.tex",
-              "figures/fig_count_agreement.pdf", "figures/fig_count_agreement.png"],
-             "tab7_fig8_count_agreement.py", _exp("exp2"),
+             ["e_result/obs/exp4/tab_count_agreement.tex",
+              "e_result/obs/figures/fig_count_agreement.pdf",
+              "e_result/obs/figures/fig_count_agreement.png"],
+             "obs/tab7_fig8_count_agreement.py", _exp("exp2"),
              BPS + "; predicted = TP+FP, true = TP+FN",
-             "Blink-count agreement: ratio, Pearson r, Lin's CCC, Bland-Altman."),
-    Artifact("tab:error-structure", "table", ["e_result/exp4/tab_error_structure.tex"],
-             "tab8_error_structure.py", _exp("exp2"), BPS,
+             "NOT compiled (never \\input in e_result/exp4/sec.tex; generator, table and the "
+             "orphaned figure assets moved to obs/ 2026-09-15). Blink-count agreement: ratio, "
+             "Pearson r, Lin's CCC, Bland-Altman."),
+    Artifact("tab:error-structure", "table", ["e_result/obs/exp4/tab_error_structure.tex"],
+             "obs/tab8_error_structure.py", _exp("exp2"), BPS,
+             "NOT compiled (never \\input in e_result/exp4/sec.tex; moved to obs/ 2026-09-15). "
              "FP:FN decomposition per condition."),
-    Artifact("tab:best-session", "table", ["e_result/exp4/tab_best_session.tex"],
-             "tab9_best_session.py", _exp("exp2"), BPS,
+    Artifact("tab:best-session", "table", ["e_result/obs/exp4/tab_best_session.tex"],
+             "obs/tab9_best_session.py", _exp("exp2"), BPS,
+             "NOT compiled (never \\input in e_result/exp4/sec.tex; moved to obs/ 2026-09-15). "
              "Best, worst and median Proposed-Med session and subject."),
-    Artifact("tab:failure_analysis", "table", ["e_result/exp4/tab_failure_analysis.tex"],
-             "tab10_failure_analysis.py", _exp("exp2") + REGIONS, BPS,
+    Artifact("tab:failure_analysis", "table", ["e_result/obs/exp4/tab_failure_analysis.tex"],
+             "obs/tab10_failure_analysis.py", _exp("exp2") + REGIONS, BPS,
+             "NOT compiled (never \\input in e_result/exp4/sec.tex; moved to obs/ 2026-09-15). "
              "The five lowest-F1 Proposed-Med sessions per corpus."),
     Artifact("tab:channel_selection", "table+figure",
-             ["e_result/exp1/tab_channel_selection.tex",
+             ["e_result/obs/exp1/tab_channel_selection.tex",
               "figures/fig_channel_selection.pdf", "figures/fig_channel_selection.png"],
-             "tab11_fig9_channel_selection_frequency.py", _exp("exp2") + REGIONS,
+             "obs/tab11_fig9_channel_selection_frequency.py", _exp("exp2") + REGIONS,
              "per-session winner pooled over the four conditions",
-             "Best-channel selection frequency by scalp location."),
+             "NOT compiled (commented out of e_result/exp1/sec.tex; generator and .tex moved to "
+             "obs/ 2026-09-15, image assets left in figures/ since result.tex's own commented "
+             "block still references them directly). Best-channel selection frequency by scalp "
+             "location."),
     # tab:channel-robustness (tab12_channel_robustness.py) was removed: its only prose
     # discussion (e_result/exp1/p12_agreement/paragraph.tex) is itself commented out of
     # the compiled document, so the table had no active discussion. Generator deleted.
 
     # ---------------- Experiment 3: Stage-B threshold estimator ----------------
-    Artifact("tab:exp3_estimator", "table", ["e_result/exp3/tab_threshold_estimator_stageb.tex"],
-             "tab19_exp3_threshold_estimator.py", _exp("exp2"),
+    Artifact("tab:exp3_estimator", "table",
+             ["e_result/obs/exp3/tab_threshold_estimator_stageb.tex"],
+             "obs/tab19_exp3_threshold_estimator.py", _exp("exp2"),
              BPS + "; Wilcoxon two-sided, Bonferroni x6",
-             "Proposed-Med vs Proposed-Mean comparison isolated from the four-condition table."),
+             "NOT compiled (entire e_result/exp3/sec.tex commented out of result.tex; whole "
+             "exp3/ folder and generator moved to obs/ 2026-09-15). Proposed-Med vs "
+             "Proposed-Mean comparison isolated from the four-condition table."),
 
     # ---------------- Experiment 2: epoch-duration stability, and summary ----------------
-    Artifact("tab:epoch_duration", "table+figure",
-             ["e_result/exp2/tab_effect_different_epoch_size.tex",
-              "figures/fig_exp3_epoch_duration.pdf", "figures/fig_exp3_epoch_duration.png"],
-             "tab13_fig10_epoch_duration.py", _exp("exp3"),
+    Artifact("fig:f1_by_epoch", "figure",
+             ["figures/fig_exp3_epoch_duration.pdf", "figures/fig_exp3_epoch_duration.png"],
+             "res_exp2_fig_f1_by_epoch_duration_fp1_fp2.py", _exp("exp3"),
              BPS + "; Wilcoxon two-sided vs 30 s, Bonferroni x6",
-             "Macro F1 of Proposed-Med across the seven epoch durations."),
-    Artifact("tab:exp_summary", "table", ["e_result/exp_summary/tab_exp_summary.tex"],
-             "tab14_tab15_fig11_exp_summary.py", _exp("exp1", "exp2", "exp3"), BPS,
-             "Proposed-Med across the three experiments vs the best competitor."),
-    Artifact("tab:exp_stats", "table", ["e_result/exp_summary/tab_exp_stats.tex"],
-             "tab14_tab15_fig11_exp_summary.py", _exp("exp1", "exp2", "exp3"),
+             "Compiled as Figure 7 (manuscript Experiment 2: Stability Across Epoch "
+             "Durations), even though its image filename says 'exp3' and its caption/label "
+             "are defined physically inside e_result/exp1/sec.tex. Macro-F1 of "
+             "Proposed-approach across epoch durations for Fp1/Fp2, reported separately. "
+             "(Formerly mistracked here as label tab:epoch_duration -> "
+             "e_result/exp2/tab_effect_different_epoch_size.tex, a table+figure pair that "
+             "does not exist on disk, generated by tab13_fig10_epoch_duration.py; there is "
+             "no LaTeX table for this comparison, only the figure.)"),
+    Artifact("tab:exp_summary", "table", ["e_result/obs/exp_summary/tab_exp_summary.tex"],
+             "obs/tab14_tab15_fig11_exp_summary.py", _exp("exp1", "exp2", "exp3"), BPS,
+             "NOT compiled (e_result/exp_summary/ was never \\input from result.tex; moved to "
+             "obs/ 2026-09-15). Proposed-Med across the three experiments vs the best "
+             "competitor."),
+    Artifact("tab:exp_stats", "table", ["e_result/obs/exp_summary/tab_exp_stats.tex"],
+             "obs/tab14_tab15_fig11_exp_summary.py", _exp("exp1", "exp2", "exp3"),
              BPS + "; one-sided Wilcoxon, Bonferroni x6, 10k bootstrap CI",
-             "Paired tests of Proposed-Med against BLINKER-concat."),
+             "NOT compiled (e_result/exp_summary/ was never \\input from result.tex; moved to "
+             "obs/ 2026-09-15). Paired tests of Proposed-Med against BLINKER-concat."),
     Artifact("fig:exp_boxplot", "figure",
-             ["figures/fig_exp_boxplot.pdf", "figures/fig_exp_boxplot.png"],
-             "tab14_tab15_fig11_exp_summary.py", _exp("exp1", "exp2", "exp3"), BPS,
-             "Session-level F1 distributions across the three experiments."),
+             ["e_result/obs/figures/fig_exp_boxplot.pdf",
+              "e_result/obs/figures/fig_exp_boxplot.png"],
+             "obs/tab14_tab15_fig11_exp_summary.py", _exp("exp1", "exp2", "exp3"), BPS,
+             "NOT compiled (orphaned image asset, no surviving .tex wrapper; moved to obs/ "
+             "2026-09-15). Session-level F1 distributions across the three experiments."),
 
     # ---------------- Literature ----------------
     Artifact("tab:literature_comparison", "table",
-             ["c_literature_review/tab_literature_comparison.tex"],
-             "tab16_literature_comparison.py", [],
+             ["e_result/obs/c_literature_review/tab_literature_comparison.tex"],
+             "obs/tab16_literature_comparison.py", [],
              "hand-curated from the bibliography; not experiment-backed",
-             "Comparison of the present detector against prior work."),
+             "NOT compiled (entire Literature Review section commented out of access.tex; "
+             "moved to obs/ 2026-09-15). Comparison of the present detector against prior "
+             "work."),
 ]
 
 #: Floats that are not data-driven and are therefore not regenerated by this tool.

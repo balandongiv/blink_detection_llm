@@ -14,7 +14,7 @@ Usage (from repo root, inside conda env double_threshold_algo):
         -> auto-create 'runs_replica_<timestamp>/' (with a warning)
 
 After running, EXPORT the printed variable in the same shell, then proceed with
-Stage 1 of REPLICATION_GUIDE.md (run_exp1_*.py, ...). Without the export, the
+Stage 1 of archive/handoff_docs/REPLICATION_GUIDE.md (run_exp1_*.py, ...). Without the export, the
 pipeline falls back to the canonical 'runs_second_iteration/'.
 """
 from __future__ import annotations

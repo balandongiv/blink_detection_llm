@@ -1,0 +1,200 @@
+[
+  {
+    "experiment": "exp3_strategy_comparison",
+    "manuscript_location": "Table 1 (tab:f1_significance)",
+    "metric_or_statistic": "Internal Proposed-approach macro-F1 (%)",
+    "old_value": "88.25",
+    "new_value": "88.25",
+    "difference": "+0.0009",
+    "match_status": "MATCH",
+    "note": "n_sessions=46; recomputed via best-channel-per-session macro mean of f1",
+    "possible_root_cause": ""
+  },
+  {
+    "experiment": "exp3_strategy_comparison",
+    "manuscript_location": "Table 1 (tab:f1_significance)",
+    "metric_or_statistic": "Internal BLINKER macro-F1 (%)",
+    "old_value": "76.54",
+    "new_value": "76.54",
+    "difference": "+0.0028",
+    "match_status": "MATCH",
+    "note": "n_sessions=46; paired against Proposed-Med, n_pairs=46",
+    "possible_root_cause": ""
+  },
+  {
+    "experiment": "exp3_strategy_comparison",
+    "manuscript_location": "Table 1 (tab:f1_significance)",
+    "metric_or_statistic": "Internal Proposed vs BLINKER significance asterisk (two-sided Wilcoxon, Bonferroni x4)",
+    "old_value": "significant (*)",
+    "new_value": "significant (*), p_raw=2.263e-05, p_bonf=9.05e-05",
+    "difference": "n/a",
+    "match_status": "MATCH",
+    "note": "n_pairs=46",
+    "possible_root_cause": ""
+  },
+  {
+    "experiment": "exp3_strategy_comparison",
+    "manuscript_location": "Table 1 (tab:f1_significance)",
+    "metric_or_statistic": "Internal MNE macro-F1 (%)",
+    "old_value": "66.64",
+    "new_value": "66.64",
+    "difference": "+0.0029",
+    "match_status": "MATCH",
+    "note": "n_sessions=46; paired against Proposed-Med, n_pairs=46",
+    "possible_root_cause": ""
+  },
+  {
+    "experiment": "exp3_strategy_comparison",
+    "manuscript_location": "Table 1 (tab:f1_significance)",
+    "metric_or_statistic": "Internal Proposed vs MNE significance asterisk (two-sided Wilcoxon, Bonferroni x4)",
+    "old_value": "significant (*)",
+    "new_value": "significant (*), p_raw=0.0005953, p_bonf=0.002381",
+    "difference": "n/a",
+    "match_status": "MATCH",
+    "note": "n_pairs=46",
+    "possible_root_cause": ""
+  },
+  {
+    "experiment": "exp3_strategy_comparison",
+    "manuscript_location": "Table 1 (tab:f1_significance)",
+    "metric_or_statistic": "Cao2018 Proposed-approach macro-F1 (%)",
+    "old_value": "80.68",
+    "new_value": "80.68",
+    "difference": "-0.0047",
+    "match_status": "MATCH",
+    "note": "n_sessions=58; recomputed via best-channel-per-session macro mean of f1",
+    "possible_root_cause": ""
+  },
+  {
+    "experiment": "exp3_strategy_comparison",
+    "manuscript_location": "Table 1 (tab:f1_significance)",
+    "metric_or_statistic": "Cao2018 BLINKER macro-F1 (%)",
+    "old_value": "69.40",
+    "new_value": "69.40",
+    "difference": "+0.0013",
+    "match_status": "MATCH",
+    "note": "n_sessions=58; paired against Proposed-Med, n_pairs=58",
+    "possible_root_cause": ""
+  },
+  {
+    "experiment": "exp3_strategy_comparison",
+    "manuscript_location": "Table 1 (tab:f1_significance)",
+    "metric_or_statistic": "Cao2018 Proposed vs BLINKER significance asterisk (two-sided Wilcoxon, Bonferroni x4)",
+    "old_value": "significant (*)",
+    "new_value": "significant (*), p_raw=4.496e-09, p_bonf=1.798e-08",
+    "difference": "n/a",
+    "match_status": "MATCH",
+    "note": "n_pairs=58",
+    "possible_root_cause": ""
+  },
+  {
+    "experiment": "exp3_strategy_comparison",
+    "manuscript_location": "Table 1 (tab:f1_significance)",
+    "metric_or_statistic": "Cao2018 MNE macro-F1 (%)",
+    "old_value": "56.27",
+    "new_value": "56.27",
+    "difference": "+0.0036",
+    "match_status": "MATCH",
+    "note": "n_sessions=58; paired against Proposed-Med, n_pairs=58",
+    "possible_root_cause": ""
+  },
+  {
+    "experiment": "exp3_strategy_comparison",
+    "manuscript_location": "Table 1 (tab:f1_significance)",
+    "metric_or_statistic": "Cao2018 Proposed vs MNE significance asterisk (two-sided Wilcoxon, Bonferroni x4)",
+    "old_value": "significant (*)",
+    "new_value": "significant (*), p_raw=2.178e-07, p_bonf=8.71e-07",
+    "difference": "n/a",
+    "match_status": "MATCH",
+    "note": "n_pairs=58",
+    "possible_root_cause": ""
+  },
+  {
+    "experiment": "exp3_strategy_comparison",
+    "manuscript_location": "par4.tex prose (Experiment 3 section)",
+    "metric_or_statistic": "Internal Proposed-approach macro-F1 (%) restated in prose",
+    "old_value": "88.25",
+    "new_value": "88.25",
+    "difference": "+0.0009",
+    "match_status": "MATCH",
+    "note": "prose restates the Table 1 value verbatim",
+    "possible_root_cause": ""
+  },
+  {
+    "experiment": "exp3_strategy_comparison",
+    "manuscript_location": "par4.tex prose (Experiment 3 section)",
+    "metric_or_statistic": "Cao2018 Proposed-approach macro-F1 (%) restated in prose",
+    "old_value": "80.68",
+    "new_value": "80.68",
+    "difference": "-0.0047",
+    "match_status": "MATCH",
+    "note": "prose restates the Table 1 value verbatim",
+    "possible_root_cause": ""
+  },
+  {
+    "experiment": "exp3_strategy_comparison",
+    "manuscript_location": "Figure 8 (fig:exp2_pr_scatter)",
+    "metric_or_statistic": "Internal Proposed-approach mean marker F1 (%) (internal consistency vs Table 1)",
+    "old_value": "88.25 (Table 1 cell)",
+    "new_value": "88.25",
+    "difference": "+0.0009",
+    "match_status": "MATCH",
+    "note": "Figure 8 and Table 1 share the same source rows/filter, so this checks recomputed Figure 8 marker F1 against the printed Table 1 value rather than against a second printed Figure 8 number (the figure prints no numeric labels).",
+    "possible_root_cause": ""
+  },
+  {
+    "experiment": "exp3_strategy_comparison",
+    "manuscript_location": "Figure 8 (fig:exp2_pr_scatter)",
+    "metric_or_statistic": "Cao2018 Proposed-approach mean marker F1 (%) (internal consistency vs Table 1)",
+    "old_value": "80.68 (Table 1 cell)",
+    "new_value": "80.68",
+    "difference": "-0.0047",
+    "match_status": "MATCH",
+    "note": "Figure 8 and Table 1 share the same source rows/filter, so this checks recomputed Figure 8 marker F1 against the printed Table 1 value rather than against a second printed Figure 8 number (the figure prints no numeric labels).",
+    "possible_root_cause": ""
+  },
+  {
+    "experiment": "exp3_strategy_comparison",
+    "manuscript_location": "par4.tex / Figure 8 prose",
+    "metric_or_statistic": "Internal BLINKER mean recall > mean precision (qualitative claim: 'favors recall over precision')",
+    "old_value": "recall > precision (claimed)",
+    "new_value": "precision=67.94%, recall=95.18% (recall > precision)",
+    "difference": "+27.23 pp",
+    "match_status": "MATCH",
+    "note": "qualitative directional claim from par4.tex, checked numerically",
+    "possible_root_cause": ""
+  },
+  {
+    "experiment": "exp3_strategy_comparison",
+    "manuscript_location": "par4.tex / Figure 8 prose",
+    "metric_or_statistic": "Cao2018 BLINKER mean recall > mean precision (qualitative claim: 'favors recall over precision')",
+    "old_value": "recall > precision (claimed)",
+    "new_value": "precision=56.96%, recall=97.15% (recall > precision)",
+    "difference": "+40.19 pp",
+    "match_status": "MATCH",
+    "note": "qualitative directional claim from par4.tex, checked numerically",
+    "possible_root_cause": ""
+  },
+  {
+    "experiment": "exp3_strategy_comparison",
+    "manuscript_location": "par5.tex prose",
+    "metric_or_statistic": "Internal Proposed-approach higher precision AND recall than both baselines",
+    "old_value": "Proposed higher on both axes vs both baselines (claimed)",
+    "new_value": "Proposed P=88.03 R=90.14; BLINKER P=67.94 R=95.18; MNE P=69.44 R=70.63",
+    "difference": "n/a",
+    "match_status": "MISMATCH",
+    "note": "qualitative directional claim from par5.tex, checked numerically",
+    "possible_root_cause": "prose overstates the precision-recall separation: Proposed-approach has uniformly higher PRECISION than both baselines on both datasets, but BLINKER-concat has higher RECALL than Proposed-approach on both datasets (Internal 95.18% vs 90.14%; Cao2018 97.15% vs 89.09%), which is also visible in par4.tex's own description of BLINKER as recall-favoring. The 'separated from both baselines in the same direction' wording in par5.tex is not literally true on the recall axis for the BLINKER comparison."
+  },
+  {
+    "experiment": "exp3_strategy_comparison",
+    "manuscript_location": "par5.tex prose",
+    "metric_or_statistic": "Cao2018 Proposed-approach higher precision AND recall than both baselines",
+    "old_value": "Proposed higher on both axes vs both baselines (claimed)",
+    "new_value": "Proposed P=75.91 R=89.09; BLINKER P=56.96 R=97.15; MNE P=60.13 R=61.68",
+    "difference": "n/a",
+    "match_status": "MISMATCH",
+    "note": "qualitative directional claim from par5.tex, checked numerically",
+    "possible_root_cause": "prose overstates the precision-recall separation: Proposed-approach has uniformly higher PRECISION than both baselines on both datasets, but BLINKER-concat has higher RECALL than Proposed-approach on both datasets (Internal 95.18% vs 90.14%; Cao2018 97.15% vs 89.09%), which is also visible in par4.tex's own description of BLINKER as recall-favoring. The 'separated from both baselines in the same direction' wording in par5.tex is not literally true on the recall axis for the BLINKER comparison."
+  }
+]

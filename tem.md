@@ -1,172 +1,287 @@
-Yes — **it can be considered an ablation study**, but I would describe it more precisely as a **channel-subset ablation** or **sensor/channel ablation study**.
 
-There is one important distinction in your setup.
 
-Your full pipeline uses multiple EEG/EOG channels in Stage A, and the candidate epoch set
+````text
+You are given access to a repository containing:
 
-[
-B={i\in E:b_i=1}
-]
+1. A final LaTeX manuscript.
+2. A compiled manuscript PDF with the name 'writing/ACCESS_latex_template_20260513/0_original_access.pdf'.
+- The pdf can be compiled from the LaTeX source using Tectonic or a similar TeX engine using "writing/ACCESS_latex_template_20260513/access.tex".
+3. Python scripts that generate result tables and figures which is store in 'C:\Users\balan\IdeaProjects\blink_detection_llm\experiment_script'.
+4. CSV/result data files used to generate the manuscript results which is store in 'C:\Users\balan\IdeaProjects\blink_detection_llm\publication_results'.
 
-depends directly on which channels are available because of your union rule:
+Your role is to act as a project manager and spawn multiple sub-agents to perform validation and cleanup. The manuscript contains three main experiments. The current objective is NOT to rewrite the manuscript, but to validate, organize, and clean up the result-generation pipeline.
 
-[
-b_i = 1 \quad \text{if at least one selected channel exceeds its } \tau_c^\star.
-]
+Main goals:
 
-So when you change from:
+1. Rename Python result-generation scripts so their filenames clearly match the manuscript result table or figure they generate.
+2. Independently verify manuscript-reported numerical/statistical results from CSV files.
+3. Identify scripts for tables/figures no longer used in the final manuscript and move them into an `obsolete/` folder.
+4. Produce clear audit reports so a human can quickly inspect any mismatch.
 
-**all channels → frontal → frontal-left → frontal-right → occipital → occipital-left → occipital-right → single channel**
+Important constraints:
 
-you are removing input channels and observing how the complete detection pipeline behaves. That is a legitimate form of **input-feature/channel ablation**.
+- Do not change scientific interpretation unless a clear error is found.
+- Do not silently overwrite manuscript values.
+- Do not delete files. Move unused scripts to `obsolete/`.
+- Preserve reproducibility.
+- Use git-aware operations where possible.
+- Keep a mapping of every old filename to its new filename.
+- If unsure whether a script is used, mark it as “uncertain” instead of moving it.
 
-### But there is a subtle terminology issue
+Agent 1: Manuscript Result Inventory
 
-Your current experiment mostly answers:
+Tasks:
 
-> **“How well does the pipeline work when it has access only to this subset of electrodes?”**
+1. Inspect the final LaTeX manuscript and the compiled PDF `C:\Users\balan\IdeaProjects\blink_detection_llm\writing\ACCESS_latex_template_20260513\0_original_access.pdf`.
+2. Identify every result table and figure in the manuscript.
+3. For each table/figure, record:
+   - Experiment number: Experiment 1, Experiment 2, or Experiment 3
+   - Table/Figure number
+   - LaTeX label
+   - Caption
+   - File included in LaTeX, if any
+   - Output file path, e.g. `.tex`, `.png`, `.pdf`, `.csv`
+   - Result section where it appears
+   - Short descriptive slug based on the caption
 
-For example:
+Deliverable:
 
-[
-\text{All channels} \rightarrow \text{Frontal only}
-]
+Create:
 
-or
+```text
+reports/result_inventory.csv
+reports/result_inventory.md
+````
 
-[
-\text{All channels} \rightarrow \text{Occipital only}.
-]
+Suggested columns:
 
-That is slightly different from the classical ablation question:
+```text
+experiment, item_type, item_number, label, caption, short_slug, latex_source_file, output_file, result_section, notes
+```
 
-> **“What happens when I remove this particular component from the full system?”**
+Agent 2: Script Renaming and Traceability
 
-A stricter channel ablation would therefore look like:
+Tasks:
 
-| Configuration                | Question answered                              |
-| ---------------------------- | ---------------------------------------------- |
-| All channels                 | Full baseline                                  |
-| All **except frontal**       | How important are frontal channels?            |
-| All **except occipital**     | How important are occipital channels?          |
-| All **except frontal-left**  | Contribution of left frontal channels          |
-| All **except frontal-right** | Contribution of right frontal channels         |
-| Frontal only                 | Can frontal channels alone perform the task?   |
-| Occipital only               | Can occipital channels alone perform the task? |
-| Single channel               | Minimum-channel baseline                       |
+1. Locate all Python scripts that generate result tables and figures.
+2. Match each script to the corresponding table or figure in `reports/result_inventory.csv`.
+3. Rename scripts using this convention:
 
-So I would distinguish two types of analysis.
+For figures:
 
-**Region-only/channel-subset analysis**
+```text
+res_exp<experiment_number>_fig_<brief_caption_slug>.py
+```
 
-[
-\text{Full},\quad F,\quad F_L,\quad F_R,\quad O,\quad O_L,\quad O_R,\quad \text{single}
-]
+For tables:
 
-This evaluates **sufficiency**:
+```text
+res_exp<experiment_number>_table_<brief_caption_slug>.py
+```
 
-> “Are frontal channels alone sufficient for blink detection?”
+Examples:
 
-**Leave-region-out ablation**
+```text
+res_exp1_fig_regional_f1_comparison.py
+res_exp1_table_per_electrode_statistics.py
+res_exp2_fig_threshold_ablation.py
+res_exp3_table_cross_dataset_performance.py
+```
 
-[
-\text{Full},\quad \text{Full}\setminus F,\quad
-\text{Full}\setminus O,\quad
-\text{Full}\setminus F_L,\ldots
-]
+Rules for slug:
 
-This evaluates **contribution/necessity**:
+* Use lowercase.
+* Use underscores.
+* Keep it brief but meaningful.
+* Derive it from the figure/table caption.
+* Avoid very long filenames.
+* Avoid vague names such as `plot1.py`, `final.py`, `table_results.py`.
 
-> “How much does performance deteriorate when frontal channels are removed?”
+4. Update any references, Makefiles, notebooks, shell scripts, or documentation that call the old filenames.
+5. Create a rename log.
 
-For a strong paper, doing **both** would be particularly convincing.
+Deliverable:
 
-### This matters even more because of your Stage A → Stage B dependency
+```text
+reports/script_rename_map.csv
+```
 
-Your pipeline has an interesting property:
+Suggested columns:
 
-[
-\text{Selected channels}
-\rightarrow
-\tau_c^\star
-\rightarrow
-B
-\rightarrow
-Y_c
-\rightarrow
-\text{Stage B thresholds}.
-]
+```text
+old_path, new_path, experiment, item_type, table_or_figure_number, label, caption_slug, confidence, notes
+```
 
-Therefore, changing the channel set does not merely change the signal provided to the final detector. It may also change **which epochs enter (B)**.
+Agent 3: Independent Result Validation
 
-For example, suppose an epoch has a large blink in Fp1 but little activity in occipital channels.
+Important: This agent must validate results independently.
 
-With all channels:
+Assume this agent has access only to CSV/result data files and the manuscript/PDF. Do not reuse the existing Python result-generation scripts.
 
-[
-a_{i,Fp1}>\tau_{Fp1}^{\star}
-]
+Tasks:
 
-so
+1. Read all result values claimed in the manuscript, tables, and figure captions.
+2. Create new independent validation scripts under:
 
-[
-i\in B.
-]
+```text
+validation/
+```
 
-With occipital-only channels, none might exceed their thresholds, so
+3. Recompute the reported statistics directly from CSV files.
+4. Compare manuscript values against independently recomputed values.
+5. For each checked value, report:
 
-[
-i\notin B.
-]
+    * Location in manuscript
+    * Claimed old value
+    * Independently computed new value
+    * Difference
+    * Match status
+    * Note
+    * Possible root cause if mismatch occurs
 
-Then Stage B is trained/estimated from a **different collection of candidate epochs**. Consequently, your experiment measures the effect of channel availability on the **entire end-to-end pipeline**, which is perfectly reasonable, but you should state this clearly.
+Deliverables:
 
-I would call your primary experiment something like:
+```text
+validation/validate_exp1_results.py
+validation/validate_exp2_results.py
+validation/validate_exp3_results.py
+reports/result_validation_table.csv
+reports/result_validation_report.md
+```
 
-> **Channel-subset ablation analysis**
+Use this table format:
 
-and explain that:
+```text
+experiment, manuscript_location, metric_or_statistic, old_value, new_value, difference, match_status, note, possible_root_cause
+```
 
-> The full multichannel configuration was used as the reference condition. The channel set was then systematically restricted to anatomically defined subsets, including frontal, left-frontal, right-frontal, occipital, left-occipital, right-occipital, and individual-channel configurations. For each configuration, the channel-specific thresholds and candidate epochs were recomputed using the same pipeline. This analysis evaluates the sensitivity of the proposed method to spatial channel availability and determines whether comparable blink-detection performance can be maintained using reduced electrode configurations.
+Match status should be one of:
 
-That is scientifically defensible as an ablation.
+```text
+MATCH
+ROUNDING_DIFFERENCE
+MISMATCH
+UNCLEAR_SOURCE
+NOT_REPRODUCIBLE_FROM_AVAILABLE_CSV
+```
 
-### One experiment would make it considerably stronger
+If values do not match, investigate the likely cause, for example:
 
-Because your Stage A is specifically **multichannel candidate-epoch selection**, I would report at least these three levels:
+* Different rounding rule
+* Macro vs micro aggregation
+* Different session inclusion/exclusion
+* Different channel/electrode subset
+* Different statistical test
+* Different correction method
+* Different CSV source
+* Old manuscript value not updated
+* Figure/table dropped or obsolete
 
-[
-\boxed{\text{All channels}}
-]
+Do not automatically “fix” manuscript values. Flag them for human review.
 
-as the reference,
+Agent 4: Obsolete Script Cleanup
 
-[
-\boxed{\text{Regional subsets: }F,F_L,F_R,O,O_L,O_R}
-]
+Tasks:
 
-to assess **regional sufficiency**, and
+1. Identify Python scripts under the folder 'C:\Users\balan\IdeaProjects\blink_detection_llm\experiment_script' that generate tables or figures not used in the final manuscript.
+2. Move these scripts into:
 
-[
-\boxed{\text{Single channels}}
-]
+```text
+C:\Users\balan\IdeaProjects\blink_detection_llm\experiment_script\obs
+```
 
-to determine whether the proposed multichannel strategy actually provides an advantage over a conventional single-electrode approach.
+3. Preserve subfolder structure where helpful.
+4. Add a README inside `obsolete/` explaining why files were moved.
+5. Do not move scripts that are still needed by active scripts unless they are clearly standalone obsolete generators.
 
-Then, if space permits, add **leave-region-out** experiments:
+Deliverables:
 
-[
-\text{All}-F,\quad \text{All}-O,\quad \text{All}-F_L,\quad\text{All}-F_R
-]
+```text
+obsolete/README.md
+reports/obsolete_scripts.csv
+```
 
-to provide the more traditional ablation interpretation.
+Suggested columns:
 
-The distinction is useful:
+```text
+old_path, new_path, reason, evidence, confidence, notes
+```
 
-**“Frontal only performs 96%”** tells you frontal electrodes are sufficient.
+Manager Agent: Final Integration and QA
 
-**“Removing frontal drops performance from 98% to 82%”** tells you frontal electrodes are important to the complete system.
+Tasks:
 
-Those are related, but they are **not the same scientific conclusion**.
+1. Review outputs from all agents.
+2. Confirm the repository still runs after renaming.
+3. Recompile the manuscript PDF.
+4. Confirm that all active result tables and figures still render correctly.
+5. Run available tests if present.
+6. Produce a final summary.
 
-For your particular Stage A formulation, I would therefore label the experiment **“Channel-Subset and Regional Ablation Analysis”** rather than simply “Ablation Study.” That wording accurately covers all-channels, region-only, left/right regional, and single-channel comparisons.
+Final deliverables:
+
+```text
+reports/final_cleanup_summary.md
+reports/result_inventory.csv
+reports/script_rename_map.csv
+reports/result_validation_table.csv
+reports/result_validation_report.md
+reports/obsolete_scripts.csv
+obsolete/README.md
+```
+
+Final summary must include:
+
+1. Number of active result figures and tables found.
+2. Number of scripts renamed.
+3. Number of obsolete scripts moved.
+4. Number of validated values.
+5. Number of exact matches.
+6. Number of rounding-only differences.
+7. Number of mismatches requiring human review.
+8. Any manuscript values that should be checked by the human author.
+9. Any scripts or figures that could not be confidently mapped.
+10. Commands used to reproduce the checks.
+
+Before finishing, run:
+
+```bash
+git status
+```
+
+Then summarize all changed files.
+
+```
+
+Other useful tasks you can add:
+
+1. **Traceability matrix**  
+   Map every manuscript claim to its source CSV, script, generated output, and LaTeX location.
+
+2. **Pre/post PDF comparison**  
+   Recompile before and after cleanup and confirm the visual manuscript output did not change unexpectedly.
+
+3. **Rounding policy audit**  
+   Check whether all reported values use consistent decimal places, percentages, p-values, and significance symbols.
+
+4. **Statistical-method audit**  
+   Confirm that each test matches the manuscript wording, especially paired vs unpaired tests, Wilcoxon use, Bonferroni correction, macro-F1 aggregation, and session-level pairing.
+
+5. **Reproducibility README**  
+   Create a short `README_results.md` explaining how to regenerate every table and figure.
+
+6. **Data manifest with checksums**  
+   Add a manifest listing every CSV used for final results, with file paths and checksums.
+
+7. **Unused LaTeX asset cleanup**  
+   Identify unused `.tex`, `.png`, `.pdf`, and `.csv` outputs that are no longer included in the manuscript.
+
+8. **Label/caption consistency check**  
+   Check that all `\label{}` references, figure numbers, table numbers, and captions match the compiled PDF.
+
+9. **Validation plots/tables folder**  
+   Keep independent QC outputs separate from publication outputs, so validation does not contaminate final manuscript assets.
+
+10. **Human-review checklist**  
+   Generate one short checklist containing only the mismatches, uncertain mappings, and values needing author decision.
+```

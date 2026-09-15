@@ -14,7 +14,7 @@ experiment_script/setup/exp2_strategy_comparison.yaml:
   autoreject_random_state, std_threshold, min_flagged_epochs, verbose
 
 The caller (not this module) is the single source of truth for those values:
-  - experiment_script/exp2_a_strategy_comparison_cao2018.py / _raja.py, via
+  - experiment_script/exp3_a_strategy_comparison_cao2018.py / _raja.py, via
     src/exp/exp2_channel_group_sweep.py
   - src/utils/condition_runner_utils.py (exp7/exp8 analyses)
   - experiment_script/paper_blink_type_recall.py (dynamic module load)

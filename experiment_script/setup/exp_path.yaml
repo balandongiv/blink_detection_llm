@@ -5,6 +5,18 @@
 # input directory from the SAME keys. Never hardcode these paths in Python — a runs0/
 # vs runs/ mismatch between a primary and its plot script previously made exp1's plots
 # silently fail to generate.
+#
+# NOTE (2026-09-14): the `exp2`/`exp3` KEYS below are internal identifiers only — exp2
+# means "strategy comparison" and exp3 means "epoch duration" everywhere in
+# paper_data.py (_FILES, load_exp2_best, etc.) and are left that way deliberately (see
+# reports/result_inventory.md's addendum). The on-disk publication_results/ FOLDER
+# NAMES were renumbered to match the manuscript's own Experiment 2 (epoch duration) /
+# Experiment 3 (strategy comparison) numbering, so the values below are intentionally
+# cross-mapped: out_dirs.exp2 (strategy content) now points at the exp3_* folder, and
+# out_dirs.exp3 (epoch-duration content) now points at the exp2_* folder. Do not "fix"
+# this cross-mapping without also renaming paper_data.py's internal exp2/exp3 keys,
+# load_exp2_best(), and every src/exp/ module that shares those keys — that was
+# evaluated and deliberately deferred as a much larger, higher-risk change.
 
 out_dir: publication_results
 selection_out_subdir: channel_selection
@@ -14,8 +26,8 @@ out_dirs:
     raja: ${out_dir}/exp1_channel_raja
     cao2018: ${out_dir}/exp1_channel_cao
   exp2:
-    raja: ${out_dir}/exp2_raja
-    cao2018: ${out_dir}/exp2_cao
-  exp3:
     raja: ${out_dir}/exp3_raja
     cao2018: ${out_dir}/exp3_cao
+  exp3:
+    raja: ${out_dir}/exp2_raja
+    cao2018: ${out_dir}/exp2_cao

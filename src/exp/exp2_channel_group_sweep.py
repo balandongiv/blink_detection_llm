@@ -1,7 +1,7 @@
 """Shared per-session worker for the exp2 per-dataset channel-group sweep scripts.
 
 Run order:
-  1. exp2_a_strategy_comparison_cao2018.py / exp2_a_strategy_comparison_raja.py
+  1. exp3_a_strategy_comparison_cao2018.py / exp3_a_strategy_comparison_raja.py
      collect per-session rows.
   2. exp2_write_results() writes the exp2 per-dataset result artifacts.
   3. update_exp2_latex.py reads both datasets' results CSVs to build the
@@ -240,7 +240,7 @@ def exp2_write_results(
     """Coerce ``all_metrics``, then write the exp2 per-dataset results CSV, summary CSV,
     summary.json, and print the summary table.
 
-    Shared by exp2_a_strategy_comparison_cao2018.py and exp2_a_strategy_comparison_raja.py
+    Shared by exp3_a_strategy_comparison_cao2018.py and exp3_a_strategy_comparison_raja.py
     so the two scripts produce identically-shaped outputs, and so
     update_exp2_latex.py's input schema stays stable.
     """
