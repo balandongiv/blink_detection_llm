@@ -266,3 +266,6 @@ telegram_heartbeat.log
 /writing/e_result/exp1/_transcripts_revise/p10_selection_frequency.reply.txt
 /writing/main.pdf
 /writing/ACCESS_latex_template_20260513/access.synctex.gz
+
+# LaTeX build artifacts
+auxil/
