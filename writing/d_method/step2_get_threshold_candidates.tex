@@ -1,7 +1,7 @@
 \paragraph{Computation of Sample-Level Blink-Region Threshold Candidates}
 
 Stage~B estimates channel-specific sample-level amplitude thresholds using signal samples drawn from the candidate epochs \(\mathcal{B}\) identified in Stage~A.
-The estimation combines a measure of central tendency with a robust measure of dispersion and a sensitivity parameter, allowing the threshold to adapt to the amplitude characteristics of each channel while limiting the influence of isolated extreme samples.
+The estimation is inspired by the BLINKER approach~\citep{kleifges2017blinker}, combining a measure of central tendency with a robust measure of dispersion and a sensitivity parameter, allowing the threshold to adapt to the amplitude characteristics of each channel while limiting the influence of isolated extreme samples.
 
 %In Stage~B, a robust sample-level amplitude threshold is estimated using only the samples
 %pooled from the flagged epochs \[\mathcal{B}\], as discussed in previous subsection., as
@@ -54,15 +54,14 @@ one-dimensional empirical sample set
 %longer peak-to-peak ranges \(a_{i,c}\), but the individual signal amplitudes
 %\(x_{i,c,t}\) that will later be thresholded to form candidate blink regions.
 
-The sample-level threshold is estimated using a robust location-plus-dispersion form. Let \(\xi_c\) be the channel-specific center of the sample distribution.
-The default choice is the median,
+The sample-level threshold is estimated using a robust location-plus-dispersion form. Let \(\xi_c\) be the channel-specific center of the sample distribution which can be express as below:
 \[
 \xi_c = \operatorname{median}_{y \in \mathcal{Y}_c} y,
 \]
 
-It should be note that, the arithmetic mean may be substituted when a mean-centered threshold
-is required for comparison.
-
+%It should be note that, the arithmetic mean may be substituted when a mean-centered threshold
+%is required for comparison.
+%
 The dispersion is estimated by the median absolute
 deviation (MAD),
 \[
@@ -74,7 +73,7 @@ and is rescaled to a standard-deviation-compatible quantity by
 \[
 \sigma^{\mathrm{rob}}_c = 1.4826\,\operatorname{MAD}_c .
 \]
-The constant \(1.4826\) is the usual normal-consistency factor for the MAD.
+The constant \(1.4826\) is the usual normal-consistency factor for the MAD, and is the same scaling choice originally used in BLINKER~\citep{kleifges2017blinker}.
 
 For a sensitivity parameter \(k>0\), the resulting sample-level blink-region
 threshold candidate for channel \(c\) is

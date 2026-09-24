@@ -18,10 +18,10 @@ The proposed method is an epoch-aware, double-thresholding pipeline that transfo
 First, the continuous recording is downsampled to a common sampling grid of \(100\)~Hz. Standardising the sampling rate makes the
 amplitude thresholds and the minimum-duration gate comparable across recordings acquired on different hardware, and reduces the per-sample computational cost of the downstream stages without discarding any information needed to resolve a blink, whose
 spectral content lies well below the new Nyquist frequency.
-
+%
 Second, a zero-phase band-pass filter from \(1.0\)~Hz  to \(20.0\)~Hz
 is applied which is removes slow drifts and DC offsets at the low end and high-frequency muscle and line noise at the high end, isolating the low-frequency, high-amplitude deflection that characterises an eye blink.
-
+%
 Third, each filtered recording is split into non-overlapping, fixed-length epochs. Epoching is what makes the thresholds
 \emph{adaptive}, rather than deriving a single level for the entire session, the pipeline treats each short epoch as a local statistical context.
 

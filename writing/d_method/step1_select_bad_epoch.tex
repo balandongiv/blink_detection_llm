@@ -1,6 +1,6 @@
 \paragraph{Selection of Candidate Epochs}
-The first stage, Stage~A, of the proposed pipeline performs an initial epoch-level screening using an \emph{autoreject}-inspired threshold-selection procedure to identify epoch that are most likely to contain prominent blink-related activity.
- Rather than relying on a single channel, the screening decision integrates channel-level information across multiple EOG/ EEG channels, allowing an epoch to be selected when abnormal amplitude excursions are detected in one or more channels.
+The first stage, Stage~A, of the proposed pipeline performs an initial epoch-level screening using an \emph{autoreject}-inspired threshold-selection procedure~\citep{jas2017autoreject} to identify epoch that are most likely to contain prominent blink-related activity.
+ Rather than relying on a single channel, the screening decision integrates channel-level information across multiple EEG channels, allowing an epoch to be selected when abnormal amplitude excursions are detected in one or more channels.
 At this stage, the objective is not to localize individual blink samples, but to identify candidate epochs containing prominent amplitude activity.
 This multi-channel screening strategy therefore narrows the search space to potentially blink-related epochs for more detailed sample-level analysis in the subsequent detection stages.
 
