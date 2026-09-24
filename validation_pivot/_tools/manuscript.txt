@@ -1,0 +1,1012 @@
+Digital Object Identifier
+
+Toward Principled Threshold Selection for Blink
+Region Detection in Biological Signals
+
+Author names omitted for review
+
+ ABSTRACT This study evaluated an epoch-aware pipeline for EEG blink-region detection that avoided
+  estimating detection thresholds from concatenated blink-containing and blink-free epochs. The three-stage
+  pipeline first screened non-overlapping epochs by peak-to-peak amplitude using an autoreject-inspired cross-
+  validation criterion, then estimated a sample-level threshold from the suspicious-epoch pool using either a
+  mean-based or median/MAD-based estimator with a fallback for small pools, and finally extracted blink
+  regions and mapped them to epoch-local coordinates. BLINKER-concat, MNE-annot, Proposed-Mean, and
+  Proposed-approach were compared on the Internal and Cao2018 naturalistic driving-EEG corpora using
+  event-level overlap matching and macro-averaged F1. At 30 s, Proposed-approach achieved a pooled macro-
+  F1 of 84.03%, significantly exceeding BLINKER-concat at 72.56% and MNE-annot at 60.86%. Proposed-
+  Mean and Proposed-approach were statistically indistinguishable (p = 1), which indicated that the gain
+  came from epoch screening rather than the choice of Stage-B estimator. The channel-selection ablation
+  further showed that a single frontopolar electrode was sufficient for the strongest single-channel detection
+  on both corpora. Finally, at Fp1 and Fp2, the two electrodes identified by the channel-selection ablation,
+  evaluated separately, pooled macro-F1 varied by only 0.41 and 0.50 percentage points, respectively, across
+  epoch durations from 10 s to 120 s, and no tested duration differed from the 30 s reference after Bonferroni
+  correction for either electrode.
+
+ INDEX TERMS blink detection, electroencephalography, epoch-aware detection, naturalistic driving,
+  threshold selection
+
+I. INTRODUCTION                                                  ments generate strong electrical potentials [6, 7]. These ocular
+                                                                 activities are especially prominent in frontal EEG electrodes
+Blinking is a physiological process that involves the clo-       due to their close proximity to the eyes [6, 8]. As a result, blink
+sure and reopening of the eyelids [1]. Its primary functions     information can be extracted from EEG recordings, either by
+are to protect the ocular surface, maintain corneal moisture,    analysing the ocular components embedded in the EEG signal
+and support visual comfort [1]. Beyond these physiological       or by combining EEG with EOG-based measurements [5, 9].
+functions, blink behaviour has been increasingly recognised      This makes EEG/EOG recordings valuable not only for study-
+as an important indicator in fatigue-driving research [2, 3].    ing neural activity during fatigue but also for identifying
+Variations in blink-related features, such as blink frequency,   blink-related markers associated with drowsiness [2, 10].
+blink duration, eye-closure duration, and blink patterns, can
+reflect changes in alertness and cognitive state [2, 4]. As         It is important to distinguish between two major perspec-
+fatigue increases, drivers may exhibit slower or prolonged       tives on blink activity in the existing literature [3, 6]. In many
+blinks, which can indicate reduced vigilance and a higher        EEG studies, blink-related activity is treated as an artifact
+risk of impaired driving performance [2]. Therefore, blink       because it contaminates neural signals and may interfere with
+behaviour provides a useful and non-invasive marker for          the interpretation of brain activity [6, 7]. In such cases, blink
+monitoring driver fatigue [3, 5].                                components are commonly removed during EEG preprocess-
+                                                                 ing [6, 11]. However, in fatigue-driving studies, blink activity
+   In the neuroscience study of fatigue driving, blink ac-       can also be treated as meaningful information rather than
+tivity can be captured through external methods, such as         noise [3, 5]. From this perspective, blink events are identi-
+camera-based eye monitoring, or through electrophysiologi-       fied, extracted, and analysed as potential indicators of driver
+cal recordings, particularly electroencephalography and elec-    fatigue [5, 10]. Blink detection methods can generally be
+trooculography [3, 5]. Although EEG is mainly used to mea-       classified into machine-learning-based, morphology-based,
+sure brain activity, blink-related components are often present  and thresholding-based approaches [9, 12]. Machine learning
+in EEG signals because eyelid movements and eye move-
+                                                                                                                                                                        1
+VOLUME 11, 2023
+                                                                 Author names omitted for review: Threshold Selection for Blink Region Detection
+
+methods rely on trained models to classify blink events, while   and MNE annot. To support reproducibility and facilitate
+morphology-based methods identify blinks based on their          further research, we also developed an automated pipeline for
+characteristic waveform shape [13, 14]. Thresholding-based       extracting ocular indices from EEG recordings and made it
+methods, in contrast, detect candidate blink events when the     freely available as a Python toolbox called pyblinker (TODO).
+signal amplitude exceeds a certain threshold value, as blink     The toolbox is intended to facilitate reproducible blink analy-
+activity typically produces large-amplitude deflections, espe-   sis and encourage more consistent reporting of ocular indices
+cially in frontal channels [8, 15].                              in EEG based fatigue research.
+
+   Thresholding is one of the most straightforward and widely       The remainder of the paper is organized as follows. Section
+used approaches for detecting blink activity from EEG or         Methods and materials describes the steps and methods used
+EOG signals [15, 16]. The simplicity of thresholding makes       to extract blinks from EEG data, as well as the datasets
+it computationally efficient and easy to implement, particu-     we used to validate the results. Section Results presents the
+larly in real-time fatigue-detection systems [16, 17]. Existing  results of running the BLINKER toolbox on a large and varied
+approaches range from single- or few-channel detectors that      collection of EEG data. Section The BLINKER software
+apply amplitude thresholds with rule-based decision logic        briefly introduces the toolbox, referring readers to the more
+to hybrid pipelines that combine thresholding as an initial      detailed online documentation and downloads. Section Visual
+detection step with additional candidate-refinement mecha-       verification of BLINKER output describes our manual video
+nisms [8, 9, 12, 14­16, 18­24]. Despite these developments,      verification process and some interesting results we obtained
+selecting an appropriate threshold remains challenging be-       when comparing subject behavior captured in video with
+cause blink amplitude varies across participants, electrode      blink signals captured by EEG. Section Discussion offers
+locations, recording devices, signal quality, and experimen-     some concluding remarks and discusses limitations of the
+tal conditions [20, 24]. Blink amplitude can vary across         method.
+participants, electrode locations, recording devices, signal
+quality, and experimental conditions [20, 24]. A threshold       II. METHOD AND MATERIALS
+that is too low may produce false detections due to noise        a: Processing pipeline overview.
+or other artifacts, whereas a threshold that is too high may
+miss genuine blink events [16, 17]. This backdrop explains       A. Processing Pipeline Overview
+why simple one-value global thresholds can be attractive,           The proposed method is an epoch-aware, double-
+yet brittle. Therefore, adaptive and robust threshold selection
+remains a critical consideration for reliable blink detection,   thresholding pipeline that transforms a continuous multichan-
+particularly in fatigue-driving applications [5, 10].            nel EEG recording into channel-wise blink-region detections
+                                                                 through five sequential operations. First, the EEG signals are
+   In many fatigue-driving studies, EEG recordings are seg-      downsampled and band-pass filtered before being divided
+mented into epochs that correspond to specific task events or    into fixed-length, non-overlapping epochs. The proposed
+analysis windows [25]. This epoch-structured setting intro-      double-thresholding method then operates through three de-
+duces additional challenges for threshold-based blink detec-     tection stages. Stage A performs multichannel peak-to-peak
+tion [16, 17]. When thresholds are estimated from the entire     screening to identify candidate epochs containing prominent
+recording, they may be biased by the presence of clean epochs    amplitude excursions. Stage B pools the samples from these
+that contain few or no blinks, which may distort threshold       candidate epochs to estimate a robust sample-level threshold
+estimates and suppress blink detection in epochs where blinks    independently for each channel. Stage C applies the resulting
+are more prevalent [11, 24]. As a result, naive application of   channel-specific thresholds to all valid epochs to localize
+thresholding in an epoch-structured context may risk under-      blink regions and determine their epoch identifier, channel,
+detection of blinks, which undermines the reliability of fa-     onset time, and duration. Figure 1 summarizes the complete
+tigue assessments based on blink metrics [5, 10]. Addressing     processing pipeline, while Stages A, B, and C are described
+this challenge requires developing blink detection methods       in detail in the following subsections.
+that explicitly account for the epoch structure and can adapt
+threshold estimation to the specific characteristics of each     b: Preprocessing
+epoch or subset of epochs, rather than relying on a global
+threshold derived from the entire recording [9, 24].             First, the continuous recording is downsampled to a common
+                                                                 sampling grid of 100 Hz. Standardising the sampling rate
+   This paper makes several contributions to blink detec-        makes the amplitude thresholds and the minimum-duration
+tion in fatigue driving research. First, we propose a dou-       gate comparable across recordings acquired on different hard-
+ble thresholding blink detection pipeline comprising epoch       ware, and reduces the per-sample computational cost of
+screening, sample level threshold estimation, and blink region   the downstream stages without discarding any information
+extraction. To our knowledge, this is among the first frame-     needed to resolve a blink, whose spectral content lies well
+works to integrate these three stages explicitly to address the  below the new Nyquist frequency.
+challenges associated with epoch structured EEG recordings.
+Second, we systematically compare the proposed pipeline             Second, a zero-phase band-pass filter from 1.0 Hz to
+against baseline methods, including BLINKER concat [8]           20.0 Hz is applied which is removes slow drifts and DC off-
+                                                                 sets at the low end and high-frequency muscle and line noise
+2
+                                                                                                                                                                  VOLUME 11, 2023
+Author names omitted for review: Threshold Selection for Blink Region Detection
+
+FIGURE 1. Overview of the proposed epoch-aware double-thresholding pipeline for EEG blink-region detection. Continuous multichannel EEG signals are
+downsampled to 100 Hz, band-pass filtered from 1 to 20 Hz, and divided into non-overlapping 30-s epochs. Stage A applies multichannel peak-to-peak
+screening and a union rule to select candidate epochs, represented by E2, E5, and E7 in this example. Stage B pools the samples from the selected epochs
+to estimate a robust sample-level threshold independently for each channel. Stage C applies the resulting channel-specific thresholds to all valid epochs
+and reports each detected blink region by its epoch identifier, channel, onset time, and duration. Pale yellow denotes Stage A candidate epochs, red
+denotes detected blink regions, and the dashed green lines represent the channel-specific thresholds.
+
+at the high end, isolating the low-frequency, high-amplitude                     epoch. The sample at epoch i  E = {1, . . . , N }, channel c 
+deflection that characterises an eye blink.                                      C = {1, . . . , C}, and within-epoch time index t  {1, . . . , T }
+                                                                                 is denoted by xi,c,t .
+   Third, each filtered recording is split into non-overlapping,
+fixed-length epochs. Epoching is what makes the thresholds                          For each epoch and channel, an amplitude-range statistic is
+adaptive, rather than deriving a single level for the entire ses-                computed using the peak-to-peak value
+sion, the pipeline treats each short epoch as a local statistical
+context.                                                                         ai,c = max xi,c,t - min xi,c,t .
+                                                                                 1t T  1t T
+c: Selection of Candidate Epochs
+The first stage, Stage A, of the proposed pipeline performs                      Large values of ai,c indicate that the corresponding epoch
+an initial epoch-level screening using an autoreject-inspired                    contains a high-amplitude excursion in channel c, a pattern
+threshold-selection procedure to identify epoch that are most
+likely to contain prominent blink-related activity. Rather than                  consistent with ocular or other transient artifacts. Because
+relying on a single channel, the screening decision integrates
+channel-level information across multiple EOG/ EEG chan-                         signal amplitudes may vary across channels, participants, and
+nels, allowing an epoch to be selected when abnormal ampli-
+tude excursions are detected in one or more channels. At this                    recording conditions, a fixed peak-to-peak threshold is not
+stage, the objective is not to localize individual blink samples,                imposed. Instead, a channel-specific threshold c is calcu-
+but to identify candidate epochs containing prominent ampli-                     lated from each of the channel's. Candidate thresholds are
+tude activity. This multi-channel screening strategy therefore
+narrows the search space to potentially blink-related epochs                     taken from the empirical range of peak-to-peak amplitudes for
+for more detailed sample-level analysis in the subsequent
+detection stages.                                                                that channel, denoted Qc = {ai,c : i  E}, and are evaluated
+                                                                                 by a cross-validation criterion that measures the discrepancy
+   Let X  RN×C×T denote the epoched multichannel signal
+after preprocessing, where N is the number of valid epochs, C                    between retained training epochs and validation epochs.
+is the number of channels, and T is the number of samples per                       After the channel-specific thresholds, c, have been esti-
+
+VOLUME 11, 2023                                                                  mated, the peak-to-peak amplitude of each epoch is evaluated
+
+                                                                                 separately for each EEG channel against its corresponding
+
+                                                                                 threshold. An epoch is retained as a candidate when the
+                                                                                 amplitude in at least one channel exceeds the threshold c
+                                                                                 defined for that channel. Thus, the epoch-level screening
+
+                                                                                 decision incorporates information across multiple channels
+
+                                                                                                                   3
+                                                                Author names omitted for review: Threshold Selection for Blink Region Detection
+
+using a union rule, rather than relying on a single predefined  A. EXTRACTION OF BLINK REGIONS
+channel. The resulting set of candidate epochs is defined as    The final stage applies the sample-level thresholds  =
+The set of suspicious epochs is therefore                       {c}cC=1 obtained in Stage B to obtain channel-wise blink
+                                                                regions. Specifically, blink regions are searched for within
+                       B = {i  E : bi = 1}.                     each valid epoch i  E = {1, . . . , N } and each channel c  C,
+                                                                by comparing the samples xi,c,t of that epoch and channel
+   where b_i denotes the epoch-level screening outcome indi-    against the threshold candidate c of the same channel.
+cating that epoch (i) satisfies the selection criterion. These
+candidate epochs represent high-amplitude segments that            The final output of this stage is therefore a channel-indexed
+may contain prominent blink-related activity and are retained   collection of blink regions, each represented by an epoch
+for subsequent sample-level blink-region detection.             identifier, a channel label, an onset time, and duration.
+
+d: Computation of Sample-Level Blink-Region Threshold           B. EXPERIMENTAL SETUP
+Candidates
+                                                                The evaluation protocol was designed to compare all detector
+Stage B estimates channel-specific sample-level amplitude       conditions on the same recordings, reference annotations,
+thresholds using signal samples drawn from the candidate        and scoring criteria. The datasets, event-level performance
+epochs B identified in Stage A. The estimation combines a       measures, and statistical analyses are described below.
+measure of central tendency with a robust measure of dis-
+persion and a sensitivity parameter, allowing the threshold to  1) Datasets
+adapt to the amplitude characteristics of each channel while
+limiting the influence of isolated extreme samples.             Two EEG corpora acquired during sustained simulated-
+                                                                driving tasks were used, providing 104 complete record-
+   Let S denote the set of epochs used for estimating the       ing sessions in total. The corpora differed in their acquisi-
+sample-level threshold. In the primary analysis, S = B, so      tion montages and data provenance, allowing the proposed
+that the estimate is driven by epochs already identified as     method to be evaluated under different hardware setups.
+likely to contain blink-related activity.
+                                                                   The public Cao2018 corpus contains 62 sessions from
+   For each channel c, all samples from the selected epochs     27 participants who performed an approximately 90-minute
+are pooled into a one-dimensional empirical sample set          lane-keeping task in an immersive driving simulator [25]. The
+                                                                present study included the 58 sessions marked as complete
+                Yc = {xi,c,t : i  S, 1  t  T }.                 and excluded the remaining four incomplete sessions. This
+                                                                study used the raw recordings. All 32 recorded electrophysi-
+   The sample-level threshold is estimated using a robust       ological channels (30 scalp electrodes and the A1/A2 mastoid
+location-plus-dispersion form. Let c be the channel-specific    reference channels) were supplied to the pipeline; the concur-
+center of the sample distribution. The default choice is the    rently recorded vehicle-position channel was excluded. These
+median,                                                         32 channels were Fp1, F3, Fp2, F4, FT7, FC3, C3, FC4, FT8,
+                                                                C4, TP7, CP3, TP8, CP4, T5, P3, O1, T6, P4, O2, F7, T3, Fz,
+                        c = medianyYc y,                        FCz, Cz, Pz, Oz, F8, T4, CPz, A1, and A2.
+
+   It should be note that, the arithmetic mean may be substi-      The Internal corpus comprised 46 complete sessions
+tuted when a mean-centered threshold is required for compar-    recorded during a simulated lane-keeping task. EEG was
+ison.                                                           acquired with a 128-channel EGI HydroCel system, with CPz
+                                                                as the reference. Although the original recordings used a high-
+   The dispersion is estimated by the median absolute devia-    density montage, the present analyses retained a predefined
+tion (MAD),                                                     subset of 32 electrodes corresponding to conventional 10­20
+                                                                scalp locations, following the subsampled 128-to-32-channel
+         MADc = medianyYc |y - medianuYc u| ,                   montage of [26]: Fp1, AF3, F3, Fp2, AF4, F4, FC5, FC1, C3,
+                                                                FC2, FC6, C4, CP5, CP1, CP2, CP6, P5, P3, PO3, O1, PO4,
+and is rescaled to a standard-deviation-compatible quantity     P4, P7, O2, F7, T7, Fz, Cz, Pz, Oz, F8, and T8.
+
+by                                                                 We divided the 32 electrodes into four anatomical regions
+                      crob = 1.4826 MADc .                      (frontal, central, parietal, and occipital) and further divided
+                                                                each region into left and right hemispheres, as per [27], as
+The constant 1.4826 is the usual normal-consistency factor      shown in Figure 2. In the figure, the resulting eight regions
+for the MAD.                                                    (frontal left, frontal right, central left, central right, parietal
+                                                                left, parietal right, occipital left, and occipital right) are ab-
+   For a sensitivity parameter k > 0, the resulting sample-     breviated FL, FR, CL, CR, PL, PR, OL, and OR, respectively.
+level blink-region threshold candidate for channel c is         The figure shows the scalp locations of the 32 electrodes: the
+                                                                blue circles represent electrodes located in both the Internal
+         c = c + kcrob.                                         and Cao2018 montages, the yellow circles represent elec-
+
+The set                                                                                                                                                          VOLUME 11, 2023
+
+          = {c : c  C}
+
+constitutes the channel-wise threshold candidates passed to
+the blink-region extraction stage.
+
+4
+Author names omitted for review: Threshold Selection for Blink Region Detection
+
+trodes located only in the Internal montage, and the red circles                 b: Session-level measures.
+represent electrodes located only in the Cao2018 montage.
+                                                                                 Precision, recall, and F1 were calculated independently for
+   Of these eight regions, only the frontal, central, parietal,                  each session s from the event counts:
+and occipital regions (left and right) were used in the analysis.
+The following electrodes were not assigned to any lateralized                    Precisions  =      TPs ,               (2)
+region and were likewise excluded from the analysis: F7, T7,                                    TPs + FPs
+F8, T8, Fz, FCz, Cz, CPz, Pz, and Oz.
+                                                                                 Recalls     =      TPs ,               (3)
+                                                                                                TPs + FNs
+
+                                                                                 F1,s        =  2 Precisions Recalls .  (4)
+                                                                                                Precisions + Recalls
+
+                                                                                 Event-level F1 was the primary outcome because blink events
+                                                                                 were sparse; sample-level accuracy would be dominated by
+                                                                                 non-blink samples and would therefore provide limited infor-
+                                                                                 mation about event-detection performance.
+
+                                                                                 c: Macro-averaging.
+
+                                                                                 For a measure M  {Precision, Recall, F1}, the reported
+                                                                                 macro-average over S sessions was
+
+                                                                                                1S   Ms.
+                                                                                 M=                                     (5)
+                                                                                        S
+                                                                                                s=1
+
+FIGURE 2. Scalp locations of the 32 electrodes used in this study, divided       Thus, each session contributed equally, irrespective of its
+into eight anatomical regions (frontal left/right, central left/right, parietal  number of annotated blinks. Pooled results across the two
+left/right, and occipital left/right, abbreviated FL, FR, CL, CR, PL, PR, OL,    corpora used the same unweighted average over all 104 ses-
+and OR). Blue circles mark electrodes present in both the Internal and           sions; event counts were not pooled before computing the
+Cao2018 montages, yellow circles mark electrodes present only in the             measures. This approach prevents sessions with many blinks
+Internal montage, and red circles mark electrodes present only in the            from dominating the headline result, as would occur with
+Cao2018 montage.                                                                 micro-averaging.
+
+2) Evaluation Metrics                                                            d: Operating-point selection.
+
+a: Event matching.                                                               Unless an analysis explicitly considered a fixed single elec-
+                                                                                 trode, each tested channel configuration was summarised
+Performance was evaluated at the blink-event level rather than                   at a retrospective best-channel-per-session operating point.
+at the sample level. For a predicted interval P and a reference                  Within each session, the output electrode with the highest
+interval G, temporal overlap was quantified using intersection                   event-level F1 was selected, and its associated precision,
+over union (IoU):                                                                recall, and F1 were retained for macro-averaging. The same
+                                                                                 rule was applied to every detector condition in a comparison.
+                                                                                 Because this selection used the reference annotations, it rep-
+                                                                                 resents an oracle operating point and should not be interpreted
+                                                                                 as prospective, label-free channel selection.
+
+                 IoU(P, G) =  |P  G|  .  (1)
+
+                              |P  G|                                             3) Statistical Analysis
+
+Here, | · | denotes interval duration. A predicted interval                      a: Paired comparisons.
+was eligible for a match when its IoU with an unmatched
+reference interval was at least 0.1. Matching was one-to-one,                    The recording session was the unit of analysis. Differ-
+so a predicted or reference interval could contribute to at                      ences between detector conditions were assessed using the
+most one match. Matched predictions were counted as true                         Wilcoxon signed-rank test applied to matched pairs of
+positives (TP), remaining predictions as false positives (FP),                   session-level F1 scores. This non-parametric paired test was
+and remaining reference intervals as false negatives (FN).                       selected because F1 is bounded and no normality assumption
+                                                                                 was imposed on the paired differences. All inferential tests re-
+VOLUME 11, 2023                                                                  ported in the main analyses were two-sided, and zero-valued
+                                                                                 paired differences were omitted according to the Wilcoxon
+                                                                                 convention.
+
+                                                                                                                                                                                        5
+                                                                 Author names omitted for review: Threshold Selection for Blink Region Detection
+
+b: Multiplicity and effect size.                                 at F1 = 31.08% and F1 = 30.18%, respectively, so the
+The family-wise significance level was set to  = 0.05. Bon-      pronounced C3­C4 asymmetry was specific to Internal.
+ferroni adjustment was applied separately within each pre-
+specified family of related comparisons. The four-condition         The posterior electrodes performed markedly worse than
+strategy analysis comprised six pairwise tests, whereas the      the frontal and central sites, and the parietal and occipital
+epoch-duration analysis comprised six comparisons between        groups also differed from each other between datasets. On
+the non-reference durations and the 30 s reference. Channel-     Internal, the four parietal electrodes CP1, CP2, CP5, and
+subset comparisons were corrected separately within each         CP6 were uniformly near floor, with F1 confined to a narrow
+corpus over the 13 subsets tested against the full 32-           1.75%­2.19% range, and the eight occipital electrodes P7, P3,
+electrode montage. Analysis-specific family sizes for any        PO3, O1, PO4, O2, P4, and P8 showed only slightly more
+additional comparisons are stated with the corresponding re-     spread, from F1 = 1.77% at P4 to F1 = 3.60% at PO3. On
+sults. Bonferroni-adjusted p-values are reported together with   Cao2018, the two parietal electrodes were more informative
+the matched-pairs rank-biserial correlation r as an effect-size  but still well below the frontal and central regions, with CP3
+measure; the sign of r indicates the direction of the paired     reaching F1 = 17.84% and CP4 reaching F1 = 19.56%. The
+difference in the stated comparison.                             Cao2018 occipital group was more heterogeneous than its
+                                                                 Internal counterpart. O1 and O2 sat near floor at F1 = 3.10%
+III. RESULTS                                                     and 3.33%, T5 and T6 were intermediate at F1 = 9.26%
+A. EXPERIMENT 1: EEG CHANNEL-SUBSET ANALYSIS                     and 8.30%, and P3 and P4, the two most anterior electrodes
+In the proposed pipeline, Stage A screens epochs using a         assigned to this region, reached F1 = 12.80% and 12.67%,
+union rule over the channels supplied to the pipeline, so        respectively, so the region's mean F1 was driven up by P3 and
+changing the channel set can also change which epochs reach      P4 rather than by the electrodes located over true occipital
+Stage B. Restricting the input channels therefore changes        cortex.
+the detector itself, not merely the signals presented to a
+fixed detector. The EEG channel-subset analysis accounts for     2) Regional Channel Subsets
+this coupling by re-running the complete pipeline separately     a: Per-Electrode Detection
+for each channel subset. We first supply the complete 32-        Within these self-contained subset reruns, per-electrode de-
+channel montage to the pipeline as a baseline, reported in       tection quality remained concentrated at the frontopolar
+Section III-A1. This configuration assumes no prior knowl-       and neighbouring anterior frontal electrodes rather than dis-
+edge of which brain region projects blinks most strongly,        tributed uniformly across the frontal region (Figure 3). On
+making it the most general starting point against which re-      Internal, within the frontal subset's own rerun, Fp2, Fp1,
+duced channel sets are compared. The analysis then evaluates     AF4 and AF3 were the four strongest electrodes, reaching F1
+anatomically defined regional subsets in Section III-A2 to       values of 85.28%, 84.84%, 77.04% and 70.70%, respectively.
+identify where the EEG information most useful for blink         Performance then fell sharply at the two remaining frontal
+detection is concentrated and to quantify the performance loss   electrodes, F3 and F4, to 42.68% and 41.00%, respectively.
+caused by excluding other scalp regions. Individual channels     On Cao2018, the same four strongest electrodes, Fp1, Fp2,
+are subsequently assessed in Section III-A3 to determine         F3 and F4, made up the entire frontal subset, reaching F1
+whether a single optimally positioned electrode can preserve     values of 78.80%, 77.05%, 55.97% and 54.64%, respectively.
+sufficient detection performance, thereby establishing the       Although every one of these frontal electrodes scored lower
+minimum channel configuration suitable for a simpler and         in its own subset rerun than the same electrode did in the full-
+more practical system.                                           montage run (Section III-A1), the ranking of electrodes by F1
+                                                                 was unchanged from the full-montage run in both datasets, so
+1) Full-Montage Reference                                        restricting Stage A/B screening to the frontal subset alone did
+                                                                 not reorder the strongest frontal electrodes.
+a: Per-Electrode Detection
+                                                                    The central electrodes again showed a dataset-specific
+In this full-montage setup, per-electrode detection quality was  asymmetry within their own subset rerun. On Internal, C3
+concentrated at the frontopolar pair rather than distributed     reached F1 = 58.59% while C4 reached only F1 = 1.73%, so
+across the frontal region. On Internal, Fp2 and Fp1 reached      the pronounced C3­C4 asymmetry seen in the full-montage
+F1 values of 86.82% and 86.32%, respectively, before perfor-     run persisted in the central subset's self-contained rerun.
+mance fell at the neighbouring frontal sites AF4 and AF3 to      Wheras on Cao2018, C3 and C4 remained close together, at
+80.32% and 73.76%, with F3, and F4 at 45.65%, and 45.23%.        27.67% and 26.62%, respectively, so this asymmetry stayed
+On Cao2018, Fp1 and Fp2 reached F1 values of 79.68% and          specific to Internal. Parietal and occipital electrodes were
+78.45%, respectively, whereas the neighbouring frontal sites     much lower in their own subset reruns. The best-performing
+F3 and F4 were lower at 59.51% and 57.99%.                       parietal electrode was CP1 at 1.92% on Internal and CP4
+                                                                 at 15.63% on Cao2018, and the best-performing occipital
+   The central electrodes showed a dataset-specific asymme-      electrode was PO3 at 3.35% on Internal and P3 at 10.04% on
+try. On Internal, C3 reached F1 = 61.06% while C4 reached        Cao2018. Overall, the self-contained subset reruns preserved
+F1 = 1.85%, whereas on Cao2018 C3 and C4 were close              the same anterior-to-posterior spatial pattern observed under
+
+6                                                                                                                                                                 VOLUME 11, 2023
+Author names omitted for review: Threshold Selection for Blink Region Detection
+
+the full montage, with detection concentrated at the frontopo-                                                                           reached significance despite very low absolute F1 (CP2, CP5,
+lar and anterior frontal sites and much lower performance at                                                                             CP6, PO3 and PO4), while most others did not.
+the central, parietal and occipital electrodes.
+                                                                                                                                            On Cao2018 (Figure 4B), significant differences were far
+     Per-electrode detection F1 within each region's own channel-subset rerun                                                            more widespread. 16 of the 18 electrodes tested remained
+                                                                                                                                         significant after correction, and again every significant dif-
+                                     Frontal             Central              Parietal             Occipital                             ference was a reduction. As on Internal, the only electrodes
+                                                                                                                                         not reaching significance were the frontopolar pair, Fp1 and
+100                                                                    Internal                                                          Fp2 (adjusted p = 1.000 for both). The remaining two
+                                                                                                                                         of the four highest-performing electrodes, F3 and F4, did
+80   85.28 84.84 77.04 70.70                                                                                                             reach significance. Unlike Internal, every central, parietal and
+                                                                                                                                         occipital electrode tested on Cao2018 reached significance,
+60                            58.59                                                                                                      including C3 and C4, whose reductions remained close to-
+Macro-F1 (%)                                                                                                                             gether, consistent with the symmetry already noted between
+40           Fp2                     42.68 41.00                                                                                         these two electrodes on this corpus.
+                 Fp1
+20                   AF4                                                                                                                    Taken together, the electrode-level comparisons in Figure 4
+ 0                       AF3                                                                                                             show that a visibly lower descriptive mean did not by it-
+                             C3                                                                                                          self imply a statistically significant change. Fp1 and Fp2,
+                                  F3                                                                                                     the highest-performing electrode in each dataset, showed no
+                                      F4                                                                                                 detectable paired difference after correction in either corpus,
+                                          FC5                                                                                            while most other electrodes changed significantly, generally
+                                              FC6                                                                                        by a few percentage points. Significant differences were also
+                                                  PO3                                                                                    more widespread on Cao2018 than on Internal, where roughly
+                                                      FC1                                                                                half of the non-frontal electrodes did not reach significance
+                                                           FC2                                                                           despite showing the same direction of change.
+                                                               PO4
+
+                                                                   --
+                                                                       O1
+                                                                           CP1
+                                                                               P3
+                                                                                    P8
+                                                                                        CP2
+                                                                                            C4
+                                                                                                P7
+                                                                                                    P4
+                                                                                                        CP5
+                                                                                                             CP6
+                                                  10.45 7.40 3.35 2.89 2.89 2.81 2.05 2.04 1.92 1.83 1.82 1.78 1.73 1.71 1.65 1.64 1.54
+
+100                                                                    Cao2018
+
+80   78.80 77.05
+
+60                55.97 54.64
+Macro-F1 (%)
+40           Fp1                     40.52        37.44  37.25  36.26  27.67
+20                 Fp2
+ 0                      F3                                                    26.62  15.63  14.37
+                              F4
+                                    FC3                                                            10.04  9.86  7.20  6.39  2.61  2.40
+                                         FT8
+                                               FC4
+                                                    FT7
+                                                          C3
+                                                               C4
+                                                                     CP4
+                                                                           CP3
+                                                                                P3
+                                                                                      P4
+                                                                                           T5
+                                                                                                 T6
+                                                                                                      O2
+                                                                                                            O1
+
+FIGURE 3. Per-electrode detection F1 within each region's own
+channel-subset rerun, coloured by scalp region. Each bar is one electrode
+scored inside that region's own self-contained subset run.
+
+                                                                                                                                             Per-electrode F1: self-contained anatomical subset vs. full montage
+
+b: Electrode-Level Significance Testing                                                                                                                                       Subset                  Montage
+
+The descriptive differences between the subset reruns and                                                                                                                  A. Internal (EGI 128, 46 sessions)
+the full-montage reference were next tested at the individual-
+electrode level using session-paired comparisons. For every                                                                                                Frontal         Central                    Parietal           Occipital
+electrode entering one of the four anatomical subsets shown                                                                              100
+in Figure 3, that electrode's session-level F1 inside its own
+subset rerun was paired against the session-level F1 of the                                                                              80  *
+same electrode inside the full-montage run, on the sessions                                                                                      *
+common to both runs. Each electrode was tested with a two-
+tailed Wilcoxon signed-rank test, paired by session, with p                                                                              60F1 (%)                       *
+Bonferroni-corrected over every electrode tested within each                                                                                      Fp2
+dataset. Figure 4 shows, for every electrode, its session-mean                                                                                        Fp1
+F1 under the subset rerun overlaid on the same electrode's                                                                                                 AF4
+session-mean F1 under the full montage, together with the                                                                                                      AF3
+adjusted p-value.                                                                                                                                                  F3
+                                                                                                                                                                       F4
+   On Internal (Figure 4A), 11 of the 24 electrodes tested                                                                                                                  C3
+remained significantly different after correction, and every                                                                                                                    FC5
+significant difference was a reduction in the subset rerun.                                                                                                                         FC6
+Despite a visible drop in the descriptive means, no statis-                                                                                                                              FC1
+tically significant difference was detected for either of the                                                                                                                                FC2
+two highest-performing electrodes, Fp2 and Fp1 (adjusted                                                                                                                                         C4
+p = 1.000 for both). But, the remaining two of the four                                                                                                                                              CP1
+highest-performing electrodes, AF4 and AF3, did reach sig-                                                                                                                                                CP2
+nificance, with reductions that were statistically significant.                                                                                                                                               CP5
+Among the non-frontal electrodes, C3 showed a significant                                                                                                                                                         CP6
+reduction whereas C4 did not, so the pronounced C3­C4                                                                                                                                                                 PO3
+asymmetry in absolute F1 persisted regardless of whether                                                                                                                                                                   PO4
+each electrode's own subset-versus-montage change was it-                                                                                                                                                                      E83
+self significant. Several parietal and occipital electrodes also                                                                                                                                                                   O1
+                                                                                                                                                                                                                                       P3
+VOLUME 11, 2023                                                                                                                                                                                                                             P8
+                                                                                                                                                                                                                                                P7
+                                                                                                                                                                                                                                                    P4
+                                                                                                                                                                    **
+                                                                                                                                         40
+
+                                                                                                                                         20                                *
+
+                                                                                                                                         0                                                            *****
+
+                                                                                                                                                                           B. Cao2018 (10 20, 58 sessions)
+
+                                                                                                                                                         Frontal              Central                 Parietal           Occipital
+                                                                                                                                         100
+
+                                                                                                                                         80
+
+                                                                                                                                         60  **
+                                                                                                                                         F1 (%)
+                                                                                                                                                   Fp1
+                                                                                                                                                         Fp2
+                                                                                                                                                              F3
+                                                                                                                                                                    F4
+                                                                                                                                                                          FC3
+                                                                                                                                                                               FT8
+                                                                                                                                                                                     FC4
+                                                                                                                                                                                           FT7
+                                                                                                                                                                                                C3
+                                                                                                                                                                                                      C4
+                                                                                                                                                                                                            CP4
+                                                                                                                                                                                                                 CP3
+                                                                                                                                                                                                                       P3
+                                                                                                                                                                                                                             P4
+                                                                                                                                                                                                                                  T5
+                                                                                                                                                                                                                                        T6
+                                                                                                                                                                                                                                              O2
+                                                                                                                                                                                                                                                   O1
+                                                                                                                                         40                             ****
+                                                                                                                                                                                                  **
+
+                                                                                                                                         20                                                           *         *  *  *
+                                                                                                                                          0
+                                                                                                                                                                                                                         *  *       *                *
+
+                                                                                                                                         FIGURE 4. Per-electrode comparison of Proposed-approach F1 when each
+                                                                                                                                         electrode was evaluated inside its own self-contained anatomical subset
+                                                                                                                                         rerun (narrow, opaque bar) against the same electrode evaluated inside
+                                                                                                                                         the full-montage run (wide, translucent bar), for (A) Internal and
+                                                                                                                                         (B) Cao2018. Bars show session-mean F1; electrodes are grouped by the
+                                                                                                                                         anatomical subset in Figure 3 and ordered by descending subset F1 within
+                                                                                                                                         each region. Comparisons are paired by session using two-tailed
+                                                                                                                                         Wilcoxon signed-rank tests, with p Bonferroni-corrected separately within
+                                                                                                                                         each dataset over every electrode tested there. An asterisk above an
+                                                                                                                                         electrode marks adjusted p < 0.05; electrodes without an asterisk did not
+                                                                                                                                         reach this threshold. Exact adjusted p-values are not printed on the bars
+                                                                                                                                         and are instead reported in the text for electrodes discussed individually.
+
+                                                                                                                                                                                                                                                        7
+                                                                                                                                                                                    Author names omitted for review: Threshold Selection for Blink Region Detection
+
+                                                Detection F1 of every full-montage electrode operating as its own self-contained detector                                           FC4, FT8 and FT7, reaching F1 values of 36.72%, 34.99%
+                                                                                                                                                                                    and 34.22%, respectively. The central region therefore oc-
+                                                                                    Frontal        Central        Parietal        Occipital                                         cupied the entire second tier of this ranking, clearly below
+                                                                                                                                                                                    the four frontal electrodes and still ahead of the weaker
+                               100                                                                          Internal                                                                central pair, C3 and C4, at 25.43% and 25.10%. Beyond
+                                                                                                                                                                                    the central electrodes, performance declined further toward
+Single-electrode macro-F1 (%)  80   83.7                                                                                                                                            parietal (14.80­16.22%) and occipital sites, with the weakest
+                                           83.4                                                                                                                                     electrode, O1, at F1 = 2.28%. This confirms, within the
+                               60                 75.2                                                                                                                              four curated regions, the same anterior-to-posterior decline
+                                                         67.6                                                                                                                       reported for the full-montage and regional-subset analyses
+                               40                               40.0                                                                                                                (Sections III-A1 and III-A2).
+                                                                       39.9
+                                                                              54.0                                                                                                  b: Electrode-Level Significance Testing
+
+                               20                                                                                                                                                   The descriptive differences between single-electrode and full-
+                                                                                                                                                                                    montage operation were next tested for every electrode us-
+                               0    Fp1                                                                                                                                             ing session-paired comparisons. For each of the electrodes,
+                                         Fp2                                                                                                                                        that electrode's session-level F1 operating alone was paired
+                                               AF4                                                                                                                                  against the same electrode's session-level F1 scored inside the
+                                                     AF3                                                                                                                            full-montage run, on the sessions common to both. For exam-
+                                                          F4                                                                                                                        ple, Fp2 operating as the entire detector was compared with
+                                                                F3                                                                                                                  Fp2 scored inside the full-montage Proposed-approach de-
+                                                                      C3                                                                                                            tector, and likewise for every other electrode. Each electrode
+                                                                           FC5 9.5                                                                                                  was tested with a two-tailed Wilcoxon signed-rank test, paired
+                                                                                 FC6 6.7                                                                                            by session, with p Bonferroni-corrected over the electrodes
+                                                                                       FC2 2.7                                                                                      tested within each dataset The Figure 6 shows, for every
+                                                                                             FC1 2.4                                                                                electrode, its session-mean F1 operating alone overlaid on
+                                                                                                  C4 1.5                                                                            the same electrode's session-mean F1 under the full montage,
+                                                                                                        CP1 1.9                                                                     together with the adjusted-significance marker.
+                                                                                                              CP2 1.9
+                                                                                                                   CP5 1.6                                                             On Internal (Figure 6A), 14 of the 24 electrodes tested
+                                                                                                                         CP6 1.5                                                    remained significantly different after correction, and every
+                                                                                                                               PO3 3.1                                              significant difference was a reduction under single-electrode
+                                                                                                                                    PO4 2.6                                         operation, with F1 ranging from -7.02 to -0.15 percentage
+                                                                                                                                          O1 2.0                                    among all 24 electrodes. Despite retaining the two highest
+                                                                                                                                                E83 1.8                             absolute single-electrode scores, neither Fp1 nor Fp2 reached
+                                                                                                                                                      P3 1.7                        significance after correction (adjusted p = 1.000 for both),
+                                                                                                                                                           P8 1.6                   wheras the AF4 and AF3 did reach significance which is
+                                                                                                                                                                 P7 1.6             lower in the single-electode relative to the full montage con-
+                                                                                                                                                                       P4 1.6       figuraion. Beyond the frontal electrodes, the Internal C3­C4
+                                                                                                                                                                                    asymmetry noted above coexisted with a significant configu-
+                               100                                                                          Cao2018                                                                 ration effect at both electrodes, and most occipital electrodes
+                                                                                                                                                                                    reached significance different except O1 and P4, despite all
+Single-electrode macro-F1 (%)  80   77.7  75.6                                                                                                                                      having very low absolute F1.
+
+                               60               49.3  49.0                                                                                                                             On Cao2018 (Figure 6B), 16 of the 18 electrodes tested
+                                                                                                                                                                                    remained significantly different after correction, again all
+                               40                           38.4                    36.7     35.0  34.2                                                                             reductions. Similarly, only the frontopolar pair, Fp1 and Fp2,
+                                                                                                                                                                                    did not reach significance after correction (adjusted p =
+                                                                                                            25.4  25.1                                                              1.000 for both), and F3 and F4, the third- and fourth-highest
+                                                                                                                                                                                    single-electrode scores, showed the two largest absolute re-
+                               20                                                                                           16.2  14.8  10.7  10.3                                  ductions (F1 = -10.21 and -8.96 percentage points,
+                                                                                                                                                                                    respectively). Every central, parietal and occipital electrode
+                               0    Fp1   Fp2   F3    F4    FC3                     FC4      FT8   FT7      C3    C4        CP4   CP3   P4    P3    T5 7.3  T6 6.7  O2 2.4  O1 2.3  reached significance, including both C3 and C4 (consistent
+                                                                                                                                                                                    with the C3/C4 symmetry already noted).
+FIGURE 5. Detection F1 of every electrode in the four curated anatomical
+regions operating as its own self-contained detector, in which the                                                                                                                                                                                                                   VOLUME 11, 2023
+complete Stage A­Stage C pipeline was rerun on that one electrode
+alone, coloured by scalp region.
+
+3) Single-Channel Operation
+
+The regional channel-subset analysis above established how
+anatomical subsets of the montage behaved as self-contained
+detectors; the present analysis takes this reduction one
+step further and asks whether each individual electrode of
+the full montage can independently support the complete
+Proposed-approach detector. For every electrode retained
+in the full-montage configuration, the complete Stage A­
+Stage C pipeline was rerun using that one electrode alone,
+with the same 30-second epochs, median centre, preprocess-
+ing and thresholding parameters as the full-montage ref-
+erence, so each result is a genuine self-contained single-
+electrode detector rather than one electrode's score extracted
+from a multichannel run.
+
+a: Per-Electrode Detection
+
+Ranked by mean single-electrode macro F1, Fp1, Fp2, AF4
+and AF3 topped Internal's ranking, reaching F1 values of
+83.73%, 83.37%, 75.16% and 67.59%, respectively, the same
+four frontal electrodes identified by the earlier restricted anal-
+ysis and in the same order except that Fp1 now leads Fp2
+by 0.36 percentage points rather than trailing it (Figure 6;
+Figure 5). C3 followed next in the ranking at F1 = 54.05%,
+ahead of the remaining two canonical frontal electrodes, F4
+and F3, which trailed further behind at 39.98% and 39.85%.
+Performance then fell sharply across the remaining 17 elec-
+trodes. The weakest was C4 at F1 = 1.51%, with every
+parietal and occipital electrode below 3.2%.
+
+   On Cao2018, Fp1, Fp2, F3 and F4 topped the single-
+electrode ranking, the same as Internal's canonical frontal set,
+reaching F1 values of 77.65%, 75.59%, 49.30% and 49.03%,
+respectively, matching both the identity and the order of the
+full-montage ranking (Figure 6). Performance then dropped
+substantially at the next electrode in the ranking, FC3, to
+F1 = 38.44%, followed by the remaining central electrodes
+
+8
+Author names omitted for review: Threshold Selection for Blink Region Detection
+
+                           Per-electrode F1: single-electrode operation vs. full montage                                              Fp1 Fp2
+
+                                                                                                               100                    Internal
+
+                                     Single                  Montage                                           95
+
+                                     A. Internal (EGI 128, 46 sessions)                                                                               *     *  **
+
+                  Frontal            Central                 Parietal                     Occipital            90
+100
+                                                                                                               macro-F1 (%)
+80  **                                                                                                         85
+                                                                                                                               85.71
+F1 (%)60                       *                                                                                                    86.27
+         Fp1                                                                                                                                 86.13
+             Fp2                                                                                                                                   86.79
+                  AF4                                                                                                                                      86.32
+                      AF3                                                                                                                                        86.82
+                          F4                                                                                                                                              86.10
+                              F3                                                                                                                                               86.67
+                                   C3                                                                                                                                                   85.92
+                                       FC5                                                                                                                                                   86.51
+                                           FC6                                                                                                                                                        85.67
+                                                FC2                                                                                                                                                         86.27
+                                                    FC1                                                                                                                                                             85.04
+                                                        C4                                                                                                                                                                85.57
+                                                            CP1                                                80
+                                                                 CP2
+                                                                     CP5
+                                                                         CP6
+                                                                             PO3
+                                                                                  PO4
+                                                                                      O1
+                                                                                          E83
+                                                                                              P3
+                                                                                                   P8
+                                                                                                       P7
+                                                                                                           P4
+                           **                                                                                  75
+40
+
+20                                *
+
+0                                             **                          **                 ****              70
+
+                                                                                                               100                    Cao2018
+
+                                     B. Cao2018 (10 20, 58 sessions)                                           95
+
+                Frontal              Central                 Parietal                     Occipital            90
+100
+                                                                                                               macro-F1 (%)
+80                                                                                                             85
+                                                                                                                               79.81
+60  **                                                                                                                              78.69
+F1 (%)                                                                                                         80
+          Fp1                                                                                                                                79.90
+                Fp2                                                                                                                                78.71
+                     F3
+                           F4                                                                                                                              79.68
+                                 FC3                                                                                                                             78.45
+                                      FC4
+                                            FT8                                                                                                                           79.82
+                                                  FT7                                                                                                                          78.46
+                                                       C3
+                                                             C4                                                                                                                         79.73
+                                                                   CP4                                                                                                                       78.50
+                                                                        CP3
+                                                                              P4                                                                                                                      80.05
+                                                                                    P3                                                                                                                      78.77
+                                                                                         T5
+                                                                                               T6                                                                                                                   80.02
+                                                                                                     O2                                                                                                                   78.78
+                                                                                                          O1
+40                             ****                                                                            75
+                                                         **
+
+20                                                           *         *  *   *
+ 0
+                                                                                          *  *       *      *  70
+
+                                                                                                                    10 s  20 s  30 s  40 s            50 s  60 s 120 s
+                                                                                                                                      epoch duration
+
+FIGURE 6. Per-electrode comparison of Proposed-approach F1 when each                                           FIGURE 7. Macro-averaged F1 of Proposed-approach across epoch
+electrode in the four curated anatomical regions operated as a complete                                        durations, on the full 32-channel montage, for Fp1 and Fp2
+self-contained detector (narrow, opaque bar) against the same electrode                                        (Experiment 1's two consistently best-performing electrodes) reported
+scored inside the full 32-channel montage (wide, translucent bar), for                                         separately: Internal (top row) and Cao2018 (bottom row). Durations of 10,
+(A) Internal and (B) Cao2018. Comparisons are paired by session using                                          20, 30 (reference), 40, 50, 60 and 120 seconds were tested, and an
+two-tailed Wilcoxon signed-rank tests, with p Bonferroni-corrected                                             asterisk marks the durations that differ significantly from the 30 s
+separately within each dataset . An asterisk above an electrode marks                                          reference after Bonferroni correction.
+adjusted p < 0.05, electrodes without an asterisk did not reach this
+threshold.
+
+B. EXPERIMENT 2: STABILITY ACROSS EPOCH                                                                        to 85.67% at 60 s (p < 0.001) and to 85.04% at 120 s
+DURATIONS                                                                                                      (p < 0.001). Fp2 differed significantly only at 120 s, falling to
+                                                                                                               85.57% (p < 0.001). Fp2's 50 s and 60 s declines, to 86.51%
+Epoch duration is routinely chosen on paradigm-specific or                                                     and 86.27% respectively, were descriptively similar to Fp1's
+theoretical grounds and is rarely optimised for the blink de-                                                  but did not reach significance after correction, with p = 0.080
+tector itself. In driving studies, epoch lengths ranging from                                                  and p = 0.064 respectively. Neither electrode differed from
+a few seconds to several minutes appear in the literature. A                                                   its reference at 10, 20 or 40 s. Significance tracked the con-
+robust pipeline should produce stable event-level F1 across                                                    sistency of the change rather than its magnitude.
+this range, because the underlying physiology of blinks does
+not change with the epoch grid imposed during analysis.                                                           Performance on Cao2018 was stable for both electrodes,
+                                                                                                               with no significant difference from the 30 s reference at any
+   The pipeline was evaluated under epoch durations of 10,                                                     tested duration. For Fp1, the 30 s reference F1 was 79.68%,
+20, 30 (reference), 40, 50, 60 and 120 seconds. For each                                                       the lowest value across the seven durations. At the two shorter
+duration the full pipeline is re-run from scratch, since epoch-                                                durations, the F1 score were higher than the 30 s reference
+level peak-to-peak statistics change with epoch length. Ex-                                                    value, reaching 79.81% at 10 s (p = 1.000) and 79.90% at
+periment 1 found that Fp1 and Fp2 were consistently the two                                                    20 s (p = 0.381). The F1 is in its highest value, 80.05%
+best-performing electrodes on both corpora. Each electrode                                                     at 60 s, a peak 0.38 percentage points above the reference
+is thus a deployable single-electrode operating point and                                                      despite not reach significance (p = 0.882). For Fp2, the 30 s
+the epoch duration is being varied. Figure 7 reports macro-                                                    reference F1 was 78.45%, also its lowest value. F1 showed
+averaged F1 for each duration, with an asterisk marking the                                                    the same pattern, rising to 78.69% at 10 s (p = 1.000) and
+durations whose two-tailed Wilcoxon p-value, Bonferroni-                                                       78.71% at 20 s (p = 0.159), and reaching its highest value,
+corrected over the six non-reference durations within each                                                     78.78% at 120 s, a peak 0.33 percentage points above the
+electrode, differs significantly from the 30-second reference.                                                 reference that also did not reach significance (p = 1.000).
+
+   Internal showed a less consistent, and electrode-dependent,                                                                                                                                                        9
+pattern. The 30 s reference yielded each electrode's highest
+Internal F1, 86.32% for Fp1 and 86.82% for Fp2. Relative to
+it, Fp1's F1 fell significantly to 85.92% at 50 s (p = 0.002),
+
+VOLUME 11, 2023
+                                                                    Author names omitted for review: Threshold Selection for Blink Region Detection
+
+C. EXPERIMENT 3: STRATEGY COMPARISON                                TABLE 1. Macro-F1 (%) for Proposed-approach and both baselines on
+In driving and other epoch-structured paradigms, it is com-         Internal and Cao2018. An asterisk marks a baseline as significantly
+mon to apply a continuous-signal blink detector to the raw or
+minimally preprocessed recording and subsequently map the           different from Proposed-approach (two-sided Wilcoxon signed-rank test
+detected blinks back onto the epoch grid. Both BLINKER and
+the standard MNE pipeline follow this approach, in which            on session-level F1, p < 0.05, Bonferroni-corrected across the four tests
+channel-specific thresholds are derived from a signal pool          shown).
+containing both blink-heavy and blink-free epochs. The cen-
+tral premise of the proposed pipeline is that pooling these                             Dataset            Proposed  BLINKER   MNE
+heterogeneous epochs dilutes the amplitude statistics used for
+threshold estimation, thereby distorting threshold placement                            Internal             88.25     76.54*  66.64*
+and shifting the resulting precision-recall trade-off.                                  Cao2018              80.68     69.40*  56.27*
+
+   Accordingly, we hypothesise that naive concatenation will                       100
+produce systematically lower session-level F1 scores than the
+epoch-aware pipeline because of a less favourable precision-                       80
+recall trade-off. To evaluate this hypothesis, all three pipelines
+(i.e., BLINKER, MNE, and Proposed-approach) are applied                            60
+to every session using 30-second epochs and all available
+channels. All 32 channels are included to ensure a fair com-        Precision (%)  40
+parison with BLINKER, which, by default, processes all
+channels provided to it and requires the user to select a                          20
+representative blink channel. For consistency across meth-
+ods, all pipelines are therefore supplied with the same 32                              Condition (shape)                          Dataset (color)
+channels, and the channel yielding the highest F1 score is                              Proposed-approach                               Internal
+selected for subsequent analysis. The per-session macro-F1                              BLINKER                                         Cao2018
+for Proposed-approach is summarised in Table 1, and the per-                            MNE
+session precision-recall operating points in Figure 8.                             00
+                                                                                                 20        40 Recall (%) 60    80      100
+   In the strategy comparison, Proposed-approach achieved
+macro-F1 scores of 88.25% and 80.68% on Internal and                FIGURE 8. Per-session precision-recall operating points for Internal and
+Cao2018, respectively, exceeding both baselines on every            Cao2018, shown separately. Each small point is one session's
+dataset (Table 1). Two-sided Wilcoxon signed-rank tests on          precision-recall pair for one condition. Marker shape encodes the
+session-level F1, Bonferroni-corrected across the four base-        condition (BLINKER, MNE, Proposed-approach) and marker color encodes
+line comparisons in that table (two baselines × two datasets),      the dataset. The large navy-outlined marker for each condition marks its
+confirm that the advantage over both BLINKER and MNE is             mean over sessions within that dataset. Both axes run from 0 to 100
+significant on both corpora (p < 0.05 after correction in every     percent.
+case). This performance gap is reflected in the precision-
+recall operating points shown in Figure 8, where BLINKER,           configurations retained substantially more performance than
+the stronger of the two baselines, consistently favors recall       other anatomical subsets. Within the full-montage run, the
+over precision on both corpora. This asymmetry follows from         best individual electrode was Fp2 on Internal, reaching F1 =
+the pooled-threshold mechanism described earlier. Deriving          86.82%, and Fp1 on Cao2018, reaching F1 = 79.68%.
+a single channel threshold from a mixture of blink-heavy            When the complete pipeline was instead run on one electrode
+and blink-free epochs lowers the effective detection thresh-        alone, the best single-electrode result was obtained at Fp1
+old relative to an epoch-aware estimate, so more candidate          in both corpora, reaching 83.73% on Internal and 77.65%
+events cross it, raising recall but also admitting more false       on Cao2018. Performance declined sharply for non-frontal
+positives that lower precision. This asymmetry appears as           subsets, although the subset analysis did not establish that
+a consistent spatial ordering in the scatter, with Proposed-        every frontal channel was necessary. This concentration is
+approach occupying the high-precision, high-recall region,          compatible with the strong projection of blink activity to the
+BLINKER sitting in the high-recall, low-precision region,           prefrontal scalp and with earlier single-channel and forehead-
+and MNE falling lower on both axes. The ordering holds not          EEG studies [10, 12, 15, 16, 21, 23, 28­30]. The findings
+only in the pooled view but within each corpus individually,        therefore motivate further evaluation of reduced frontopolar
+with Proposed-approach separated from both baselines in the         systems for wearable or in-vehicle use, without establish-
+same direction on Internal and on Cao2018.                          ing that such systems will reproduce the retrospective full-
+                                                                    montage operating point in deployment.
+IV. DISCUSSION
+Experiment 1 showed that useful detection information was              Experiment 2 indicated that Proposed-approach, evaluated
+concentrated at the frontopolar sites and that reduced frontal      separately at Fp1 and at Fp2, the two electrodes identified in
+                                                                    Experiment 1 as consistently the best-performing, was largely
+10                                                                  insensitive to epoch duration on Cao2018, where F1 spread
+                                                                    by only 0.38 percentage points at Fp1 and 0.33 percentage
+                                                                    points at Fp2 across the seven tested durations, with no signif-
+
+                                                                                                                                                                     VOLUME 11, 2023
+Author names omitted for review: Threshold Selection for Blink Region Detection
+
+icant difference from the 30-second reference at any duration                    and disabling epoch screening. The supported interpretation
+(Figure 7). This pattern is useful because epoch duration is                     is consequently that the proposed pipeline achieved a more
+commonly determined by the experimental paradigm rather                          balanced operating point. A causal attribution to reduced
+than by the blink detector. Internal showed a less consistent,                   threshold dilution requires a dedicated ablation.
+electrode-dependent pattern. Fp1's F1 declined from 86.32%
+at 30 seconds to 85.92% at 50 seconds (p = 0.002), to 85.67%                        These findings are subject to several limitations. The
+at 60 seconds (p < 0.001), and to 85.04% at 120 seconds                          benchmark was restricted to two driving corpora, so gener-
+(p < 0.001), all three remaining significant after correction,                   alisation to other experimental paradigms or clinical popu-
+whereas Fp2 declined from 86.82% to 85.57% only at 120                           lations was not tested. Event detection was reported under
+seconds (p < 0.001), with its 50-second and 60-second drops                      one overlap-based matching rule, and sensitivity to alternative
+falling short of significance (p = 0.080 and p = 0.064).                         event-matching criteria was not evaluated; absolute F1 val-
+Neither electrode differed from its 30-second reference at 10,                   ues should therefore not be compared across studies without
+20, or 40 seconds. The evidence therefore supports stable                        accounting for their scoring rules [31]. Performance was not
+performance from 10 to 40 seconds in both corpora for ei-                        reported separately by blink duration, so detection of pro-
+ther electrode, and full stability across the complete 10­120-                   longed eye closures, which is particularly relevant to drowsi-
+second range on Cao2018, but it does not establish equiv-                        ness assessment, remains unestablished. The evaluation also
+alence across that full range on Internal, where the point                       depends on the available reference annotations and their op-
+at which performance becomes unstable is itself electrode-                       erational definitions of blink onset and offset, boundaries that
+dependent. Longer epochs may alter the composition of the                        can vary with signal representation and annotation criteria [1].
+signal used during screening and threshold estimation, but the                   In addition, the headline strategy comparison used a retro-
+present analysis did not test that mechanism directly.                           spective best-channel-per-session rule based on reference F1;
+                                                                                 this common oracle was applied fairly to every condition, but
+   Experiment 3 showed that the epoch-aware proposed                             its scores do not represent prospective channel selection with-
+pipeline outperformed both comparison methods across the                         out labels. Finally, the proposed thresholding method was not
+two driving corpora. Proposed-approach reached macro-F1 of                       benchmarked against learned detectors such as transformer-
+88.25% on Internal and 80.68% on Cao2018, compared with                          , vision-, or other deep-learning approaches [32­34]. Its
+76.54% and 69.40% for BLINKER-concat and 66.64% and                              demonstrated strengths are therefore limited to the methods
+56.27% for MNE-annot on the same two corpora (Table 1).                          and evaluation protocol examined here.
+BLINKER-concat represented an established blink-specific
+method applied to the concatenated recording [8], whereas                           Future work should therefore evaluate prolonged eye
+MNE-annot represented the default amplitude-annotation                           closures separately, test prospective channel selection, and
+routine from MNE-Python.                                                         broaden the benchmark. Reporting normal blinks and pro-
+                                                                                 longed closures independently would establish whether per-
+   The corresponding session-level differences were statisti-                    formance is retained for the sustained closures most relevant
+cally significant for both BLINKER-concat and MNE-annot                          to drowsiness assessment [3, 5]. A prospective study should
+on both corpora, with p < 0.05 after Bonferroni correction in                    also replace the reference-based best-channel oracle with a
+every comparison, and neither baseline equalled or exceeded                      fixed frontopolar electrode or a label-free quality criterion
+Proposed-approach in any channel group on either dataset.                        and quantify the resulting performance loss. Evaluation be-
+These comparisons establish the advantage of the complete                        yond driving data, including paradigms organised into task
+proposed configuration under the common evaluation pro-                          blocks, trials, or other natural segments, would test whether
+tocol. Because the experiment compared complete detection                        the observed robustness extends to different blink morpholo-
+strategies rather than a screening-on versus screening-off ab-                   gies, cognitive demands, and recording conditions. Finally,
+lation of an otherwise identical detector, it does not by itself                 the epoch-screening idea could be assessed as a front end to
+attribute the improvement exclusively to epoch screening.                        learned blink or drowsiness detectors [35­37]; such a hybrid
+                                                                                 remains a proposal and was not evaluated in the present
+   The precision and recall profile is consistent with, but                      study.
+does not prove, the proposed explanation that heterogeneous
+epoch composition affects a threshold derived from the con-                      V. CONCLUSION
+catenated recording. BLINKER-concat consistently favoured                        Taken together, the findings indicate that screening epoch-
+recall over precision on both corpora, whereas Proposed-                         structured EEG before estimating sample-level thresholds
+approach occupied the higher-precision, higher-recall region                     provides more reliable event-level blink-region detection than
+of the same operating-point plot (Figure 8). BLINKER-                            deriving a single threshold from a concatenated recording
+concat therefore operated at a more permissive point, pro-                       under the evaluated driving conditions. The proposed median-
+ducing greater sensitivity together with more false detec-                       based configuration outperformed the examined baselines
+tions. Variation in ocular-artifact amplitude across subjects,                   across both driving corpora, supporting epoch screening as
+electrodes, and recording sessions makes sensitivity to the                      the principal methodological contribution of the pipeline. The
+signal pool plausible [6, 8, 11, 24]. However, the reported                      spatial analysis further showed that frontopolar electrodes
+experiments did not directly measure epoch composition, the                      retained most of the full-montage performance, while the
+resulting threshold shift, or the isolated effect of enabling
+                                                                                                                                                                                      11
+VOLUME 11, 2023
+                                                                 Author names omitted for review: Threshold Selection for Blink Region Detection
+
+epoch-duration analysis indicated broadly stable pooled per-           tained attention task,'' Journal of Neural Engineering,
+formance despite some corpus-specific sensitivity to longer            2020.
+epochs. Collectively, these findings support an interpretable    [11] A. Klein and W. Skrandies, ``A reliable statistical
+and spatially sparse approach to epoch-aware blink detec-              method to detect eyeblink-artefacts from electroen-
+tion that can accommodate common segmentation choices                  cephalogram data only,'' Brain Topography, 2013.
+without requiring a dense electrode montage. The evaluation      [12] Y. Zhang, X. Zheng, W. Xu, and H. Liu, ``Rt-blink:
+deliberately focused on driving data to establish the method's         A method toward real-time blink detection from single
+performance within its intended fatigue-driving context. Con-          frontal eeg signal,'' IEEE Sensors Journal, 2023.
+sequently, its generalizability beyond this domain and its       [13] M. Rashida and M. Habib, ``Quantitative eeg features
+suitability for practical deployment remain to be established.         and machine learning classifiers for eye-blink artifact
+Future work should validate the pipeline across independent            detection: A comparative study,'' Neuroscience Infor-
+driving datasets and recording systems before examining its            matics, 2023.
+transfer to other epoch-structured paradigms. Overall, this      [14] Y. Jiang, D. Wu, J. Cao, L. Jiang, S. Zhang, and
+study positions epoch screening as a practical foundation for          D. Wang, ``Eyeblink detection algorithm based on joint
+improving blink-detection threshold calibration in heteroge-           optimization of vme and morphological feature extrac-
+neous, epoch-structured EEG.                                           tion,'' IEEE Sensors Journal, 2023.
+                                                                 [15] W.-D. Chang, H.-S. Cha, K. Kim, and C.-H. Im, ``Detec-
+REFERENCES                                                             tion of eye blink artifacts from single prefrontal channel
+ [1] M. Nyström, R. Andersson, D. Niehorster, R. Hessels,              electroencephalogram,'' Computer Methods and Pro-
+                                                                       grams in Biomedicine, 2016.
+      and I. Hooge, ``What is a blink? classifying and char-     [16] D.-K. Tran, T.-H. Nguyen, and T.-N. Nguyen, ``De-
+      acterizing blinks in eye openness signals,'' Behavior            tection of eeg-based eye-blinks using a thresholding
+      Research Methods, 2024.                                          algorithm,'' European Journal of Engineering and Tech-
+ [2] E. Alyan, ``Blink-related eeg activity measures cogni-            nology Research, 2021.
+      tive load during proactive and reactive driving,'' Scien-  [17] L. Jefri, F. Rahman, N. Malik, and F. Isa, ``Eye blink
+      tific Reports, 2023.                                             region detection in eeg using amplitude thresholding,''
+ [3] Y. Tian and J. Cao, ``Fatigue driving detection based             2022.
+      on electrooculography: a review,'' Eurasip Journal on      [18] H. Nolan, R. Whelan, and R. Reilly, ``Faster: Fully
+      Image and Video Processing, 2021.                                automated statistical thresholding for eeg artifact
+ [4] P. Ren, X. Ma, W. Lai, M. Zhang, S. Liu, Y. Wang,                 rejection,'' Journal of Neuroscience Methods, vol.
+      M. Li, D. Ma, Y. Dong, Y. He, and X. Xu, ``Comparison            192, no. 1, pp. 152­162, 2010. [Online]. Available:
+      of the use of blink rate and blink rate variability for          https://www.sciencedirect.com/science/article/pii/S016
+      mental state recognition,'' IEEE Transactions on Neural          5027010003894
+      Systems and Rehabilitation Engineering, 2019.              [19] R. Ghosh, S. Phadikar, N. Deb, N. Sinha, P. Das, and
+ [5] M. Shahbakhti, M. Beiramvand, E. Nasiri, S. Far,                  E. Ghaderpour, ``Automatic eyeblink and muscular ar-
+      W. Chen, J. Sole-Casals, M. Wierzchon, A. Broniec-               tifact detection and removal from eeg signals using k-
+      Wojcik, P. Augustyniak, and V. Marozas, ``Fusion of eeg          nearest neighbor classifier and long short-term memory
+      and eye blink analysis for detection of driver fatigue,''        networks,'' IEEE Sensors Journal, 2023.
+      IEEE Transactions on Neural Systems and Rehabilita-        [20] M. Wang, J. Wang, X. Cui, T. Wang, T. Jiang,
+      tion Engineering, 2023.                                          F. Gao, and J. Cao, ``Multidimensional feature opti-
+ [6] R. J. Croft and R. J. Barry, ``Removal of ocular arti-            mization based eye blink detection under epileptiform
+      fact from the eeg: a review,'' Neurophysiologie Clin-            discharges,'' IEEE Transactions on Neural Systems and
+      ique/Clinical Neurophysiology, 2000.                             Rehabilitation Engineering, 2022.
+ [7] S. Akuthota, K. Kumar, and R. Janapati, ``Artifacts re-     [21] G. Wang, ``Sliding window higher-order cumulants for
+      moval techniques in eeg data for bci applications: A sur-        detection of eye blink artifact from short segments of
+      vey,'' Computational Intelligence and Deep Learning              single-channel eeg,'' PeerJ Computer Science, 2025.
+      Methods for Neuro-rehabilitation Applications, 2023.       [22] J. Cao, L. Chen, D. Hu, F. Dong, T. Jiang, W. Gao,
+ [8] K. K. Kleifges, N. Bigdely-Shamlo, S. E. Kerick, and              and F. Gao, ``Unsupervised eye blink artifact detection
+      K. A. Robbins, ``Blinker: Automated extraction of oc-            from eeg with gaussian mixture model,'' IEEE Journal
+      ular indices from eeg enabling large-scale analysis,''           of Biomedical and Health Informatics, 2021.
+      Frontiers in Neuroscience, 2017.                           [23] J. Valderrama, A. De La Torre, and B. Van Dun, ``An
+ [9] M. Agarwal and R. Sivakumar, ``Blink: A fully auto-               automatic algorithm for blink-artifact suppression based
+      mated unsupervised algorithm for eye-blink detection in          on iterative template matching: Application to single
+      eeg signals,'' 2019.                                             channel recording of cortical auditory evoked poten-
+[10] L.-W. Ko, O. Komarov, W.-K. Lai, W.-G. Liang, and T.-             tials,'' Journal of Neural Engineering, 2018.
+      P. Jung, ``Eyeblink recognition improves fatigue predic-   [24] E. Guttmann-Flury, X. Sheng, D. Zhang, and X. Zhu,
+      tion from single-channel forehead eeg in a realistic sus-
+                                                                                                                                                                  VOLUME 11, 2023
+12
+Author names omitted for review: Threshold Selection for Blink Region Detection
+
+      ``A new algorithm for blink correction adaptive to inter-                  [37] B. Zhang, D. Yan, X. Wang, L. Wang, and J. Mo,
+      and intra-subject variability,'' Computers in Biology and                        ``Fatigue driving detection based on fusion of eeg and
+      Medicine, 2019.                                                                  blink potential features,'' Journal of Railway Science
+[25] Z. Cao, C.-H. Chuang, J.-K. King, and C.-T. Lin,                                  and Engineering, vol. 22, no. 8, pp. 3738­3747, 2025.
+      ``Multi-channel eeg recordings during a sustained-                                                                                                 
+      attention driving task,'' Scientific Data, 2019.
+[26] C. Hatlestad-Hall, R. Bruña, M. Liljeström, H. Renvall,                                                                                                                          13
+      K. Heuser, E. Taubøll, F. Maestú, and I. H. Haraldsen,
+      ``Reliable evaluation of functional connectivity and
+      graph theory measures in source-level eeg: How many
+      electrodes are enough?'' Clinical Neurophysiology,
+      vol. 150, pp. 1­16, 2023. [Online]. Available: https:
+      //www.sciencedirect.com/science/article/pii/S1388245
+      723002286
+[27] B. E. Butler and L. J. Trainor, ``Sequencing the
+      cortical processing of pitch-evoking stimuli using
+      eeg analysis and source estimation,'' Frontiers in
+      Psychology, vol. Volume 3 - 2012, 2012. [Online].
+      Available: https://www.frontiersin.org/journals/psychol
+      ogy/articles/10.3389/fpsyg.2012.00180
+[28] M. Shahbakhti, M. Beiramvand, I. Rejer, P. Au-
+      gustyniak, A. Broniec-Wojcik, M. Wierzchon, and
+      V. Marozas, ``Simultaneous eye blink characterization
+      and elimination from low-channel prefrontal eeg signals
+      enhances driver drowsiness detection,'' IEEE Journal of
+      Biomedical and Health Informatics, 2022.
+[29] Y. Aoki and T. Fukami, ``Drowsiness detection based on
+      eeg and blink information measured with a single elec-
+      trode,'' International Journal of Innovative Computing,
+      Information and Control, vol. 19, no. 1, pp. 229­238,
+      2023.
+[30] R. López-Ahumada, R. Jiménez-Naharro, and
+      F. Gómez-Bravo, ``A hardware-based configurable
+      algorithm for eye blink signal detection using a
+      single-channel bci headset,'' Sensors, vol. 23, no. 11,
+      2023.
+[31] R. Salles, ``Softed: Metrics for soft evaluation of time
+      series event detection,'' Computers & Industrial Engi-
+      neering, 2024.
+[32] Á. Fodor, K. Fenech, and A. Lrincz, ``Blinklinmult:
+      Transformer-based eye blink detection,'' Journal of
+      Imaging, 2023.
+[33] J. Hong, J. Shin, J. Choi, and M. Ko, ``Robust eye blink
+      detection using dual embedding video vision trans-
+      former,'' 2024.
+[34] A. Egambaram and N. Badruddin, ``An investigation to
+      detect driver drowsiness from eye blink artifacts using
+      deep learning models,'' 2022, pp. 23­29.
+[35] N. Cabot, D. Lamouchi, Y. Yaddaden, and R. Cherif,
+      ``Drowsiness detection through yawning and eye blink-
+      ing models using convolutional neural networks and
+      transfer learning,'' 2024.
+[36] F. Makhmudov, D. Turimov, M. Xamidov, F. Nazarov,
+      and Y.-I. Cho, ``Real-time fatigue detection algorithms
+      using machine learning for yawning and eye state,''
+      Sensors, 2024.
+
+VOLUME 11, 2023
+
