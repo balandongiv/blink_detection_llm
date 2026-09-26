@@ -1,11 +1,10 @@
-
-
-
 \begin{figure*}[!t]
     \centering
     \includegraphics[width=\textwidth]{flowchart}
     \caption{
-Overview of the proposed epoch-aware double-thresholding pipeline for EEG blink-region detection. Continuous multichannel EEG signals are downsampled to 100 Hz, band-pass filtered from 1 to 20 Hz, and divided into non-overlapping 30-s epochs. Stage A applies multichannel peak-to-peak screening and a union rule to select candidate epochs, represented by E2, E5, and E7 in this example. Stage B pools the samples from the selected epochs to estimate a robust sample-level threshold independently for each channel. Stage C applies the resulting channel-specific thresholds to all valid epochs and reports each detected blink region by its epoch identifier, channel, onset time, and duration. Pale yellow denotes Stage A candidate epochs, red denotes detected blink regions, and the dashed green lines represent the channel-specific thresholds.
+        Overview of the proposed epoch-aware pipeline for EEG blink-region detection. Continuous multichannel EEG signals are downsampled to 100 Hz, band-pass filtered from 1 to 20 Hz, and segmented into non-overlapping 30-s epochs. Stage A applies multichannel peak-to-peak screening with a union rule to select candidate epochs, represented by E2, E5, and E7 in this example. Stage B pools the samples from these candidate epochs to estimate a robust sample-level threshold independently for each channel
+        , illustrated here for $FP1$.
+        Stage C applies each channel's threshold to the corresponding channel across all valid epochs, including non-candidate epochs, and reports each detected blink region by its epoch, channel, onset time, and duration. Pale yellow shading denotes Stage A candidate epochs, red shading denotes detected blink regions, and dashed green lines denote the channel-specific thresholds.
     }
     \label{fig:pipeline_flow}
 \end{figure*}
