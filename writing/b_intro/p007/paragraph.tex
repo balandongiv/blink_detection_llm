@@ -1,7 +1,8 @@
-This paper makes several contributions to blink detection in fatigue driving research.
-First,  we propose a double thresholding blink detection pipeline comprising epoch screening, sample level threshold estimation, and blink region extraction. To our knowledge, this is among the first frameworks to integrate these three stages explicitly to address the challenges associated with epoch structured EEG recordings.
-Second, we systematically compare the proposed pipeline against baseline methods, including BLINKER concat~\citep{kleifges2017blinker} and MNE annot.
-%Finally, we provide a comprehensive benchmark of the competing methods across different epoch durations using two naturalistic driving EEG datasets, consisting of one dataset collected in house and one publicly available dataset~\citep{cao2019multichannel,dari2020unsupervised}.
-To support reproducibility and facilitate further research, we also developed an automated pipeline for extracting ocular indices from EEG recordings and made it freely available as a Python toolbox called \textit{pyblinker} (TODO).
-The toolbox is intended to facilitate reproducible blink analysis and encourage more consistent reporting of ocular indices in EEG based fatigue research.
+
+
+This paper makes several contributions to blink detection in fatigue driving research. First, we propose a three-stage pipeline that screens for candidate epochs likely to contain blink activity using multi-channel amplitude screening, derives a threshold for each channel from these candidate epochs, and applies each threshold to its corresponding channel across all epochs to extract channel-wise blink regions.
+To our knowledge, this is among the first frameworks to integrate these three stages explicitly to address the challenges associated with epoch structured EEG recordings.
+Second, we systematically compare the proposed pipeline against baseline methods, including BLINKER ~\citep{kleifges2017blinker} and MNE~\citep{GramfortEtAl2013a}.
+Finally, to support reproducibility, we release the source code for the proposed pipeline, the baseline implementations, and the scripts used to run all experiments reported in this paper\footnote{\url{https://github.com/pyresearchs/double_thresholding_blink}}.
+This allows every result to be regenerated and the pipeline to be applied to other epoch structured EEG datasets.
 

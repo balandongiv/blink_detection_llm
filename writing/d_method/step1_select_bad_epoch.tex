@@ -1,8 +1,7 @@
 \paragraph{Selection of Candidate Epochs}
-The first stage, Stage~A, of the proposed pipeline performs an initial epoch-level screening using an \emph{autoreject}-inspired threshold-selection procedure~\citep{jas2017autoreject} to identify epoch that are most likely to contain prominent blink-related activity.
- Rather than relying on a single channel, the screening decision integrates channel-level information across multiple EEG channels, allowing an epoch to be selected when abnormal amplitude excursions are detected in one or more channels.
-At this stage, the objective is not to localize individual blink samples, but to identify candidate epochs containing prominent amplitude activity.
-This multi-channel screening strategy therefore narrows the search space to potentially blink-related epochs for more detailed sample-level analysis in the subsequent detection stages.
+
+The first stage, Stage~A, performs an initial epoch-level screening to identify epochs that are most likely to contain prominent blink-related activity. The screening adopts the threshold-selection approach of \citep{jas2017autoreject}, in which a peak-to-peak amplitude threshold is estimated for each channel through cross-validation. Rather than relying on a single channel, the screening decision integrates information across multiple EEG channels. An epoch is therefore selected when abnormal amplitude excursions are detected in one or more channels. At this stage, the objective is not to localize individual blink samples but to identify candidate epochs containing prominent amplitude activity. This multichannel screening strategy narrows the search space to potentially blink-related epochs for detailed sample-level analysis in the subsequent stages.
+
 
 
 
@@ -25,29 +24,7 @@ Instead, a channel-specific threshold \(\tau_c^\star\) is calculated from each o
 Candidate thresholds are taken from the empirical range of peak-to-peak amplitudes for that channel, denoted
 \(\mathcal{Q}_c=\{a_{i,c}: i \in \mathcal{E}\}\), and are evaluated by a
 cross-validation criterion that measures the discrepancy between retained training epochs and validation epochs.
-%
-%\input{writing/d_method/cross_validation_eq.tex}
-%While in practice, this objective may be searched by sequential Bayesian optimization or by a random search over candidate peak-to-peak thresholds, this study employ the Bayesian optimization which is the default setting.
-%; both choices  retain the same validation objective and rejection rule.
 
-%After the channel-specific thresholds \(\{\tau_c^\star\}_{c=1}^{C}\) have been estimated, each epoch receives a channel-level artifact indicator
-%\[
-%z_{i,c}
-%= \mathbf{1}\{a_{i,c} > \tau_c^\star\},
-%\]
-%where \(\mathbf{1}\{\cdot\}\) is the indicator function. The present pipeline
-%uses the union of the channel-level decisions to form the epoch-level screening
-%mask,
-%\[
-%b_i
-%= \mathbf{1}\left\{\sum_{c=1}^{C} z_{i,c} \geq 1\right\}
-%= \mathbf{1}\left\{\exists c \in \mathcal{C}: a_{i,c} > \tau_c^\star\right\}.
-%\]
-%The set of suspicious epochs is therefore
-%\[
-%\mathcal{B}=\{i \in \mathcal{E}: b_i=1\}.
-%\]
-%
 %These epochs are regarded as candidate high-amplitude epochs potentially containing blink-related activity or other artifacts.
 %. They provide the restricted data subset from which the next stage estimates sample-level blink-region thresholds.
 %
@@ -61,10 +38,7 @@ The set of suspicious epochs is therefore
 \mathcal{B}=\{i \in \mathcal{E}: b_i=1\}.
 \]
 
-%[
-%\mathcal{B}={i \in \mathcal{E}: b_i=1},
-%]
 
-where  b\_i denotes the epoch-level screening outcome indicating that epoch (i) satisfies the selection criterion. These candidate epochs represent high-amplitude segments that may contain prominent blink-related activity and are retained for subsequent sample-level blink-region detection.
+where  \(b_i\) denotes the epoch-level screening outcome indicating that epoch (i) satisfies the selection criterion. These candidate epochs represent high-amplitude segments that may contain prominent blink-related activity and are retained for subsequent sample-level blink-region detection.
 
 

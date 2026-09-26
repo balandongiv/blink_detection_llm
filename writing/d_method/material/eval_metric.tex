@@ -2,9 +2,8 @@
 
 
 \paragraph{Event matching.}
-Performance was evaluated at the blink-event level rather than at the sample
-level. For a predicted interval $P$ and a reference interval $G$, temporal
-overlap was quantified using intersection over union (IoU):
+Performance was evaluated at the blink-event level rather than at the sample level. For a predicted interval $P$ and a reference interval $G$, temporal
+overlap was quantified using intersection over union (IoU)~\cite{Startsev2023}:
 \begin{equation}
     \operatorname{IoU}(P,G)
     = \frac{|P \cap G|}{|P \cup G|}.
@@ -26,25 +25,10 @@ Precision, recall, and $F_1$ were calculated independently for each session $s$ 
         {\operatorname{Precision}_s+\operatorname{Recall}_s}.
 \end{align}
 
-%Event-level $F_1$ was the primary outcome because blink events were sparse sample-level accuracy would be dominated by non-blink samples and would  therefore provide limited information about event-detection performance.
-
 \paragraph{Macro-averaging.}
 For a measure $M\in\{\operatorname{Precision},\operatorname{Recall},F_1\}$,
 the reported macro-average over $S$ sessions was
 \begin{equation}
     \overline{M}=\frac{1}{S}\sum_{s=1}^{S}M_s.
 \end{equation}
-Thus, each session contributed equally, irrespective of its number of annotated  blinks.
-Pooled results across the two corpora used the same unweighted average
-over all 104 sessions; event counts were not pooled before computing the
-measures. This approach prevents sessions with many blinks from dominating the headline result, as would occur with micro-averaging.
-
-%\paragraph{Operating-point selection.}
-%Unless an analysis explicitly considered a fixed single electrode, each tested
-%channel configuration was summarised at a retrospective
-%\emph{best-channel-per-session} operating point. Within each session, the output
-%electrode with the highest event-level $F_1$ was selected, and its associated
-%precision, recall, and $F_1$ were retained for macro-averaging. The same rule was
-%applied to every detector condition in a comparison. Because this selection used
-%the reference annotations, it represents an oracle operating point and should
-%not be interpreted as prospective, label-free channel selection.
+Thus, each session contributed equally, irrespective of its number of annotated  blinks. This approach prevents sessions with many blinks from dominating the headline result, as would occur with micro-averaging.
