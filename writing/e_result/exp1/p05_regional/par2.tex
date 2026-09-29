@@ -1,9 +1,3 @@
-The full-montage analysis above established the per-electrode detection performance when all 32 channels were supplied to the pipeline. The present analysis reduces the input to anatomically defined regions and asks how each region performs as a self-contained detector. For each of the four regions, frontal, central, parietal, and occipital, the complete pipeline from Stage~A to Stage~C was rerun using only the electrodes within that region. The 30-s epochs, preprocessing, and thresholding parameters were identical to those of the full-montage reference. With a regional input, the Stage~A union rule operates only over the channels within that region, so the candidate epochs, and therefore the channel-specific thresholds estimated from them, are determined by that region alone. Results are reported per electrode, but each electrode's score is obtained from the rerun of its own region.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
-
 As shown in Figure~\ref{fig:exp1_subset_per_electrode}, per-electrode detection quality within the regional reruns was highest at Fp1, Fp2 and the neighbouring frontal electrodes rather than uniform across the frontal region.
 On Internal, Fp2, Fp1, AF4 and AF3 were the four strongest electrodes in the frontal regional rerun, at 85.28\%, 84.84\%, 77.04\% and 70.70\%, respectively, and performance then fell sharply at F3 and F4 to $42.68\%$ and $41.00\%$. On Cao2018, the frontal region consists of Fp1, Fp2, F3 and F4 only, which reached 78.80\%, 77.05\%, 55.97\% and 54.64\%, respectively.
 Every one of these frontal electrodes scored lower in the regional rerun than in the full-montage run (Section~\ref{sec:exp1_reference}), but restricting Stage~A and Stage~B to the frontal electrodes left their ranking by $F_1$ unchanged in both datasets.

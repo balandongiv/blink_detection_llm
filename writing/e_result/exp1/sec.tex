@@ -1,7 +1,7 @@
 
 
 
-\input{e_result/exp1/p01_motivation/paragraph}
+\input{e_result/exp1/p01_motivation/par1}
 
 % ---------------------------------------------------------------------------
 \subsubsection{Full-Montage Reference}
@@ -11,22 +11,12 @@
 \paragraph{Per-Electrode Detection}
 \label{sec:exp1_per_electrode}
 
-\input{e_result/exp1/p04_per_electrode/paragraph_per_electrode}
+\input{e_result/exp1/p04_per_electrode/par1}
 
-% ---------------------------------------------------------------------------
-% NOTE (commented out on purpose, do not delete): Region-Collapsed Results for
-% the Full-Montage Reference subsection is disabled. The region-collapsed
-% view is retained for the Regional Channel Subsets and Single-Channel
-% Operation subsections below (see sec:exp1_regional_region_collapsed and
-% sec:exp1_single_channel_region_collapsed), so this full-montage version was
-% deemed redundant. Re-enable by uncommenting if the full-montage
-% region-collapsed view is needed again.
-%\paragraph{Region-Collapsed Results}
-%\label{sec:exp1_region_collapsed}
-%
-%\input{e_result/exp1/p04_per_electrode/paragraph_region_collapsed}
-%
-%\input{e_result/exp1/tab_region_performance}
+\input{e_result/exp1/p04_per_electrode/par2}
+
+\input{e_result/exp1/p04_per_electrode/par3}
+
 
 
 
@@ -38,13 +28,28 @@
 \paragraph{Per-Electrode Detection}
 \label{sec:exp1_regional_per_electrode}
 
-\input{e_result/exp1/p05_regional/paragraph_per_electrode}
+\input{e_result/exp1/p05_regional/par1}
+
+\input{e_result/exp1/p05_regional/par2}
 
 % ---------------------------------------------------------------------------
 \paragraph{Electrode-Level Significance Testing}
 \label{sec:exp1_regional_electrode_level_stats}
 
-\input{e_result/exp1/p05_regional/paragraph_electrode_level_stats}
+\input{e_result/exp1/p05_regional/par3}
+
+\input{e_result/exp1/p05_regional/par4}
+
+\input{e_result/exp1/p05_regional/par5}
+
+%\input{e_result/exp1/p05_regional/possible_discussion}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\linewidth]{fig_exp1_subset_per_electrode_stats.pdf}
+    \caption{Per-electrode comparison of $F_1$ for each electrode in the rerun of its own anatomical region (narrow, opaque bars) and in the full-montage run (wide, translucent bars), for (A)~Internal and (B)~Cao2018. Bars show session-mean $F_1$. Electrodes are grouped by the anatomical regions in Figure~\ref{fig:eeg_map} and ordered by descending regional-rerun $F_1$ within each region. Comparisons are paired by session using two-tailed Wilcoxon signed-rank tests, with $p$-values Bonferroni-corrected separately over the electrodes tested within each dataset. An asterisk marks adjusted $p < 0.05$.}
+    \label{fig:exp1_subset_per_electrode_stats}
+\end{figure}
 
 % ---------------------------------------------------------------------------
 % NOTE (commented out on purpose, do not delete): Region-Collapsed Results for
@@ -93,13 +98,15 @@
 \subsubsection{Single-Channel Operation}
 \label{sec:exp1_single_channel}
 
-\input{e_result/exp1/p07_single_channel/paragraph_setup}
+\input{e_result/exp1/p07_single_channel/par1}
 
 % ---------------------------------------------------------------------------
 \paragraph{Per-Electrode Detection}
 \label{sec:exp1_single_channel_per_electrode}
 
-\input{e_result/exp1/p07_single_channel/paragraph_per_electrode}
+\input{e_result/exp1/p07_single_channel/par2}
+
+\input{e_result/exp1/p07_single_channel/par3}
 
 % ---------------------------------------------------------------------------
 
@@ -108,7 +115,10 @@
 \paragraph{Electrode-Level Significance Testing}
 \label{sec:exp1_single_channel_electrode_level_stats}
 
-\input{e_result/exp1/p07_single_channel/paragraph_electrode_level_stats}
+\input{e_result/exp1/p07_single_channel/par4}
+
+\input{e_result/exp1/p07_single_channel/par5}
+\input{e_result/exp1/p07_single_channel/par6}
 
 \begin{figure*}[t]
     \centering

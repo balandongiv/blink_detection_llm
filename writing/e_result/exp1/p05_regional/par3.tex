@@ -1,14 +1,1 @@
 The descriptive differences between the regional reruns and the full-montage reference were next tested for every electrode using session-paired comparisons. For each electrode in the four anatomical subsets shown in Figure~\ref{fig:eeg_map}, its session-level $F_1$ in the rerun of its own region was paired with its session-level $F_1$ in the full-montage run, using the sessions common to both. For example, the $F_1$ of Fp1 when the pipeline was run on the frontal electrodes only was compared with the $F_1$ of Fp1 when all 32 channels were supplied to the pipeline, and the same comparison was made for every other electrode within its own region. Each electrode was tested with a two-tailed Wilcoxon signed-rank test paired by session, with $p$-values Bonferroni-corrected over the electrodes tested within each dataset. Figure~\ref{fig:exp1_subset_per_electrode_stats} shows, for every electrode, its session-mean $F_1$ in the regional rerun overlaid on its session-mean $F_1$ in the full-montage run, with an asterisk marking electrodes that were significant after correction.
-
-\input{e_result/exp1/p05_regional/p2}
-
-\input{e_result/exp1/p05_regional/p3}
-
-\input{e_result/exp1/p05_regional/possible_discussion}
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=\linewidth]{fig_exp1_subset_per_electrode_stats.pdf}
-    \caption{Per-electrode comparison of $F_1$ for each electrode in the rerun of its own anatomical region (narrow, opaque bars) and in the full-montage run (wide, translucent bars), for (A)~Internal and (B)~Cao2018. Bars show session-mean $F_1$. Electrodes are grouped by the anatomical regions in Figure~\ref{fig:eeg_map} and ordered by descending regional-rerun $F_1$ within each region. Comparisons are paired by session using two-tailed Wilcoxon signed-rank tests, with $p$-values Bonferroni-corrected separately over the electrodes tested within each dataset. An asterisk marks adjusted $p < 0.05$.}
-    \label{fig:exp1_subset_per_electrode_stats}
-\end{figure}
