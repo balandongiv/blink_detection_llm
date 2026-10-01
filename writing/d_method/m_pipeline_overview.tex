@@ -1,9 +1,6 @@
 \paragraph{Processing pipeline overview.}
 \label{sec:pipeline_overview}
 
-A. Processing Pipeline Overview
-
-
 The proposed method is an epoch-aware pipeline that converts a continuous multichannel EEG recording into channel-wise blink-region detections through five sequential operations. The first two operations prepare the signal, in which (1) the EEG is downsampled to 100 Hz and band-pass filtered between 1 and 20 Hz, and (2) segmented into fixed-length, non-overlapping 30 s epochs. The remaining three operations constitute the detection method. (3) Stage A applies an epoch-level, multichannel peak-to-peak screening with a union rule to identify candidate epochs containing prominent amplitude excursions. (4) Stage B pools the samples from these candidate epochs to estimate a robust sample-level threshold independently for each channel. (5) Stage C applies each channel's threshold to the corresponding channel across all valid epochs to localize blink regions, each described by its epoch, channel, onset time, and duration. Figure~\ref{fig:pipeline_flow} summarizes the complete processing pipeline, while Stages A, B, and C are described in detail in the following subsections.
 
 
