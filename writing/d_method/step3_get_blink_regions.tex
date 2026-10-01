@@ -1,10 +1,9 @@
-\subsection{Extraction of Blink Regions}
-The final stage applies the sample-level thresholds
+\paragraph{Extraction of Blink Regions}
+The final stage, stage C, applies the sample-level thresholds
 \(\Theta=\{\theta_c\}_{c=1}^{C}\) obtained in Stage~B to obtain channel-wise
 blink regions. Specifically, blink regions are searched for within each valid
 epoch \(i \in \mathcal{E}=\{1,\ldots,N\}\) and each channel
 \(c \in \mathcal{C}\), by comparing the samples \(x_{i,c,t}\) of that epoch and
 channel against the threshold candidate \(\theta_c\) of the same channel.
-
 The final output of this stage is therefore a channel-indexed collection of blink regions, each represented by an epoch identifier, a channel label, an onset time, and duration.
 
