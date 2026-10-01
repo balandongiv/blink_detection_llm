@@ -115,7 +115,28 @@ def load(exp: str, ds: str, **read_csv_kwargs) -> pd.DataFrame:
             f"missing published results: {path}\n"
             "Every manuscript artifact is generated from publication_results/ only."
         )
-    return pd.read_csv(path, **read_csv_kwargs)
+    df = pd.read_csv(path, **read_csv_kwargs)
+    return _drop_off_montage_raja(df) if ds == "raja" else df
+
+
+def _drop_off_montage_raja(df: pd.DataFrame) -> pd.DataFrame:
+    """Normalise Internal results produced before O2 was corrected from E84 to E83.
+
+    Those runs scored E84 (not part of the montage) as a 32nd channel, ran an
+    ``o2_only`` group on E84 and an ``e83_only`` group on the real O2. Drop the E84
+    rows and rename ``e83_only`` to ``o2_only`` so every analysis sees the 31-channel
+    montage. E84 still took part in the ``all_channel`` Stage A screening of those
+    runs, which only a rerun removes. Results from a post-fix run pass through as-is.
+    """
+    if "channel" in df.columns:
+        df = df[df["channel"].astype(str) != "E84"]
+    if "selection" in df.columns and "e83_only" in set(df["selection"]):
+        df = df[df["selection"] != "o2_only"].copy()
+        df["selection"] = df["selection"].replace({"e83_only": "o2_only"})
+        if "condition" in df.columns:
+            df["condition"] = df["condition"].str.replace(
+                "__e83_only__", "__o2_only__", regex=False)
+    return df
 
 
 def bps(df: pd.DataFrame) -> pd.DataFrame:
@@ -212,8 +233,8 @@ def spell_1020(name: str) -> str:
 def egi_to_1020() -> dict[str, str]:
     """Raja EGI HydroCel label -> 10--20 name.
 
-    Read from the ``egi_pair`` block of ``brain_region_raja.yaml``, which covers all 32
-    recorded electrodes. ``32_ch.csv`` is not used: it leaves several channels unmapped
+    Read from the ``egi_pair`` block of ``brain_region_raja.yaml``, which covers the 32
+    montage electrodes (31 recorded; Cz/E129 is not in the files). ``32_ch.csv`` is not used: it leaves several channels unmapped
     (E3 and E23 in particular, which are AF4 and AF3), and reporting those as a bare EGI
     index makes the channel table unreadable for anyone not working in HydroCel indices.
     """

@@ -48,7 +48,6 @@
 \cortext[cor1]{Corresponding author.}
 
 \affiliation[ums]{organization={Faculty of Science and Natural Resources, Universiti Malaysia Sabah},
-            addressline={Jalan UMS},
             city={Kota Kinabalu},
             postcode={88400},
             state={Sabah},
@@ -156,6 +155,12 @@ e.
 % Acknowledgements must appear in a separate section directly before the
 % reference list (not on the title page or as a title footnote).
 %\section*{Acknowledgements}
+
+% Elsevier convention: appendices come after the end-matter statements and
+% before the reference list; \appendix makes \section produce Appendix A, B, ...
+% with equations, tables and figures numbered A.1, A.2, ...
+\appendix
+\input{../h_appendix/appendix_per_electrode_stats}
 
 \bibliographystyle{elsarticle-num}
 \bibliography{../references_from_csv,../references_scopus_new}

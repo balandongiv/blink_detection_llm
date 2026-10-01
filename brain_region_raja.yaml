@@ -18,7 +18,7 @@ egi_pair:
   - po3: 67
   - o1: 70
   - po4: 77
-  - o2: 84
+  - o2: 83
   - p4: 85
   - p8: 91
   - cp2: 87
@@ -59,12 +59,16 @@ eeg_regions:
   # only the frontal ones.
   # E129/Cz never resolves to an actual recorded channel in the Internal (raja) FIF
   # files (confirmed by a full exp1 rerun, 2026-09-07: this group produced 0 rows for
-  # all 46 sessions, unlike every other newly-added *_only group here). This matches
-  # `all_channel` below, which also lists 129 but likewise never resolves it — its
-  # count still reaches 32 only because a different region's own listing (occipital's
-  # 83) is pulled in by the union in build_selection_groups. Kept here (rather than
+  # all 46 sessions, unlike every other newly-added *_only group here). `all_channel`
+  # below also lists 129 and likewise never resolves it. Kept here (rather than
   # deleted) as a record that Cz was considered and could not be validly single-channel
-  # tested; the true resolvable single-electrode montage for Internal is 31 channels.
+  # tested; the true resolvable montage for Internal is 31 channels.
+  #
+  # O2 is E83 on the HydroCel net (corrected 2026-10-01; it was mistyped as 84). Runs
+  # made before the fix carry an extra off-montage E84 in `all_channel` (32 resolved
+  # channels: E84 from the old declared list plus E83 pulled in from `occipital`), an
+  # `o2_only` group that is really E84, and an `e83_only` group that is the real O2.
+  # experiment_script/paper_data.load() normalises such results.
   cz_only:
     - 129
   p3_only:
@@ -78,7 +82,7 @@ eeg_regions:
   oz_only:
     - 75
   o2_only:
-    - 84
+    - 83
   po4_only:
     - 77
   cp2_only:
@@ -117,14 +121,6 @@ eeg_regions:
     - 47
   p7_only:
     - 59
-  # E83 is a real, distinct recorded channel that appears in the `occipital` region's
-  # own list below (code 83) but not in `all_channel`'s declared list (which has 84/O2
-  # instead) -- discovered when the full exp1 rerun showed `all_channel` resolving to
-  # E83 rather than E129 (see the Cz note above). No egi_pair name maps to 83, so it is
-  # reported in results/tables under its raw EGI label E83. Added after the first
-  # all-channel single-electrode rerun; requires its own rerun to populate.
-  e83_only:
-    - 83
   frontal:
     - 3
     - 9
@@ -199,7 +195,7 @@ eeg_regions:
     - 67
     - 62
     - 75
-    - 84
+    - 83
     - 77
     - 87
     - 85

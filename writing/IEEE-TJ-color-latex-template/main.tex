@@ -1,0 +1,102 @@
+%! TeX program = pdflatex
+%! TeX options = -synctex=1 -interaction=nonstopmode -halt-on-error
+% IEEE Transactions/Journals (colour) submission root.  The manuscript prose
+% remains modular under ../a_abstract through ../g_conclusion; do not move
+% section content here.
+\documentclass[journal,twoside,web]{ieeecolor}
+\usepackage{generic}
+
+% Packages used by the modular manuscript.
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{textcomp}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+% ieeecolor defines a dummy \NAT@parse for cite.sty; drop it so natbib loads.
+\makeatletter
+\let\NAT@parse\undefined
+\makeatother
+\usepackage[numbers,sort&compress]{natbib}
+
+% Paths are relative to this template folder.
+\graphicspath{{../e_result/figures/}{../figures/}{../images/}}
+% Set the shared-source path only after \begin{document} has read main.aux,
+% so a clean build never picks up the biblatex ../main.aux instead.
+\makeatletter
+\AtBeginDocument{\def\input@path{{../}}}
+\makeatother
+
+\markboth{\hskip25pc IEEE TRANSACTIONS AND JOURNALS}
+{Balandong \MakeLowercase{\textit{et al.}}: Epoch-Aware Threshold Estimation for Blink Detection}
+
+\begin{document}
+
+\title{Epoch-Aware Threshold Estimation for Blink Detection in Naturalistic Driving EEG}
+
+% Rodney Petrus Balandong is first and corresponding author.
+\author{Rodney Petrus Balandong, Nur Syahirah Roslan, Syaimaa' Solehah Mohd Radzi,
+Muhamad Hafiz Abd Latif,
+%    Lucky Poh Wah Goh,
+    and Tong Boon Tang
+\thanks{This research was supported by the Ministry of Higher Education (MOHE)
+under the Fundamental Research Grant Scheme -- Early Career Researcher
+(FRGS-EC) with the project code (FRGC026-2024).}
+\thanks{Rodney Petrus Balandong is with the Faculty of Science and Natural
+Resources, Universiti Malaysia Sabah, 88400 Kota Kinabalu, Sabah, Malaysia (corresponding
+author, e-mail: balandong@ums.edu.my).}
+\thanks{Nur Syahirah Roslan is with the Department of Information Systems,
+Faculty of Information and Communication Technology, Universiti Tunku Abdul
+Rahman, Perak, Malaysia.}
+%\thanks{Lucky Poh Wah Goh is with the Faculty of Science and Technology,
+%Universiti Malaysia Sabah, 88400 Kota Kinabalu, Sabah, Malaysia.}
+\thanks{Syaimaa' Solehah Mohd Radzi, Muhamad Hafiz Abd Latif, and Tong Boon
+Tang are with the Centre for Intelligent Signal and Imaging Research (CISIR),
+Universiti Teknologi PETRONAS, 32610 Seri Iskandar, Perak, Malaysia.}}
+
+\maketitle
+
+\input{../a_abstract/abstract}
+
+\begin{IEEEkeywords}
+blink detection, electroencephalography, epoch-aware detection, naturalistic
+driving, threshold selection
+\end{IEEEkeywords}
+
+\input{../b_introduction}
+%\input{../c_literature_review/p001/paragraph}
+%\input{../c_literature_review/p002/paragraph}
+\input{../d_method/material_method}
+\input{../e_result/result}
+\input{../f_discussion/discussion}
+\input{../g_conclusion/conclusion}
+
+% If applicable, add \section*{Acknowledgment} here.
+
+% Read only the local main.bbl; ../main.bbl belongs to the biblatex build.
+\makeatletter
+\def\input@path{{./}}
+\makeatother
+\bibliographystyle{IEEEtran}
+\bibliography{../references_from_csv,../references_scopus_new}
+
+% Appendices start on a new page after the references; \appendices numbers
+% them A, B, ...  Restore the shared-source input path first.
+\clearpage
+\makeatletter
+\def\input@path{{../}}
+\makeatother
+\appendices
+\input{../h_appendix/appendix_per_electrode_stats}
+
+% Back to the local folder so \end{document} re-reads this build's main.aux,
+% not the biblatex ../main.aux.
+\makeatletter
+\def\input@path{{./}}
+\makeatother
+
+\end{document}

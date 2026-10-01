@@ -37,8 +37,7 @@
 \uppercase{Muhamad Hafiz Abd Latif}\authorrefmark{2}, and
 \uppercase{Tong Boon Tang}\authorrefmark{2}}
 
-\address[1]{Green Technologies and Advanced Matter (GreAt) Research Group,
-Faculty of Science and Natural Resources, Universiti Malaysia Sabah,
+\address[1]{Faculty of Science and Natural Resources, Universiti Malaysia Sabah,
 88400 Kota Kinabalu, Sabah, Malaysia}
 \address[2]{Centre for Intelligent Signal and Imaging Research (CISIR),
 Universiti Teknologi PETRONAS, 32610 Seri Iskandar, Perak, Malaysia}
@@ -71,11 +70,23 @@ driving, threshold selection
 \input{../f_discussion/discussion}
 \input{../g_conclusion/conclusion}
 
+% IEEE convention: appendices follow the conclusion and precede the
+% acknowledgment and references; \appendices numbers them A, B, ...
+\appendices
+% The auto-generated per-electrode tables are ten columns wide, so they are
+% set as two-column floats in this two-column layout.
+{\renewenvironment{table}[1][!t]{\begin{table*}[#1]}{\end{table*}}%
+\input{../h_appendix/appendix_per_electrode_stats}}
+
 % If applicable, add \section*{Acknowledgment} here. Funding information
 % belongs in the IEEE Access first-page footnote of the final author version.
 
+% Read only the local access.bbl; ../main.bbl belongs to the biblatex build.
+\makeatletter
+\def\input@path{{./}}
+\makeatother
 \bibliographystyle{IEEEtran}
-\bibliography{references_from_csv,references_scopus_new}
+\bibliography{../references_from_csv,../references_scopus_new}
 
 \EOD
 \end{document}

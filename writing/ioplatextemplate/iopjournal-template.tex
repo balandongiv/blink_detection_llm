@@ -1,91 +1,113 @@
-%This is a template file for use of iopjournal.cls
-
+%! TeX program = pdflatex
+%! TeX options = -synctex=1 -interaction=nonstopmode -halt-on-error
+% IOP Publishing (iopjournal.cls) submission root.  The manuscript prose
+% remains modular under ../a_abstract through ../h_appendix; do not move
+% section content here.
+%
+% Class option [anonymous] removes author names, affiliations and the
+% end-matter statements (except \suppdata) for double-anonymous review.
 \documentclass{iopjournal}
 
-% Options
-% 	[anonymous]	Provides output without author names, affiliations or acknowledgments to facilitate double-anonymous peer-review
+% Packages used by the modular manuscript (graphicx, xcolor and hyperref are
+% loaded by iopjournal.cls itself).
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{xurl}
+\usepackage[numbers,sort&compress]{natbib}
+
+% Paths are relative to this IOP template folder.
+\graphicspath{{../e_result/figures/}{../figures/}{../images/}}
+\makeatletter
+\def\input@path{{../}}
+\makeatother
 
 \begin{document}
 
-\articletype{Article type} %	 e.g. Paper, Letter, Topical Review...
+\articletype{Paper}
 
-\title{Replace this text with the article title}
+\title{Epoch-Aware Threshold Estimation for Blink Detection in Naturalistic Driving EEG}
 
-\author{Author Name$^1$\orcid{0000-0000-0000-0000}, Author Name$^2$\orcid{0000-0000-0000-0000} and Author Name$^{1,*}$\orcid{0000-0000-0000-0000}}
+% Rodney Petrus Balandong is first and corresponding author.
+\author{Rodney Petrus Balandong$^{1,2,*}$, Nur Syahirah Roslan$^3$,
+Syaimaa' Solehah Mohd Radzi$^2$, Muhamad Hafiz Abd Latif$^2$ and
+Tong Boon Tang$^2$}
 
-\affil{$^1$Department, Institution, City, Country}
+\affil{$^1$Faculty of Science and Natural Resources, Universiti Malaysia Sabah,
+88400 Kota Kinabalu, Sabah, Malaysia}
 
-\affil{$^2$Department, Institution, City, Country}
+\affil{$^2$Centre for Intelligent Signal and Imaging Research (CISIR),
+Universiti Teknologi PETRONAS, 32610 Seri Iskandar, Perak, Malaysia}
+
+\affil{$^3$Department of Information Systems, Faculty of Information and
+Communication Technology, Universiti Tunku Abdul Rahman, Perak, Malaysia}
 
 \affil{$^*$Author to whom any correspondence should be addressed.}
 
-\email{name@institution.org}
+\email{balandong@ums.edu.my}
 
-\keywords{sample term, sample term, sample term}
+\keywords{blink detection, electroencephalography, epoch-aware detection,
+naturalistic driving, threshold selection}
 
-\begin{abstract}
-Sample text inserted for demonstration. Replace with abstract text. Your abstract must give readers a brief summary of your article. Concisely describe the contents of your article and include key terms. It should be informative and accessible: indicate the general scope of the article and state the main results obtained and conclusions drawn. The abstract must be complete in itself: it must not contain undefined abbreviations and must not refer to any table, figure, reference or equation numbers. Normally the abstract text is not more than 300 words.
-\end{abstract}
+\input{../a_abstract/abstract}
 
-\section{Section title}
-Sample text inserted for demonstration. Organize the main text of your article using section headings, and include any equations, figures, tables, lists etc using your preferred \LaTeX\ packages and commands. Example code for a figure and a table is given below, but you do not have to use this format. For general guidance on using \LaTeX , including information on figures, tables, equations and references, please refer to documents such as the \LaTeX\ WikiBook: \href{https://en.wikibooks.org/wiki/LaTeX}{https://en.wikibooks.org/wiki/LaTeX}.
+\input{../b_introduction}
+%\input{../c_literature_review/p001/paragraph}
+%\input{../c_literature_review/p002/paragraph}
+\input{../d_method/material_method}
+\input{../e_result/result}
+\input{../f_discussion/discussion}
+\input{../g_conclusion/conclusion}
 
-Note that clarity of presentation is the most important consideration when preparing your article for submission. It is not necessary to format your article in the style used for published articles in the journal.
+% End-matter statements.  Each macro below creates an unnumbered section; all
+% except \suppdata are suppressed by the [anonymous] option.
+\ack{During the preparation of this work, the authors used ChatGPT to support
+language editing, manuscript organization, and preliminary drafting of
+selected non-substantive text. The authors reviewed, verified, and edited all
+AI-assisted content and took full responsibility for the final manuscript.}
 
-\subsection{Subsection title}
-Sample text inserted for demonstration, including links to figure \ref{fig1} and table \ref{tab1}.
+\funding{This research was supported by the Ministry of Higher Education
+(MOHE) under the Fundamental Research Grant Scheme -- Early Career Researcher
+(FRGS-EC) with the project code (FRGC026-2024).}
 
-\subsubsection{Subsubsection heading}
-Sample text inserted for demonstration.
+% TODO: confirm the roles below with every co-author.
+\roles{Rodney Petrus Balandong: Conceptualization, Methodology, Software,
+Formal analysis, Investigation, Data curation, Visualization, Writing --
+original draft. Nur Syahirah Roslan: Investigation, Data curation, Writing --
+review \& editing. Syaimaa' Solehah Mohd Radzi: Investigation, Data curation,
+Writing -- review \& editing. Muhamad Hafiz Abd Latif: Investigation,
+Validation, Writing -- review \& editing. Tong Boon Tang: Supervision,
+Resources, Funding acquisition, Writing -- review \& editing.}
 
-\begin{figure}
- \centering
-        \includegraphics[width=0.5\textwidth]{figure1}
- \caption{Text describing the figure and the main conclusions drawn from it. To make your figures accessible to as many readers as possible, try to avoid using colour as the only means of conveying information. For example, in charts and graphs use different line styles and symbols. Further information is available in the online guide: \href{https://publishingsupport.iopscience.iop.org/publishing-support/authors/authoring-for-journals/writing-journal-article/\#figures}{https://publishingsupport.iopscience.iop.org/publishing-support/authors/authoring-for-journals/writing-journal-article/\#figures}}
-\label{fig1}
-\end{figure}
+\data{The public driving-EEG corpus used in this study is available from its
+original source~\citep{cao2019multichannel}. The internally collected dataset
+contains identifiable physiological recordings of human participants and
+cannot be shared publicly; it is available from the corresponding author on
+reasonable request, subject to ethics approval.}
 
+% TODO: add the approving ethics committee and reference number for the
+% internally collected dataset.
+\section*{Ethical statement}
+The internally collected recordings were acquired with the approval of
+[ETHICS COMMITTEE, reference number]. All participants gave written informed
+consent prior to participation.
 
-\begin{table}
-\caption{Caption text describing the table. Adapt the template table below or replace with a new table. To add more tables, copy and paste the whole {\tt \textbackslash begin\{table\}...\textbackslash end\{table\}} block.}
-\centering
-\begin{tabular}{l c c c}
-\hline
-Column heading & Column heading & Column heading & Column heading \\
-\hline
-Data row 1 & 1.0 & 1.5 & 2.0 \\
-Data row 2 & 2.0 & 2.5 & 3.0 \\
-Data row 3 & 3.0 & 3.5 & 4.0 \\
-\hline
-\end{tabular}
-\label{tab1}
-\end{table}
+\section*{Conflict of interest}
+The authors declare that they have no known competing financial interests or
+personal relationships that could have appeared to influence the work reported
+in this paper.
 
-%
-% Each of the commands below will create an unnumbered section with the appropriate heading.
-% Remove any sections that are not relevant for your article.
-% All sections except suppdata will be removed if the [anonymous] option is used.
-% See iopjournal-guidelines.pdf for more information.
-%
+% IOP convention: appendices follow the end-matter statements and precede the
+% reference list; \appendix makes \section produce Appendix A, B, ...
+\appendix
+\input{../h_appendix/appendix_per_electrode_stats}
 
-\ack{Sample text inserted for demonstration.}
-
-\funding{Sample text inserted for demonstration.}
-% This section is a list of funder names and grant numbers
-
-\roles{Sample text inserted for demonstration.}
-% List author names and the contributions made to the article, using terms from the NISO Contributor Roles Taxonomy (CRediT) https://credit.niso.org
-
-\data{Sample text inserted for demonstration.}
-% For more information on IOP Publishing's research data policy see: https://publishingsupport.iopscience.iop.org/questions/research-data/
-
-\suppdata{Sample text inserted for demonstration.}
-
-
-\section*{References}
-
-
+% IOP accepts Vancouver (numbered) or Harvard citations; full reference
+% styling is applied in production.
+\bibliographystyle{unsrtnat}
+\bibliography{../references_from_csv,../references_scopus_new}
 
 \end{document}
-
-

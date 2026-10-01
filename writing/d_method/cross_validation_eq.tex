@@ -5,36 +5,36 @@ cross-validation splits of the epoch indices into training sets
 \(\mathcal{T}_k\) and validation sets \(\mathcal{V}_k\). For a candidate
 threshold \(\tau \in \mathcal{Q}_c\), the training epochs retained for channel
 \(c\) in fold \(k\) are
-\[
+\begin{equation}
     \mathcal{G}_{k,c}(\tau)
     = \{ i \in \mathcal{T}_k : a_{i,c} \leq \tau \}.
-\]
+\end{equation}
 These retained epochs define a threshold-dependent training template
-\[
+\begin{equation}
     \bar{x}^{(\tau)}_{k,c}(t)
     = \frac{1}{|\mathcal{G}_{k,c}(\tau)|}
     \sum_{i \in \mathcal{G}_{k,c}(\tau)} x_{i,c,t},
-\]
+\end{equation}
 where candidates yielding an empty retained set are treated as inadmissible. The
 corresponding validation reference is computed as the pointwise median across
 the validation epochs,
-\[
+\begin{equation}
     \tilde{x}_{k,c}(t)
     = \operatorname{median}_{i \in \mathcal{V}_k} x_{i,c,t}.
-\]
+\end{equation}
 The use of a median validation reference makes the criterion less sensitive to
 large validation-set artifacts. The validation loss for channel \(c\) is then
 defined as
-\[
+\begin{equation}
     \mathcal{J}_{c}(\tau)
     = \frac{1}{K}\sum_{k=1}^{K}
     \left[
         \frac{1}{T}\sum_{t=1}^{T}
         \left\{\bar{x}^{(\tau)}_{k,c}(t)-\tilde{x}_{k,c}(t)\right\}^{2}
     \right]^{1/2}.
-\]
+\end{equation}
 The selected channel threshold is the candidate that minimizes the average  validation discrepancy,
-\[
+\begin{equation}
     \tau_c^\star
     = \arg\min_{\tau \in \mathcal{Q}_c} \mathcal{J}_{c}(\tau).
-\]
+\end{equation}
