@@ -33,7 +33,7 @@ cross-validation criterion that measures the discrepancy between retained traini
 
 After the channel-specific thresholds, \(\tau_c^\star\), have been estimated, the peak-to-peak amplitude of each epoch is evaluated separately for each EEG channel against its corresponding threshold.
 An epoch is retained as a candidate when the amplitude in at least one channel exceeds the threshold \(\tau_c^\star\) defined for that channel. Thus, the epoch-level screening decision incorporates information across multiple channels using a union rule, rather than relying on a single predefined channel. The resulting set of candidate epochs is defined as
-The set of suspicious epochs is therefore
+The set of suspicious epochs is therefore can be represented as below;
 \[
 \mathcal{B}=\{i \in \mathcal{E}: b_i=1\}.
 \]
