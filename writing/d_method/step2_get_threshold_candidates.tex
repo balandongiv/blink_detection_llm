@@ -1,8 +1,9 @@
 \paragraph{Computation of Sample-Level Blink-Region Threshold Candidates}
 
 
-Stage~B estimates a sample-level amplitude threshold for each channel using samples drawn from the candidate epochs $\mathcal{B}$ identified in Stage~A. The estimation adopts the approach by
-\citep{kleifges2017blinker}, in which each threshold combines a measure of central tendency with a robust measure of dispersion and a sensitivity parameter. This allows the threshold to adapt to the amplitude characteristics of each channel. It also limits the influence of isolated extreme samples.
+Stage~B estimates a sample-level amplitude threshold for each channel using samples drawn from the candidate epochs $\mathcal{B}$ identified in Stage~A.
+% REMOVED (issue I21): The estimation adopts the approach by \citep{kleifges2017blinker}, in which each threshold combines...
+\rev{Each threshold combines a measure of central tendency with a robust measure of dispersion and a sensitivity parameter, allowing the threshold to adapt to the amplitude characteristics of each channel while limiting the influence of isolated extreme samples. This robust median/MAD construction differs from the initial-detection threshold of~\citep{kleifges2017blinker}, which uses the arithmetic mean plus 1.5 standard deviations of the full recording signal.}
 
 
 Let \(\mathcal{S}\) denote the set of epochs used for estimating the
@@ -21,7 +22,8 @@ one-dimensional empirical sample set
 %longer peak-to-peak ranges \(a_{i,c}\), but the individual signal amplitudes
 %\(x_{i,c,t}\) that will later be thresholded to form candidate blink regions.
 
-The sample-level threshold is estimated using a robust location-plus-dispersion form. Let \(\xi_c\) be the channel-specific center of the sample distribution which can be express as below:
+The sample-level threshold is estimated using a robust location-plus-dispersion form. Let \(\xi_c\) be the channel-specific center of the sample distribution % REMOVED (issue I22): which can be express as below:
+\rev{defined as follows:}
 \begin{equation}
 \xi_c = \operatorname{median}_{y \in \mathcal{Y}_c} y,
 \end{equation}
@@ -40,7 +42,8 @@ and is rescaled to a standard-deviation-compatible quantity by
 \begin{equation}
 \sigma^{\mathrm{rob}}_c = 1.4826\,\operatorname{MAD}_c .
 \end{equation}
-The constant \(1.4826\) is the usual normal-consistency factor for the MAD, and is the same scaling choice originally used in the paper ~\citep{kleifges2017blinker}.
+% REMOVED (issue I21): and is the same scaling choice originally used in the paper \citep{kleifges2017blinker}.
+The constant \(1.4826\) is the usual normal-consistency factor for the MAD\rev{, ensuring that the rescaled MAD equals the standard deviation under Gaussian data}.
 
 For a sensitivity parameter \(k>0\), the resulting sample-level blink-region
 threshold candidate for channel \(c\) is
@@ -52,3 +55,5 @@ The set
 \Theta = \{\theta_c: c \in \mathcal{C}\}
 \end{equation}
 constitutes the channel-wise threshold candidates passed to the blink-region extraction stage.
+
+\rev{In the present study, $k=3.0$ was used for the proposed configurations. This value was selected by a sweep over candidate values on the evaluation corpora (see Section~IV for discussion of this limitation). The BLINKER-style baseline used a different threshold rule with $k=1.5$ applied to the arithmetic mean and standard deviation of the full recording, following the initial detection stage of~\citep{kleifges2017blinker}.}

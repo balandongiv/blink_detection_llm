@@ -12,8 +12,11 @@ amplitude thresholds and the minimum-duration gate comparable across recordings 
 spectral content lies well below the new Nyquist frequency.
 %
 Second, a zero-phase band-pass filter from \(1.0\)~Hz  to \(20.0\)~Hz
-is applied which is removes slow drifts and DC offsets at the low end and high-frequency muscle and line noise at the high end, isolating the low-frequency, high-amplitude deflection that characterises an eye blink.
+is applied, \rev{which removes} slow drifts and DC offsets at the low end and high-frequency muscle and line noise at the high end, isolating the low-frequency, high-amplitude deflection that characterises an eye blink.
 %
-Third, each filtered recording is split into non-overlapping, fixed-length epochs. Epoching is what makes the thresholds
-adaptive, rather than deriving a single level for the entire session, the pipeline treats each short epoch as a local statistical context.
+Third, each filtered recording is split into non-overlapping, fixed-length epochs.
+% REMOVED (issue I12): Epoching is what makes the thresholds adaptive, rather than deriving a single level for the entire session, the pipeline treats each short epoch as a local statistical context.
+\rev{Epoching enables candidate-pool selection. Rather than deriving a single threshold from the entire concatenated session, Stage~B estimates one session-specific threshold per channel from the samples pooled across the selected candidate epochs.}
+
+\rev{In the present implementation, epoching precedes per-epoch filtering and resampling rather than the continuous-first order described above. This implementation detail is noted as a methodological limitation in Section~IV.}
 

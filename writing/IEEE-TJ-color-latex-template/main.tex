@@ -16,6 +16,8 @@
 \usepackage{float}
 \usepackage{textcomp}
 \usepackage{xurl}
+\usepackage{xcolor}
+\newcommand{\rev}[1]{\textcolor{red}{#1}}
 \usepackage[hidelinks]{hyperref}
 % ieeecolor defines a dummy \NAT@parse for cite.sty; drop it so natbib loads.
 \makeatletter
@@ -36,7 +38,8 @@
 
 \begin{document}
 
-\title{Epoch-Aware Threshold Estimation for Blink Detection in Naturalistic Driving EEG}
+% REMOVED (issue I19): \title{Epoch-Aware Threshold Estimation for Blink Detection in Naturalistic Driving EEG}
+\title{\rev{Epoch-Aware Threshold Estimation for Blink Detection in Simulated-Driving EEG}}
 
 % Rodney Petrus Balandong is first and corresponding author.
 \author{Rodney Petrus Balandong, Nur Syahirah Roslan, Syaimaa' Solehah Mohd Radzi,
@@ -63,8 +66,9 @@ Universiti Teknologi PETRONAS, 32610 Seri Iskandar, Perak, Malaysia.}}
 \input{../a_abstract/abstract}
 
 \begin{IEEEkeywords}
-blink detection, electroencephalography, epoch-aware detection, naturalistic
-driving, threshold selection
+% REMOVED (issue I19): naturalistic driving
+\rev{blink detection, electroencephalography, epoch-aware detection, simulated
+driving, threshold selection}
 \end{IEEEkeywords}
 
 \input{../b_introduction}
