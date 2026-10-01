@@ -1,4 +1,3 @@
 The pipeline was evaluated under epoch durations of 10, 20, 30, 40, 50, 60, and 120~s, with 30~s serving as the reference duration~\citep{ahn2016exploring,chai2017improving,lan2024driving,dai2023detection,chen2022fatigue}.
 %ko2020eyeblink,shahbakhti2022simultaneous consider add these two which use 20 sec
-
 For each duration, the complete pipeline was rerun from scratch using the full 32-channel montage, since both the Stage~A peak-to-peak statistics and the samples pooled for the Stage~B thresholds change with epoch length. Keeping the full montage ensures that epoch duration is the only factor that differs from the reference. Experiment~1 found that Fp1 and Fp2 were consistently the two best-performing electrodes on both corpora. We therefore restrict the epoch-duration analysis to these two electrodes and report their $F_1$ from each full-montage run. The two electrodes are reported separately rather than averaged.
