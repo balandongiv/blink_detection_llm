@@ -1,0 +1,15 @@
+{
+  "experiment": "exp3_epoch_duration_cao2018",
+  "reference_epoch_duration_s": 30.0,
+  "groups_run": [
+    "all_channel",
+    "frontal",
+    "frontal_left",
+    "frontal_right",
+    "single:FP1",
+    "single:FP2"
+  ],
+  "n_sessions": 58,
+  "n_rows": 32480,
+  "n_errors": 0
+}

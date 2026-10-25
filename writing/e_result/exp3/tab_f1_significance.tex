@@ -1,12 +1,12 @@
 % Source: publication_results/; script experiment_script/res_exp3_table_strategy_f1_significance.py
 \begin{table}[ht]
   \centering
-  \caption{\rev{Session-mean $F_1$ (\%, mean $\pm$ SD) of the proposed pipeline, the BLINKER-style initial-threshold baseline, and MNE on Internal ($n=46$ sessions from 17 participants) and Cao2018 ($n=58$ sessions from 27 participants). All conditions are evaluated at the retrospective best-channel-per-session operating point (oracle selection using reference annotations). An asterisk marks a baseline whose session-level $F_1$ differs significantly from that of the proposed pipeline (two-tailed Wilcoxon signed-rank test paired by session, Bonferroni-corrected over the four comparisons shown, adjusted $p < 0.05$).}}
+  \caption{\rev{Session-mean $F_1$ (\%, mean $\pm$ SD) of the proposed pipeline, the BLINKER-threshold baseline, and MNE on Internal ($n=46$ sessions from 17 participants) and Cao2018 ($n=58$ sessions from 27 participants). All conditions are evaluated at the retrospective best-channel-per-session operating point (oracle selection using reference annotations). An asterisk marks a baseline whose session-level $F_1$ differs significantly from that of the proposed pipeline (two-tailed Wilcoxon signed-rank test paired by session, Bonferroni-corrected over the four comparisons shown, adjusted $p < 0.05$).}}
   \label{tab:f1_significance}
   \begin{tabular}{lccc}
     \toprule
     % REMOVED (issue I04): BLINKER column header
-    Dataset & Proposed & \rev{BLINKER-style} & MNE \\
+    Dataset & Proposed & \rev{BLINKER-threshold} & MNE \\
     \midrule
     % REMOVED (issue I18): values without SD
     \rev{Internal} & \rev{88.25 $\pm$ 10.10} & \rev{76.54 $\pm$ 20.10*} & \rev{66.64 $\pm$ 35.98*} \\

@@ -1,0 +1,17 @@
+{
+  "experiment": "exp3_epoch_duration_raja",
+  "reference_epoch_duration_s": 30.0,
+  "groups_run": [
+    "all_channel",
+    "frontal",
+    "frontal_left",
+    "frontal_right",
+    "single:E22",
+    "single:E23",
+    "single:E3",
+    "single:E9"
+  ],
+  "n_sessions": 46,
+  "n_rows": 28336,
+  "n_errors": 0
+}

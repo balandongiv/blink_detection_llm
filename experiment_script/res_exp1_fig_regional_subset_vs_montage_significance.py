@@ -126,7 +126,7 @@ def fmt_sig(row: pd.Series) -> str:
     return "*" if row["p_bonf"] < 0.05 else ""
 
 
-def build_figure(data: dict[str, tuple[pd.DataFrame, int]], n_sessions: dict[str, int]) -> None:
+def build_figure(data: dict[str, tuple[pd.DataFrame, int]]) -> None:
     NAVY = S.NAVY
     REGION_COLORS = S.REGION_COLORS
     PANEL_BLUE = S.PANEL_BLUE
@@ -144,7 +144,7 @@ def build_figure(data: dict[str, tuple[pd.DataFrame, int]], n_sessions: dict[str
     S.style_fig(fig)
 
     panel_letter = {"raja": "A", "cao": "B"}
-    dataset_detail = {"raja": "EGI 128", "cao": "10–20"}
+
 
     for ax, ds in zip(axes, ["raja", "cao"]):
         df, n_tests = data[ds]
@@ -203,8 +203,7 @@ def build_figure(data: dict[str, tuple[pd.DataFrame, int]], n_sessions: dict[str
         ax.set_yticks([0, 20, 40, 60, 80, 100])
         ax.set_ylabel(r"$F_1$ (%)", color=NAVY)
 
-        title = (f"{panel_letter[ds]}. {P.DSN[ds]} ({dataset_detail[ds]}, "
-                 f"{n_sessions[ds]} sessions)")
+        title = f"({panel_letter[ds]}) {P.DSN[ds]}"
         ax.set_title(title, fontweight="bold", color=NAVY, pad=10)
 
         # style_axis applies the shared chrome font size (S.FONT_CHROME) to the title,
@@ -230,9 +229,8 @@ def build_figure(data: dict[str, tuple[pd.DataFrame, int]], n_sessions: dict[str
 
 
 def main() -> None:
-    n_sessions = {ds: len(P.bps(P.load("exp1", ds))) for ds in ["raja", "cao"]}
     data = {ds: ordered(ds) for ds in ["raja", "cao"]}
-    build_figure(data, n_sessions)
+    build_figure(data)
 
     for ds, title in (("raja", "Internal"), ("cao", "Cao2018")):
         df, n_tests = data[ds]

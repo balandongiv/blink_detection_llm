@@ -1,0 +1,13 @@
+{
+  "experiment": "exp1_channel_selection_raja",
+  "epoch_duration_s": 30.0,
+  "resample_rate": 100.0,
+  "use_epoch_health": false,
+  "groups_run": [
+    "all"
+  ],
+  "metric_primary": "f1 per (selection, channel, centre)",
+  "n_sessions": 46,
+  "n_rows": 9016,
+  "n_errors": 0
+}
