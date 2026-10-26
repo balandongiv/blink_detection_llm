@@ -3,7 +3,9 @@
 
 Stage~B estimates a sample-level amplitude threshold for each channel using samples drawn from the candidate epochs $\mathcal{B}$ identified in Stage~A.
 % REMOVED (issue I21): The estimation adopts the approach by \citep{kleifges2017blinker}, in which each threshold combines...
-\rev{Each threshold combines a measure of central tendency with a robust measure of dispersion and a sensitivity parameter, allowing the threshold to adapt to the amplitude characteristics of each channel while limiting the influence of isolated extreme samples. This robust median/MAD construction differs from the initial-detection threshold of~\citep{kleifges2017blinker}, which uses the arithmetic mean plus 1.5 standard deviations of the full recording signal.}
+\rev{Each threshold combines a measure of central tendency with a robust measure of dispersion and a sensitivity parameter, allowing the threshold to adapt to the amplitude characteristics of each channel while limiting the influence of isolated extreme samples.
+%This robust median/MAD construction differs from the initial-detection threshold of~\citep{kleifges2017blinker}, which uses the arithmetic mean plus 1.5 standard deviations of the full recording signal.
+}
 
 
 Let \(\mathcal{S}\) denote the set of epochs used for estimating the
@@ -55,5 +57,3 @@ The set
 \Theta = \{\theta_c: c \in \mathcal{C}\}
 \end{equation}
 constitutes the channel-wise threshold candidates passed to the blink-region extraction stage.
-
-% REMOVED: k=3.0 disclosure (not needed)
