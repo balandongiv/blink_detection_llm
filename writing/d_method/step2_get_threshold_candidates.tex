@@ -3,7 +3,7 @@
 
 Stage~B estimates a sample-level amplitude threshold for each channel using samples drawn from the candidate epochs $\mathcal{B}$ identified in Stage~A.
 % REMOVED (issue I21): The estimation adopts the approach by \citep{kleifges2017blinker}, in which each threshold combines...
-\rev{Each threshold combines a measure of central tendency with a robust measure of dispersion and a sensitivity parameter, allowing the threshold to adapt to the amplitude characteristics of each channel while limiting the influence of isolated extreme samples.
+\rev{Each threshold combines a measure of central tendency with a scaled robust measure of dispersion, allowing the threshold to adapt to the amplitude characteristics of each channel while limiting the influence of isolated extreme samples.
 %This robust median/MAD construction differs from the initial-detection threshold of~\citep{kleifges2017blinker}, which uses the arithmetic mean plus 1.5 standard deviations of the full recording signal.
 }
 
@@ -38,20 +38,18 @@ deviation (MAD),
 \begin{equation}
 \operatorname{MAD}_c
 = \operatorname{median}_{y \in \mathcal{Y}_c}
-\left|y-\operatorname{median}_{u \in \mathcal{Y}_c}u\right|,
+\left|y-\operatorname{median}_{u \in \mathcal{Y}_c}u\right|.
 \end{equation}
-and is rescaled to a standard-deviation-compatible quantity by
-\begin{equation}
-\sigma^{\mathrm{rob}}_c = 1.4826\,\operatorname{MAD}_c .
-\end{equation}
+% REMOVED (revision): and is rescaled to a standard-deviation-compatible quantity by
+% \sigma^{\mathrm{rob}}_c = 1.4826\,\operatorname{MAD}_c .
 % REMOVED (issue I21): and is the same scaling choice originally used in the paper \citep{kleifges2017blinker}.
-The constant \(1.4826\) is the usual normal-consistency factor for the MAD\rev{, ensuring that the rescaled MAD equals the standard deviation under Gaussian data}.
-
-For a sensitivity parameter \(k>0\), the resulting sample-level blink-region
-threshold candidate for channel \(c\) is
+% REMOVED (revision): The constant \(1.4826\) is the usual normal-consistency factor for the MAD, ensuring that the rescaled MAD equals the standard deviation under Gaussian data.
+% REMOVED (revision): For a sensitivity parameter \(k>0\), the resulting sample-level blink-region threshold candidate for channel \(c\) is \theta_c = \xi_c + k\sigma^{\mathrm{rob}}_c .
+\rev{The threshold candidate for channel \(c\) is then set above the channel center by a margin \(\Delta_c\),
 \begin{equation}
-\theta_c = \xi_c + k\sigma^{\mathrm{rob}}_c .
+\theta_c = \xi_c + \Delta_c .
 \end{equation}
+The margin \(\Delta_c\) is a fixed multiple of \(\operatorname{MAD}_c\), and the same multiple is used for every channel. A channel with a wider amplitude spread therefore receives a higher threshold.}
 The set
 \begin{equation}
 \Theta = \{\theta_c: c \in \mathcal{C}\}
