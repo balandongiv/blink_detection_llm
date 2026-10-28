@@ -1,5 +1,0 @@
-# The .tex file cites references_from_csv/references_scopus_new by bare name.
-# Run BibTeX from this folder (not from -outdir/-auxdir) and add writing/
-# (this folder's parent) to its search path.
-$bibtex_fudge = 0;
-ensure_path('BIBINPUTS', '..');

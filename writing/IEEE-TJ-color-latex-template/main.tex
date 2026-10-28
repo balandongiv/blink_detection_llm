@@ -5,25 +5,38 @@
 % section content here.
 \documentclass[journal,twoside,web]{ieeecolor}
 \usepackage{generic}
-
-% Packages used by the modular manuscript.
 \usepackage{amsmath,amssymb,amsfonts}
-\usepackage{booktabs}
-\usepackage{array}
-\usepackage{tabularx}
-\usepackage{longtable}
+\usepackage{algorithmic}
 \usepackage{graphicx}
-\usepackage{float}
-\usepackage{textcomp}
-\usepackage{xurl}
-\usepackage{xcolor}
-\newcommand{\rev}[1]{\textcolor{red}{#1}}
 \usepackage[hidelinks]{hyperref}
+\usepackage{textcomp}
 % ieeecolor defines a dummy \NAT@parse for cite.sty; drop it so natbib loads.
+% natbib (numeric) stands in for the template's cite.sty because the shared
+% prose uses \citep/\citet; the printed [n] style is the same.
 \makeatletter
 \let\NAT@parse\undefined
 \makeatother
 \usepackage[numbers,sort&compress]{natbib}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+% ieeecolor assumes pdfLaTeX Times/Helvetica (ptm/phv); map them when the
+% IDE compiles with XeLaTeX/LuaLaTeX so the template typography is kept.
+\usepackage{iftex}
+\ifPDFTeX\else
+  \usepackage{fontspec}
+  \setmainfont{Times New Roman}
+  \setsansfont{Arial}
+\fi
+
+% Extra packages used by the modular manuscript.
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{float}
+\usepackage{xurl}
+\usepackage{xcolor}
+\newcommand{\rev}[1]{\textcolor{red}{#1}}
 
 % Paths are relative to this template folder.
 \graphicspath{{../e_result/figures/}{../figures/}{../images/}}
@@ -33,7 +46,7 @@
 \AtBeginDocument{\def\input@path{{../}}}
 \makeatother
 
-\markboth{\hskip25pc IEEE TRANSACTIONS AND JOURNALS}
+\markboth{\hskip25pc IEEE TRANSACTIONS AND JOURNALS TEMPLATE}
 {Balandong \MakeLowercase{\textit{et al.}}: Epoch-Aware Threshold Estimation for Blink Detection}
 
 \begin{document}
@@ -41,7 +54,7 @@
 
 \title{Epoch-Aware Threshold Estimation for Blink Detection in Simulated-Driving EEG}
 
-% Rodney Petrus Balandong is first and corresponding author.
+
 \author{Rodney Petrus Balandong, Nur Syahirah Roslan, Syaimaa' Solehah Mohd Radzi,
 Muhamad Hafiz Abd Latif,
     Lucky Poh Wah Goh,
@@ -81,7 +94,7 @@ driving, threshold selection
 \def\input@path{{./}}
 \makeatother
 \bibliographystyle{IEEEtran}
-\bibliography{../references_from_csv,../references_scopus_new}
+\bibliography{../references}
 \clearpage
 \makeatletter
 \def\input@path{{../}}

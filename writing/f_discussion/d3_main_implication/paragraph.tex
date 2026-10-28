@@ -6,7 +6,7 @@ MNE~\citep{GramfortEtAl2013a} instead missed most blinks in several sessions on 
 Both failure patterns are consistent with calibrating the threshold on the whole recording.
 In the BLINKER-threshold baseline, blink-free epochs may dilute the pool and shift the threshold towards the background EEG, so smaller non-blink deflections could cross it.
 In MNE, a single large artefact raises the range-based threshold above many genuine blinks.
-The first effect is a particular concern in driving, because the degree of dilution depends on how often the drivs blinks, and blink frequency changes with sleepiness and differ considerably between drivers~\citep{schleicher2008blink}.
+The first effect is a particular concern in driving, because the degree of dilution depends on how often the drivs blinks, and blink frequency changes with sleepiness and differ considerably between drivers~\citep{schleicher2008blinks}.
 A threshold calibrated in this way would therefore depend partly on the state it is meant to monitor.
 The proposed pipeline is designed to avoid this dilution by estimating its threshold only from epochs flagged as containing prominent amplitude excursions.
 The proposed approach outperformed BLINKER by a similar F1 margin on Internal and Cao2018, even though the two datasets were recorded with different hardware and montages.
