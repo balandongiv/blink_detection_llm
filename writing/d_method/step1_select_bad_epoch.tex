@@ -20,21 +20,14 @@ a_{i,c}
 \end{equation}
 Large values of \(a_{i,c}\) indicate that the corresponding epoch contains a high-amplitude excursion in channel \(c\), a pattern consistent with ocular or other transient artifacts.
 Because signal amplitudes may vary across channels, participants, and recording conditions, a fixed peak-to-peak threshold is not imposed.
-% REMOVED (issue I22): a channel-specific threshold is calculated from each of the channel's.
-Instead, \rev{a channel-specific threshold \(\tau_c^\star\) is estimated from that channel's peak-to-peak amplitudes across epochs.}
+Instead, a channel-specific threshold \(\tau_c^\star\) is estimated from that channel's peak-to-peak amplitudes across epochs.
 Candidate thresholds are taken from the empirical range of peak-to-peak amplitudes for that channel, denoted
 \(\mathcal{Q}_c=\{a_{i,c}: i \in \mathcal{E}\}\), and are evaluated by a
 cross-validation criterion that measures the discrepancy between retained training epochs and validation epochs.
 
-%These epochs are regarded as candidate high-amplitude epochs potentially containing blink-related activity or other artifacts.
-%. They provide the restricted data subset from which the next stage estimates sample-level blink-region thresholds.
-%
-
-
-
 After the channel-specific thresholds, \(\tau_c^\star\), have been estimated, the peak-to-peak amplitude of each epoch is evaluated separately for each EEG channel against its corresponding threshold.
-An epoch is retained as a candidate when the amplitude in at least one channel exceeds the threshold \(\tau_c^\star\) defined for that channel. Thus, the epoch-level screening decision incorporates information across multiple channels using a union rule, rather than relying on a single predefined channel. % REMOVED (issue I22): The resulting set of candidate epochs is defined as / The set of suspicious epochs is therefore can be represented as below;
-\rev{The set of candidate epochs is therefore}
+An epoch is retained as a candidate when the amplitude in at least one channel exceeds the threshold \(\tau_c^\star\) defined for that channel. Thus, the epoch-level screening decision incorporates information across multiple channels using a union rule, rather than relying on a single predefined channel. %
+The set of candidate epochs is therefore
 \begin{equation}
 \mathcal{B}=\{i \in \mathcal{E}: b_i=1\}.
 \end{equation}
