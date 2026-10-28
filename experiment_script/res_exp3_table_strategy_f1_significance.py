@@ -63,8 +63,8 @@ def mean_sd(best: dict, ds: str, cond: str) -> tuple[float, float]:
 
 
 def cell(m_sd: tuple[float, float], star: str = "") -> str:
-    """``\\rev{mean $\\pm$ SD*}`` table cell, in percent."""
-    return rf"\rev{{{P.fmt(m_sd[0])} $\pm$ {P.fmt(m_sd[1])}{star}}}"
+    """``mean $\\pm$ SD*`` table cell, in percent."""
+    return rf"{P.fmt(m_sd[0])} $\pm$ {P.fmt(m_sd[1])}{star}"
 
 
 def compute(best: dict) -> list[tuple[str, tuple, dict[str, tuple[tuple, bool]]]]:
@@ -90,15 +90,15 @@ def compute(best: dict) -> list[tuple[str, tuple, dict[str, tuple[tuple, bool]]]
 def build_table(rows: list[tuple[str, tuple, dict[str, tuple[tuple, bool]]]]) -> list[str]:
     lines = [
         r"\begin{table}[ht]", r"  \centering",
-        r"  \caption{\rev{Session-mean $F_1$ (\%, mean $\pm$ SD) of CECT, "
+        r"  \caption{Session-mean $F_1$ (\%, mean $\pm$ SD) of CECT, "
         r"the BLINKER-threshold baseline, and MNE on Internal and Cao2018. All conditions are evaluated "
         r"at the retrospective best-channel-per-session operating point. An asterisk marks a "
         r"baseline whose session-level $F_1$ differs significantly from that of CECT "
         r"(two-tailed Wilcoxon signed-rank test paired by session, Bonferroni-corrected "
-        r"over the four comparisons shown, adjusted $p < 0.05$).}}",
+        r"over the four comparisons shown, adjusted $p < 0.05$).}",
         r"  \label{tab:f1_significance}",
         r"  \begin{tabular}{lccc}", r"    \toprule", "",
-        r"    Dataset & \rev{CECT} & \rev{BLINKER-threshold} & MNE \\", r"    \midrule",
+        r"    Dataset & CECT & BLINKER-threshold & MNE \\", r"    \midrule",
     ]
     for label, f1_prop, per_baseline in rows:
         f1_blinker, sig_blinker = per_baseline["BLINKER-concat"]
@@ -106,7 +106,7 @@ def build_table(rows: list[tuple[str, tuple, dict[str, tuple[tuple, bool]]]]) ->
         star_blinker = "*" if sig_blinker else ""
         star_mne = "*" if sig_mne else ""
         lines.append(
-            rf"    \rev{{{label}}} & {cell(f1_prop)} & {cell(f1_blinker, star_blinker)} & "
+            rf"    {label} & {cell(f1_prop)} & {cell(f1_blinker, star_blinker)} & "
             rf"{cell(f1_mne, star_mne)} \\"
         )
     lines += [r"    \bottomrule", r"  \end{tabular}", r"\end{table}"]
