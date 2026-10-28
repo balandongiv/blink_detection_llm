@@ -80,11 +80,12 @@ def build_table(rows: list[tuple[str, float, dict[str, tuple[float, bool]]]]) ->
     blinker, mne = (P.display(b) for b in BASELINES)
     lines = [
         r"\begin{table}[ht]", r"  \centering",
-        rf"  \caption{{Macro-$F_1$ (\%) for Proposed-approach and both baselines on "
-        rf"Internal and Cao2018. An asterisk marks a baseline as significantly "
-        rf"different from Proposed-approach (two-sided Wilcoxon signed-rank test on "
-        rf"session-level $F_1$, $p<0.05$, Bonferroni-corrected across the four tests "
-        rf"shown).}}",
+        r"  \caption{\rev{Session-mean $F_1$ (\%, mean $\pm$ SD) of the proposed pipeline, "
+        r"the BLINKER-threshold baseline, and MNE on Internal. All conditions are evaluated "
+        r"at the retrospective best-channel-per-session operating point. An asterisk marks a "
+        r"baseline whose session-level $F_1$ differs significantly from that of the proposed "
+        r"pipeline (two-tailed Wilcoxon signed-rank test paired by session, Bonferroni-corrected "
+        r"over the four comparisons shown, adjusted $p < 0.05$).}}",
         r"  \label{tab:f1_significance}",
         r"  \begin{tabular}{lccc}", r"    \toprule",
         rf"    Dataset & Proposed & {blinker} & {mne} \\", r"    \midrule",
