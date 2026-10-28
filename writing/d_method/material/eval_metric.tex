@@ -1,6 +1,3 @@
-
-
-
 \paragraph{Event matching.}
 Performance was evaluated at the blink-event level rather than at the sample level. For a predicted interval $P$ and a reference interval $G$, temporal
 overlap was quantified using intersection over union (IoU)~\cite{Startsev2023}:
@@ -9,9 +6,10 @@ overlap was quantified using intersection over union (IoU)~\cite{Startsev2023}:
     = \frac{|P \cap G|}{|P \cup G|}.
 \end{equation}
 Here, $|\cdot|$ denotes interval duration.
-A predicted interval was eligible for a match when its IoU with an unmatched reference interval was at least 0.1. \rev{The IoU threshold of 0.1 was chosen to ensure event-level correspondence while accommodating the onset and offset variability inherent in manual EEG annotation. This threshold verifies that predicted and reference events overlap in time without requiring precise boundary alignment.} Matching was one-to-one, so a predicted or reference interval could contribute to at most one match.
+A predicted interval was eligible for a match when its IoU with an unmatched reference interval was at least 0.1.
+%\rev{The IoU threshold of 0.1 was chosen to ensure event-level correspondence while accommodating the onset and offset variability inherent in manual EEG annotation. This threshold verifies that predicted and reference events overlap in time without requiring precise boundary alignment.}
+Matching was one-to-one, so a predicted or reference interval could contribute to at most one match.
 
-%Matched predictions were counted as true positives (TP), remaining predictions as false positives(FP), and remaining reference intervals as false negatives (FN).
 
 \paragraph{Session-level measures.}
 Precision, recall, and $F_1$ were calculated independently for each session $s$ from the event counts:
