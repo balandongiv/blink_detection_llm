@@ -53,6 +53,7 @@ FIGDIR = REPO / "writing" / "figures"
 FIGDIR.mkdir(parents=True, exist_ok=True)
 
 CONDS = ["Proposed-Med", "BLINKER-concat", "MNE-annot"]
+LEGEND_LABEL = {"Proposed-Med": "CECT"}
 MARKERS = {"Proposed-Med": "o", "BLINKER-concat": "^", "MNE-annot": "D"}
 DSN = {"raja": "Internal", "cao2018": "Cao2018"}
 DS_COLORS = {"raja": S.DATASET_COLORS["Internal"], "cao2018": S.DATASET_COLORS["Cao2018"]}
@@ -90,11 +91,11 @@ def main() -> None:
     S.style_axis(ax, grid_axis="both")
 
     # two-part legend: marker shape -> condition, color -> dataset. Labels go through
-    # P.display() so they match Table 1's naming (BLINKER, MNE, Proposed-approach), not
-    # the raw CONDS/data-key strings (BLINKER-concat, MNE-annot, Proposed-Med).
+    # P.display() so they match Table 1's naming (BLINKER, MNE), not the raw CONDS/data-key
+    # strings (BLINKER-concat, MNE-annot); the proposed pipeline is labelled CECT here.
     cond_handles = [
         Line2D([0], [0], marker=MARKERS[c], color="none", markerfacecolor=S.PANEL_BLUE,
-               markeredgecolor=S.NAVY, markersize=9, label=P.display(c))
+               markeredgecolor=S.NAVY, markersize=9, label=LEGEND_LABEL.get(c, P.display(c)))
         for c in CONDS
     ]
     ds_handles = [Patch(facecolor=DS_COLORS[ds], edgecolor=S.NAVY, label=DSN[ds])

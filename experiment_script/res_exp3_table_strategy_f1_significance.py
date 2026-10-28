@@ -1,11 +1,11 @@
-"""Table 4 — Proposed-approach F1 vs. both baselines, per dataset.
+"""Table 4 — CECT F1 vs. both baselines, per dataset.
 
-Writes ``writing/e_result/exp4/tab_f1_significance.tex`` (tab:f1_significance).
+Writes ``writing/e_result/exp3/tab_f1_significance.tex`` (tab:f1_significance).
 
 Replaces the deleted Figure 4/8 (``fig4_fig5_condition_prf.py``'s ``fig_condition_prf``,
 which plotted precision/recall/F1 for the proposed approach alone). That figure's own
 generator is gone; this table keeps only what a reader actually used from it -- each
-condition's F1 and whether Proposed-approach differs significantly from it. The
+condition's F1 and whether CECT differs significantly from it. The
 precision/recall operating-point story now lives in Figure~\\ref{fig:exp2_pr_scatter}
 instead.
 
@@ -13,8 +13,8 @@ No Pooled row (Internal and Cao2018 only). Both BLINKER-concat and MNE-annot get
 own column (displayed as "BLINKER"/"MNE" via the shared ``DISPLAY_LABEL``/``P.display``
 mapping in ``paper_data.py``). Four tests total (two baselines x two datasets),
 Bonferroni-corrected as one family; the asterisk sits on each baseline's own cell,
-marking that specific baseline as significantly different from Proposed-approach (not a
-single combined marker on the Proposed-approach cell) -- two-sided Wilcoxon signed-rank,
+marking that specific baseline as significantly different from CECT (not a
+single combined marker on the CECT cell) -- two-sided Wilcoxon signed-rank,
 session-level F1. Exact $p$-values are not printed on the table, only the threshold in
 the caption, matching the Figure 7/10 asterisk convention used throughout the manuscript.
 
@@ -56,8 +56,19 @@ PROPOSED = "Proposed-Med"
 BASELINES = ["BLINKER-concat", "MNE-annot"]
 
 
-def compute(best: dict) -> list[tuple[str, float, dict[str, tuple[float, bool]]]]:
-    """``(dataset label, Proposed-approach F1, {baseline -> (F1, significant)})``.
+def mean_sd(best: dict, ds: str, cond: str) -> tuple[float, float]:
+    """Session-mean and sample SD of F1 for one dataset and condition."""
+    f1 = best[(ds, cond)]["f1"]
+    return f1.mean(), f1.std()
+
+
+def cell(m_sd: tuple[float, float], star: str = "") -> str:
+    """``\\rev{mean $\\pm$ SD*}`` table cell, in percent."""
+    return rf"\rev{{{P.fmt(m_sd[0])} $\pm$ {P.fmt(m_sd[1])}{star}}}"
+
+
+def compute(best: dict) -> list[tuple[str, tuple, dict[str, tuple[tuple, bool]]]]:
+    """``(dataset label, CECT (F1, SD), {baseline -> ((F1, SD), significant)})``.
 
     Significance is Bonferroni-corrected across all four tests (two baselines x two
     datasets) shown in this table, not per dataset alone.
@@ -65,10 +76,10 @@ def compute(best: dict) -> list[tuple[str, float, dict[str, tuple[float, bool]]]
     n_corrections = len(BASELINES) * 2
     rows = []
     for ds, label in [("raja", P.DSN["raja"]), ("cao", "Cao2018")]:
-        f1_prop = P.macro(best, ds, PROPOSED)[2]
+        f1_prop = mean_sd(best, ds, PROPOSED)
         per_baseline = {}
         for baseline in BASELINES:
-            f1_base = P.macro(best, ds, baseline)[2]
+            f1_base = mean_sd(best, ds, baseline)
             a, b = P.paired_f1(best, PROPOSED, baseline, ds_list=(ds,))
             _, p = stats.wilcoxon(a, b, alternative="two-sided")
             per_baseline[baseline] = (f1_base, min(1.0, p * n_corrections) < 0.05)
@@ -76,19 +87,18 @@ def compute(best: dict) -> list[tuple[str, float, dict[str, tuple[float, bool]]]
     return rows
 
 
-def build_table(rows: list[tuple[str, float, dict[str, tuple[float, bool]]]]) -> list[str]:
-    blinker, mne = (P.display(b) for b in BASELINES)
+def build_table(rows: list[tuple[str, tuple, dict[str, tuple[tuple, bool]]]]) -> list[str]:
     lines = [
         r"\begin{table}[ht]", r"  \centering",
-        r"  \caption{\rev{Session-mean $F_1$ (\%, mean $\pm$ SD) of the proposed pipeline, "
-        r"the BLINKER-threshold baseline, and MNE on Internal. All conditions are evaluated "
+        r"  \caption{\rev{Session-mean $F_1$ (\%, mean $\pm$ SD) of CECT, "
+        r"the BLINKER-threshold baseline, and MNE on Internal and Cao2018. All conditions are evaluated "
         r"at the retrospective best-channel-per-session operating point. An asterisk marks a "
-        r"baseline whose session-level $F_1$ differs significantly from that of the proposed "
-        r"pipeline (two-tailed Wilcoxon signed-rank test paired by session, Bonferroni-corrected "
+        r"baseline whose session-level $F_1$ differs significantly from that of CECT "
+        r"(two-tailed Wilcoxon signed-rank test paired by session, Bonferroni-corrected "
         r"over the four comparisons shown, adjusted $p < 0.05$).}}",
         r"  \label{tab:f1_significance}",
-        r"  \begin{tabular}{lccc}", r"    \toprule",
-        rf"    Dataset & Proposed & {blinker} & {mne} \\", r"    \midrule",
+        r"  \begin{tabular}{lccc}", r"    \toprule", "",
+        r"    Dataset & \rev{CECT} & \rev{BLINKER-threshold} & MNE \\", r"    \midrule",
     ]
     for label, f1_prop, per_baseline in rows:
         f1_blinker, sig_blinker = per_baseline["BLINKER-concat"]
@@ -96,8 +106,8 @@ def build_table(rows: list[tuple[str, float, dict[str, tuple[float, bool]]]]) ->
         star_blinker = "*" if sig_blinker else ""
         star_mne = "*" if sig_mne else ""
         lines.append(
-            f"    {label} & {P.fmt(f1_prop)} & {P.fmt(f1_blinker)}{star_blinker} & "
-            f"{P.fmt(f1_mne)}{star_mne} \\\\"
+            rf"    \rev{{{label}}} & {cell(f1_prop)} & {cell(f1_blinker, star_blinker)} & "
+            rf"{cell(f1_mne, star_mne)} \\"
         )
     lines += [r"    \bottomrule", r"  \end{tabular}", r"\end{table}"]
     return lines
@@ -106,13 +116,13 @@ def build_table(rows: list[tuple[str, float, dict[str, tuple[float, bool]]]]) ->
 def main() -> None:
     best = P.load_exp2_best()
     rows = compute(best)
-    P.write_tex(P.ER / "exp4" / "tab_f1_significance.tex", build_table(rows), SCRIPT)
+    P.write_tex(P.ER / "exp3" / "tab_f1_significance.tex", build_table(rows), SCRIPT)
     for label, f1_prop, per_baseline in rows:
         f1_blinker, sig_blinker = per_baseline["BLINKER-concat"]
         f1_mne, sig_mne = per_baseline["MNE-annot"]
-        print(f"{label}: Proposed={f1_prop*100:.2f}%  "
-              f"BLINKER={f1_blinker*100:.2f}% (sig={sig_blinker})  "
-              f"MNE={f1_mne*100:.2f}% (sig={sig_mne})")
+        print(f"{label}: CECT={f1_prop[0]*100:.2f}%  "
+              f"BLINKER={f1_blinker[0]*100:.2f}% (sig={sig_blinker})  "
+              f"MNE={f1_mne[0]*100:.2f}% (sig={sig_mne})")
 
 
 if __name__ == "__main__":
