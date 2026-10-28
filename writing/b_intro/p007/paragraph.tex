@@ -1,9 +1,6 @@
 
-This paper makes several contributions to blink detection in fatigue driving research. First, we propose a three-stage pipeline that screens for candidate epochs likely to contain blink activity using multi-channel amplitude screening, derives a threshold for each channel from these candidate epochs, and applies each threshold to its corresponding channel across all epochs to extract channel-wise blink regions.
-% REMOVED (issue I26): To our knowledge, this is among the first frameworks to integrate these three stages explicitly to address the challenges associated with epoch structured EEG recordings.
-\rev{We evaluate a candidate-epoch-conditioned composition of these three stages for epoch-structured EEG recordings.}
-% REMOVED (issue I04): "BLINKER" without qualification
-\rev{Second, we systematically compare the proposed pipeline against baseline methods, including the BLINKER-threshold baseline~\citep{kleifges2017blinker} and MNE~\citep{GramfortEtAl2013a}.}
-% REMOVED (issue I25): "we release the source code" / "made it freely available" / "(TODO)" — repo not yet populated
-% MOVED: code-release sentence now in d_method/material/code_availability.tex, not a contribution
+This paper makes several contributions to blink detection in fatigue driving research. First, we propose  Candidate-Epoch-
+Conditioned Thresholding (CECT), a three-stage pipeline that screens for candidate epochs likely to contain blink activity using multi-channel amplitude screening, derives a threshold for each channel from these candidate epochs, and applies each threshold to its corresponding channel across all epochs to extract channel-wise blink regions.
+We evaluate a candidate-epoch-conditioned composition of CECT on an epoch-structured EEG recordings.
+Second, we systematically compare the proposed pipeline against baseline methods, including the BLINKER-threshold baseline~\citep{kleifges2017blinker} and MNE~\citep{GramfortEtAl2013a}.
 
