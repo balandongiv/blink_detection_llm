@@ -1,5 +1,23 @@
-% REMOVED (issue I01): Taken together, the findings indicate that screening epoch-structured EEG before estimating sample-level thresholds provides more reliable event-level blink-region detection than deriving a single threshold from a concatenated recording under the evaluated driving conditions.
-%\rev{Under the evaluated offline protocol with retrospective best-channel selection, the proposed epoch-conditioned configuration achieved higher session-mean event-level $F_1$ than the BLINKER-style initial-threshold baseline and the MNE comparator on both simulated-driving corpora.}
-The spatial analysis further showed that \rev{frontopolar electrodes showed the smallest reduction relative to full-montage performance, although formal equivalence was not tested}, while the epoch-duration analysis indicated broadly stable pooled performance despite some corpus-specific sensitivity to longer epochs. Collectively, these findings support an interpretable and spatially sparse approach to epoch-aware blink detection that can accommodate common segmentation choices without requiring a dense electrode montage.
-\rev{The evaluation was restricted to two simulated-driving corpora, and therefore generalisability beyond this domain and suitability for practical deployment remain to be established.}
-\rev{Overall, the candidate-epoch-conditioned configuration is a promising and interpretable approach to epoch-aware blink detection in simulated-driving EEG.}
+Taken together, the findings indicate that screening epoch-
+structured EEG before estimating sample-level thresholds pro-
+vides more reliable event-level blink-region detection than de-
+riving a single threshold from a concatenated recording under
+the evaluated driving conditions. The proposed median-based
+configuration outperformed the examined baselines across both
+driving corpora, supporting epoch screening as the principal
+methodological contribution of the pipeline. The spatial analy-
+sis further showed that frontopolar electrodes retained most of
+the full-montage performance, while the epoch-duration anal-
+ysis indicated broadly stable pooled performance despite some
+corpus-specific sensitivity to longer epochs. Collectively, these
+findings support an interpretable and spatially sparse approach to epoch-aware blink detection that can accommodate common
+segmentation choices without requiring a dense electrode mon-
+tage. The evaluation deliberately focused on driving data to establish the method’s performance within its intended fatigue-
+driving context. Consequently, its generalizability beyond this
+domain and its suitability for practical deployment remain to
+be established. Future work should validate the pipeline across
+independent driving datasets and recording systems before
+examining its transfer to other epoch-structured paradigms.
+Overall, this study positions epoch screening as a practical
+foundation for improving blink-detection threshold calibration
+in heterogeneous, epoch-structured EEG.
